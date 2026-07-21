@@ -22,40 +22,22 @@ function Login({ onLogin }) {
 
         <p>Who's using the farm manager?</p>
 
-        <button
-const buttonStyle = {
-  background: "#2b2b2b",
-  color: "white",
-  border: "none",
-  padding: "16px",
-  borderRadius: "10px",
-  cursor: "pointer",
-  minHeight: "50px",
-  width: "100%",
-  fontWeight: "bold",
-  transition: "0.2s",
-};          onClick={() => onLogin("David")}
-        >
-          David
-        </button>
+<button
+  style={{
+    ...buttonStyle,
+    marginBottom: "10px",
+  }}
+  onClick={() => onLogin("David")}
+>
+  👨‍🌾 David
+</button>
 
-        <button
-const buttonStyle = {
-  background: "#2b2b2b",
-  color: "white",
-  border: "none",
-  padding: "16px",
-  borderRadius: "10px",
-  cursor: "pointer",
-  minHeight: "50px",
-  width: "100%",
-  fontWeight: "bold",
-  transition: "0.2s",
-};          onClick={() => onLogin("Gemma")}
-        >
-          Gemma
-        </button>
-      </div>
+<button
+  style={buttonStyle}
+  onClick={() => onLogin("Gemma")}
+>
+  👩‍🌾 Gemma
+</button>      </div>
     </div>
   );
 }
