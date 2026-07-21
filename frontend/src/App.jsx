@@ -85,7 +85,7 @@ const buttonStyle = (buttonPage) => ({
     marginTop: "8px",
   }}
 >
-  Logged in as {user}
+  Logged in as: [{String(user)}]
 </div>
   </h1>
 
