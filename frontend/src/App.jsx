@@ -62,10 +62,34 @@ const buttonStyle = (buttonPage) => ({
           boxSizing: "border-box",
         }}
       >
-        <h2 style={{ color: "#03a9f4" }}>
-          🐑 Farm Manager
-        </h2>
+<div
+  style={{
+    marginBottom: "25px",
+    borderBottom: "1px solid #333",
+    paddingBottom: "15px",
+  }}
+>
+  <h1
+    style={{
+      margin: 0,
+      color: "#03a9f4",
+      fontSize: "1.8rem",
+    }}
+  >
+    🐑 Wern Villa
+  </h1>
 
+  <div
+    style={{
+      color: "#888",
+      fontSize: "0.85rem",
+      marginTop: "6px",
+      letterSpacing: "1px",
+    }}
+  >
+    GEMMA & DAVID'S FARM MANAGER
+  </div>
+</div>
         <div
           style={{
             display: "flex",
