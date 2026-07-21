@@ -28,6 +28,7 @@ export default function Tasks() {
       },
       body: JSON.stringify({
         task: newTask,
+        createdBy: localStorage.getItem("user")
       }),
     }).then(() => {
       setNewTask("");
@@ -92,12 +93,24 @@ export default function Tasks() {
           }}
         >
           <div>
-            {task.completed
-              ? "✅"
-              : "□"}{" "}
-            {task.task}
-          </div>
+<div>
+  <div>
+    {task.completed
+      ? "✅"
+      : "□"}{" "}
+    {task.task}
+  </div>
 
+  <div
+    style={{
+      color: "#888",
+      fontSize: "0.85rem",
+      marginTop: "4px",
+    }}
+  >
+    Created by: {task.createdBy || "Unknown"}
+  </div>
+</div>
           {!task.completed && (
             <button
               onClick={() =>

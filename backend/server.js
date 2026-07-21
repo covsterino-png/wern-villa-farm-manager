@@ -27,7 +27,9 @@ db.run(`
 CREATE TABLE IF NOT EXISTS tasks (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   task TEXT,
-  completed INTEGER DEFAULT 0
+  completed INTEGER DEFAULT 0,
+  createdBy TEXT,
+  completedBy TEXT
 )
 `);
 app.get("/", (req, res) => {
@@ -64,14 +66,13 @@ app.get("/tasks", (req, res) => {
 });
 
 app.post("/tasks", (req, res) => {
-  const { task } = req.body;
-
+const { task, createdBy } = req.body;
   db.run(
     `
-    INSERT INTO tasks (task)
-    VALUES (?)
+INSERT INTO tasks (task, createdBy)
+VALUES (?, ?)
     `,
-    [task],
+    [task, createdBy],
     function (err) {
       if (err) {
         res.status(500).json(err);
