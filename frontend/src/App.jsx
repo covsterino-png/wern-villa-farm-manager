@@ -102,6 +102,25 @@ const buttonStyle = (buttonPage) => ({
   }}
 >
   Logged in as: [{String(user)}]
+  <button
+  style={{
+    marginTop: "10px",
+    width: "100%",
+    padding: "10px",
+    background: "#444",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+  }}
+  onClick={() => {
+    localStorage.removeItem("user");
+    window.location.reload();
+  }}
+>
+  Logout
+</button>
+
 </div>
   </h1>
 
