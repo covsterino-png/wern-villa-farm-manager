@@ -19,6 +19,14 @@ ADD COLUMN createdBy TEXT
     console.log("createdBy column already exists");
   }
 });
+db.run(`
+ALTER TABLE tasks
+ADD COLUMN completedBy TEXT
+`, (err) => {
+  if (err) {
+    console.log("completedBy column already exists");
+  }
+});
 
 // Create movements table
 
@@ -175,14 +183,17 @@ app.get("/summary", (req, res) => {
 });
 app.put("/tasks/:id/complete", (req, res) => {
   const { id } = req.params;
+  const { completedBy } = req.body;
 
   db.run(
     `
     UPDATE tasks
-    SET completed = 1
+    SET completed = 1,
+        completedBy = ?
     WHERE id = ?
     `,
-    [id],
+    [completedBy, id],
+    
     function (err) {
       if (err) {
         res.status(500).json(err);
@@ -215,6 +226,15 @@ app.get("/activity", (req, res) => {
         return;
       }
 
+      res.json(rows);
+    }
+  );
+});
+app.get("/debug-tasks", (req, res) => {
+  db.all(
+    "SELECT * FROM tasks",
+    [],
+    (err, rows) => {
       res.json(rows);
     }
   );
