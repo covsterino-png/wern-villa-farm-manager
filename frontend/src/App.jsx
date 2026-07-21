@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./App.css";
-
+import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import MoveSheep from "./pages/MoveSheep";
 import Fields from "./pages/Fields";
@@ -22,7 +22,9 @@ function App() {
       rams: 11,
     },
   });
-
+const [user, setUser] = useState(
+  localStorage.getItem("user")
+);
   const [movements, setMovements] = useState([]);
 
   const isMobile = window.innerWidth < 768;
@@ -77,6 +79,14 @@ const buttonStyle = (buttonPage) => ({
     }}
   >
     🐑 Wern Villa
+    <div
+  style={{
+    color: "#03a9f4",
+    marginTop: "8px",
+  }}
+>
+  Logged in as {user}
+</div>
   </h1>
 
   <div
@@ -167,6 +177,20 @@ const buttonStyle = (buttonPage) => ({
       </div>
     </div>
   );
+  if (!user) {
+  return (
+    <Login
+      onLogin={(username) => {
+        localStorage.setItem(
+          "user",
+          username
+        );
+
+        setUser(username);
+      }}
+    />
+  );
+}
 }
 
 export default App;
