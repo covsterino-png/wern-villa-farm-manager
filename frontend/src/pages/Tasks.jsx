@@ -37,21 +37,21 @@ export default function Tasks() {
   }
 
   function completeTask(id) {
-  fetch(
-    `https://wern-villa-api.onrender.com/tasks/${id}/complete`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        completedBy: localStorage.getItem("user"),
-      }),
-    }
-  ).then(() => {
-    loadTasks();
-  });
-}
+    fetch(
+      `https://wern-villa-api.onrender.com/tasks/${id}/complete`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          completedBy: localStorage.getItem("user"),
+        }),
+      }
+    ).then(() => {
+      loadTasks();
+    });
+  }
 
   return (
     <div>
@@ -100,21 +100,22 @@ export default function Tasks() {
               {task.completed ? "✅" : "□"} {task.task}
             </div>
 
-           <div
-  style={{
-    color: "#888",
-    fontSize: "0.85rem",
-    marginTop: "4px",
-  }}
->
-  Created by: {task.createdBy || "Unknown"}
+            <div
+              style={{
+                color: "#888",
+                fontSize: "0.85rem",
+                marginTop: "4px",
+              }}
+            >
+              Created by: {task.createdBy || "Unknown"}
 
-  {task.completedBy && (
-    <div>
-      Completed by: {task.completedBy}
-    </div>
-  )}
-</div>
+              {task.completedBy && (
+                <div>
+                  Completed by: {task.completedBy}
+                </div>
+              )}
+            </div>
+          </div>
 
           {!task.completed && (
             <button
