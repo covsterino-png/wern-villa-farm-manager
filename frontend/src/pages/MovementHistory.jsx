@@ -21,49 +21,54 @@ export default function MovementHistory() {
       {movements.length === 0 ? (
         <p>No movements recorded.</p>
       ) : (
-        <div
-  key={move.id}
-  style={{
-    background: "#1f1f1f",
-    padding: "15px",
-    borderRadius: "12px",
-    marginBottom: "10px",
-    border: "1px solid #333",
-  }}
->
-  <strong>
-    🐑 {move.number} sheep
-  </strong>
+        <div>
+          {movements.map((move) => (
+            <div
+              key={move.id}
+              style={{
+                background: "#1f1f1f",
+                padding: "15px",
+                borderRadius: "12px",
+                marginBottom: "10px",
+                border: "1px solid #333",
+              }}
+            >
+              <strong>
+                🐑 {move.number} sheep
+              </strong>
 
-  <br />
+              <br />
 
-  {move.fromLocation}
-  {" → "}
-  {move.toLocation}
+              {move.fromLocation}
+              {" → "}
+              {move.toLocation}
 
-  <br />
+              <br />
 
-  <span
-    style={{
-      color: "#888",
-    }}
-  >
-    {move.moveDate}
-  </span>
+              <span
+                style={{
+                  color: "#888",
+                }}
+              >
+                {move.moveDate}
+              </span>
 
-  {move.movedBy && (
-    <>
-      <br />
-      <span
-        style={{
-          color: "#03a9f4",
-        }}
-      >
-        Moved by: {move.movedBy}
-      </span>
-    </>
-  )}
-</div>
+              {move.movedBy && (
+                <>
+                  <br />
+
+                  <span
+                    style={{
+                      color: "#03a9f4",
+                    }}
+                  >
+                    Moved by: {move.movedBy}
+                  </span>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
