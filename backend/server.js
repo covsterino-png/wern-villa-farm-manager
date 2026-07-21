@@ -11,6 +11,14 @@ app.use(
 );app.use(express.json());
 
 const db = new sqlite3.Database("./farm.db");
+db.run(`
+ALTER TABLE tasks
+ADD COLUMN createdBy TEXT
+`, (err) => {
+  if (err) {
+    console.log("createdBy column already exists");
+  }
+});
 
 // Create movements table
 
