@@ -11,6 +11,16 @@ app.use(
 );app.use(express.json());
 
 const db = new sqlite3.Database("./farm.db");
+
+db.run(`
+ALTER TABLE movements
+ADD COLUMN movedBy TEXT
+`, (err) => {
+  if (err) {
+    console.log("movedBy column already exists");
+  }
+});
+
 db.run(`
 ALTER TABLE tasks
 ADD COLUMN createdBy TEXT
@@ -19,6 +29,7 @@ ADD COLUMN createdBy TEXT
     console.log("createdBy column already exists");
   }
 });
+
 db.run(`
 ALTER TABLE tasks
 ADD COLUMN completedBy TEXT
@@ -104,30 +115,32 @@ VALUES (?, ?)
 });
 
 app.post("/movements", (req, res) => {
-  const {
-    number,
-    fromLocation,
-    toLocation,
-    moveDate,
-  } = req.body;
-
+const {
+  number,
+  fromLocation,
+  toLocation,
+  moveDate,
+  movedBy,
+} = req.body;
   db.run(
     `
-    INSERT INTO movements
-    (
-      number,
-      fromLocation,
-      toLocation,
-      moveDate
-    )
-    VALUES (?, ?, ?, ?)
+INSERT INTO movements
+(
+  number,
+  fromLocation,
+  toLocation,
+  moveDate,
+  movedBy
+)
+VALUES (?, ?, ?, ?, ?)
     `,
-    [
-      number,
-      fromLocation,
-      toLocation,
-      moveDate,
-    ],
+[
+  number,
+  fromLocation,
+  toLocation,
+  moveDate,
+  movedBy,
+],
     function (err) {
       if (err) {
         res.status(500).json(err);
