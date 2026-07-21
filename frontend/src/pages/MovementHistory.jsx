@@ -4,7 +4,7 @@ export default function MovementHistory() {
   const [movements, setMovements] = useState([]);
 
   useEffect(() => {
-    fetch("https://wern-villa-farm-manager.onrender.com/movements")
+    fetch("https://wern-villa-api.onrender.com/movements")
       .then((response) => response.json())
       .then((data) => {
         setMovements(data);

@@ -212,6 +212,6 @@ app.get("/activity", (req, res) => {
 });
 app.listen(3001, () => {
   console.log(
-    "Farm API running on https://wern-villa-farm-manager.onrender.com"
+    "Farm API running on https://wern-villa-api.onrender.com"
   );
 });

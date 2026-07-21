@@ -5,7 +5,7 @@ export default function Tasks() {
   const [newTask, setNewTask] = useState("");
 
   function loadTasks() {
-    fetch("https://wern-villa-farm-manager.onrender.com/tasks")
+    fetch("https://wern-villa-api.onrender.com/tasks")
       .then((response) => response.json())
       .then((data) => {
         setTasks(data);
@@ -21,7 +21,7 @@ export default function Tasks() {
       return;
     }
 
-    fetch("https://wern-villa-farm-manager.onrender.com/tasks", {
+    fetch("https://wern-villa-api.onrender.com/tasks", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -37,7 +37,7 @@ export default function Tasks() {
 
   function completeTask(id) {
     fetch(
-      `https://wern-villa-farm-manager.onrender.com/tasks/${id}/complete`,
+      `https://wern-villa-api.onrender.com/tasks/${id}/complete`,
       {
         method: "PUT",
       }

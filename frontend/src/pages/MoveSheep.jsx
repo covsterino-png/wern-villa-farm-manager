@@ -38,7 +38,7 @@ export default function MoveSheep({
       },
     ]);
 
-    fetch("https://wern-villa-farm-manager.onrender.com/movements", {
+    fetch("https://wern-villa-api.onrender.com/movements", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

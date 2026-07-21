@@ -11,7 +11,7 @@ export default function Dashboard() {
   const [activity, setActivity] = useState([]);
 
   useEffect(() => {
-    fetch("https://wern-villa-farm-manager.onrender.com/summary")
+    fetch("https://wern-villa-api.onrender.com/summary")
       .then((response) => response.json())
       .then((data) => {
         setSummary(data);
@@ -22,7 +22,7 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    fetch("https://wern-villa-farm-manager.onrender.com/activity")
+    fetch("https://wern-villa-api.onrender.com/activity")
       .then((response) => response.json())
       .then((data) => {
         setActivity(data);
