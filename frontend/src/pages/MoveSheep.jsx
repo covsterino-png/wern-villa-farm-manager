@@ -37,7 +37,10 @@ export default function MoveSheep({
         date: new Date().toLocaleDateString(),
       },
     ]);
-
+console.log(
+  "Moving sheep as:",
+  localStorage.getItem("user")
+);
     fetch("https://wern-villa-api.onrender.com/movements", {
       method: "POST",
       headers: {
@@ -48,6 +51,7 @@ export default function MoveSheep({
         fromLocation: "Gellidywyll",
         toLocation: "Wern Villa",
         moveDate: new Date().toLocaleDateString(),
+        movedBy: localStorage.getItem("user"),
       }),
     })
       .then((response) => response.json())
