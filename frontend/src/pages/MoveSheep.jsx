@@ -8,6 +8,12 @@ export default function MoveSheep({
 }) {
   const [number, setNumber] = useState("");
 
+  const [fromLocation, setFromLocation] =
+    useState("Gellidywyll");
+
+  const [toLocation, setToLocation] =
+    useState("Wern Villa");
+
   function moveSheep() {
     const qty = parseInt(number);
 
@@ -15,48 +21,50 @@ export default function MoveSheep({
       return;
     }
 
-    setFarmData({
-      ...farmData,
-
-      locations: {
-        wernVilla:
-          farmData.locations.wernVilla + qty,
-
-        gellidywyll:
-          farmData.locations.gellidywyll - qty,
-      },
-    });
+    if (fromLocation === toLocation) {
+      alert(
+        "From and To locations must be different."
+      );
+      return;
+    }
 
     setMovements([
       ...movements,
-
       {
         number: qty,
-        from: "Gellidywyll",
-        to: "Wern Villa",
+        from: fromLocation,
+        to: toLocation,
         date: new Date().toLocaleDateString(),
       },
     ]);
-console.log(
-  "Moving sheep as:",
-  localStorage.getItem("user")
-);
-    fetch("https://wern-villa-api.onrender.com/movements", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        number: qty,
-        fromLocation: "Gellidywyll",
-        toLocation: "Wern Villa",
-        moveDate: new Date().toLocaleDateString(),
-        movedBy: localStorage.getItem("user"),
-      }),
-    })
-      .then((response) => response.json())
+
+    fetch(
+      "https://wern-villa-api.onrender.com/movements",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+        body: JSON.stringify({
+          number: qty,
+          fromLocation,
+          toLocation,
+          moveDate:
+            new Date().toLocaleDateString(),
+          movedBy:
+            localStorage.getItem("user"),
+        }),
+      }
+    )
+      .then((response) =>
+        response.json()
+      )
       .then((data) => {
-        console.log("Movement Saved", data);
+        console.log(
+          "Movement Saved",
+          data
+        );
       })
       .catch((error) => {
         console.error(error);
@@ -69,23 +77,108 @@ console.log(
     <div>
       <h1>🚜 Move Sheep</h1>
 
-      <p>
-        Move sheep from Gellidywyll to
-        {" "}
-        Wern Villa
-      </p>
+      <div
+        style={{
+          background: "#1f1f1f",
+          padding: "20px",
+          borderRadius: "12px",
+          maxWidth: "500px",
+        }}
+      >
+        <div
+          style={{
+            marginBottom: "15px",
+          }}
+        >
+          <label>
+            From:
+          </label>
 
-      <input
-        type="number"
-        value={number}
-        onChange={(e) =>
-          setNumber(e.target.value)
-        }
-      />
+          <br />
 
-      <button onClick={moveSheep}>
-        Move
-      </button>
+          <select
+            value={fromLocation}
+            onChange={(e) =>
+              setFromLocation(
+                e.target.value
+              )
+            }
+            style={{
+              width: "100%",
+              padding: "10px",
+            }}
+          >
+            <option>
+              Gellidywyll
+            </option>
+            <option>
+              Wern Villa
+            </option>
+          </select>
+        </div>
+
+        <div
+          style={{
+            marginBottom: "15px",
+          }}
+        >
+          <label>To:</label>
+
+          <br />
+
+          <select
+            value={toLocation}
+            onChange={(e) =>
+              setToLocation(
+                e.target.value
+              )
+            }
+            style={{
+              width: "100%",
+              padding: "10px",
+            }}
+          >
+            <option>
+              Wern Villa
+            </option>
+            <option>
+              Gellidywyll
+            </option>
+          </select>
+        </div>
+
+        <div
+          style={{
+            marginBottom: "15px",
+          }}
+        >
+          <label>
+            Number of Sheep:
+          </label>
+
+          <br />
+
+          <input
+            type="number"
+            value={number}
+            onChange={(e) =>
+              setNumber(
+                e.target.value
+              )
+            }
+            style={{
+              width: "100%",
+              padding: "10px",
+            }}
+          />
+        </div>
+
+        <button
+          onClick={moveSheep}
+        >
+          Move Sheep
+        </button>
+      </div>
     </div>
   );
 }
