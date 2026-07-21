@@ -27,17 +27,24 @@ function App() {
 
   const isMobile = window.innerWidth < 768;
 
-  const buttonStyle = {
-    background: "#2b2b2b",
-    color: "white",
-    border: "none",
-    padding: "16px",
-    borderRadius: "10px",
-    textAlign: "left",
-    cursor: "pointer",
-    minHeight: "50px",
-  };
-
+const buttonStyle = (buttonPage) => ({
+  background:
+    page === buttonPage
+      ? "#03a9f4"
+      : "#2b2b2b",
+  color: "white",
+  border: "none",
+  padding: "16px",
+  borderRadius: "10px",
+  textAlign: "left",
+  cursor: "pointer",
+  minHeight: "50px",
+  fontWeight:
+    page === buttonPage
+      ? "bold"
+      : "normal",
+  transition: "0.2s",
+});
   return (
     <div
       style={{
@@ -69,35 +76,35 @@ function App() {
           }}
         >
           <button
-            style={buttonStyle}
+            style={buttonStyle("dashboard")}
             onClick={() => setPage("dashboard")}
           >
             Dashboard
           </button>
 
           <button
-            style={buttonStyle}
+            style={buttonStyle("move")}
             onClick={() => setPage("move")}
           >
             Move Sheep
           </button>
 
           <button
-            style={buttonStyle}
+            style={buttonStyle("fields")}
             onClick={() => setPage("fields")}
           >
             Fields
           </button>
 
           <button
-            style={buttonStyle}
+            style={buttonStyle("history")}
             onClick={() => setPage("history")}
           >
             History
           </button>
 
           <button
-            style={buttonStyle}
+            style={buttonStyle("tasks")}
             onClick={() => setPage("tasks")}
           >
             Tasks
