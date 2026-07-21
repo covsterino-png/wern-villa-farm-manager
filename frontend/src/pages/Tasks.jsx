@@ -28,7 +28,7 @@ export default function Tasks() {
       },
       body: JSON.stringify({
         task: newTask,
-        createdBy: localStorage.getItem("user")
+        createdBy: localStorage.getItem("user"),
       }),
     }).then(() => {
       setNewTask("");
@@ -61,9 +61,7 @@ export default function Tasks() {
       >
         <input
           value={newTask}
-          onChange={(e) =>
-            setNewTask(e.target.value)
-          }
+          onChange={(e) => setNewTask(e.target.value)}
           placeholder="Enter task..."
           style={{
             padding: "10px",
@@ -87,35 +85,29 @@ export default function Tasks() {
             marginBottom: "10px",
             border: "1px solid #333",
             display: "flex",
-            justifyContent:
-              "space-between",
+            justifyContent: "space-between",
             alignItems: "center",
           }}
         >
           <div>
-<div>
-  <div>
-    {task.completed
-      ? "✅"
-      : "□"}{" "}
-    {task.task}
-  </div>
+            <div>
+              {task.completed ? "✅" : "□"} {task.task}
+            </div>
 
-  <div
-    style={{
-      color: "#888",
-      fontSize: "0.85rem",
-      marginTop: "4px",
-    }}
-  >
-    Created by: {task.createdBy || "Unknown"}
-  </div>
-</div>
+            <div
+              style={{
+                color: "#888",
+                fontSize: "0.85rem",
+                marginTop: "4px",
+              }}
+            >
+              Created by: {task.createdBy || "Unknown"}
+            </div>
+          </div>
+
           {!task.completed && (
             <button
-              onClick={() =>
-                completeTask(task.id)
-              }
+              onClick={() => completeTask(task.id)}
             >
               Complete
             </button>
