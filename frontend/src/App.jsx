@@ -25,6 +25,22 @@ function App() {
 const [user, setUser] = useState(
   localStorage.getItem("user")
 );
+
+if (!user) {
+  return (
+    <Login
+      onLogin={(username) => {
+        localStorage.setItem(
+          "user",
+          username
+        );
+
+        setUser(username);
+      }}
+    />
+  );
+}
+console.log("Current user:", user);
   const [movements, setMovements] = useState([]);
 
   const isMobile = window.innerWidth < 768;
@@ -177,20 +193,7 @@ const buttonStyle = (buttonPage) => ({
       </div>
     </div>
   );
-  if (!user) {
-  return (
-    <Login
-      onLogin={(username) => {
-        localStorage.setItem(
-          "user",
-          username
-        );
-
-        setUser(username);
-      }}
-    />
-  );
-}
+  
 }
 
 export default App;
