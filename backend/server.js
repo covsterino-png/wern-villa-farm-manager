@@ -252,6 +252,16 @@ app.get("/debug-tasks", (req, res) => {
     }
   );
 });
+app.get("/debug-movements", (req, res) => {
+  db.all(
+    "SELECT * FROM movements",
+    [],
+    (err, rows) => {
+      res.json(rows);
+    }
+  );
+});
+
 app.listen(3001, () => {
   console.log(
     "Farm API running on https://wern-villa-api.onrender.com"
