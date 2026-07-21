@@ -29,15 +29,10 @@ const [user, setUser] = useState(
 if (!user) {
   return (
     <Login
-      onLogin={(username) => {
-        localStorage.setItem(
-          "user",
-          username
-        );
-
-        setUser(username);
-      }}
-    />
+onLogin={(username) => {
+  localStorage.setItem("user", username);
+  window.location.reload();
+}}    />
   );
 }
 console.log("Current user:", user);
