@@ -59,8 +59,20 @@ CREATE TABLE IF NOT EXISTS tasks (
   completedBy TEXT
 )
 `);
+db.run(`
+CREATE TABLE IF NOT EXISTS fields (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT
+)
+`);
 app.get("/", (req, res) => {
   res.send("Wern Villa Farm Manager API");
+});
+app.get("/test-fields", (req, res) => {
+  res.json({
+    success: true,
+    message: "Fields route is alive",
+  });
 });
 
 app.get("/movements", (req, res) => {
@@ -261,7 +273,43 @@ app.get("/debug-movements", (req, res) => {
     }
   );
 });
+app.get("/fields", (req, res) => {
+  db.all(
+    "SELECT * FROM fields ORDER BY name",
+    [],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
 
+      res.json(rows);
+    }
+  );
+});
+
+app.post("/fields", (req, res) => {
+  const { name } = req.body;
+
+  db.run(
+    `
+    INSERT INTO fields (name)
+    VALUES (?)
+    `,
+    [name],
+    function (err) {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json({
+        success: true,
+        id: this.lastID,
+      });
+    }
+  );
+});
 app.listen(3001, () => {
   console.log(
     "Farm API running on https://wern-villa-api.onrender.com"
