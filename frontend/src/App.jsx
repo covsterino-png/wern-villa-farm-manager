@@ -148,12 +148,7 @@ const buttonStyle = (buttonPage) => ({
           >
             Dashboard
           </button>
-<button
-  style={buttonStyle("settings")}
-  onClick={() => setPage("settings")}
->
-  Settings
-</button>
+
           <button
             style={buttonStyle("move")}
             onClick={() => setPage("move")}
@@ -193,15 +188,33 @@ const buttonStyle = (buttonPage) => ({
         </div>
       </div>
 
-      <div
-        style={{
-          flex: 1,
-          padding: isMobile ? "10px" : "20px",
-          background: "#121212",
-          color: "white",
-        }}
-      >
-        {page === "dashboard" && (
+<div
+  style={{
+    flex: 1,
+    padding: isMobile ? "10px" : "20px",
+    background: "#121212",
+    color: "white",
+    position: "relative",
+  }}
+>
+  {user === "David" && (
+    <button
+      onClick={() => setPage("settings")}
+      style={{
+        position: "absolute",
+        top: "20px",
+        right: "20px",
+        background: "transparent",
+        border: "none",
+        fontSize: "2rem",
+        cursor: "pointer",
+        zIndex: 1000,
+      }}
+      title="Settings"
+    >
+      ⚙️
+    </button>
+  )}        {page === "dashboard" && (
           <Dashboard farmData={farmData} />
         )}
         {page === "settings" && (
