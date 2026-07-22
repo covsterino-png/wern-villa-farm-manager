@@ -1,5 +1,3 @@
-import mapImage from "../assets/wern-villa-map.png";
-
 export default function FarmMap() {
   return (
     <div>
@@ -9,117 +7,111 @@ export default function FarmMap() {
           marginBottom: "20px",
         }}
       >
-        🗺️ Wern Villa Farm Map
+        🗺️ Wern Villa Farm
       </h1>
 
       <div
         style={{
-          position: "relative",
-          width: "100%",
-          maxWidth: "800px",
-          height: "1400px",
+          maxWidth: "550px",
           margin: "0 auto",
-          backgroundImage: `url(${mapImage})`,
-          backgroundSize: "contain",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "center",
+          display: "grid",
+          gap: "12px",
         }}
       >
-        {/* 5 Acre Field */}
-
-        <FieldArea
-          title="🌱 5 Acre Field"
-          top="3%"
-          left="16%"
-          width="68%"
-          height="22%"
-          colour="#4caf50"
+        <FieldCard
+          name="🌱 5 Acre Field"
+          colour="#2e7d32"
+          sheep="0 Sheep"
+          status="⚪ Empty"
+          height="90px"
         />
 
-        {/* 4 Acre Field */}
-
-        <FieldArea
-          title="🌱 4 Acre Field"
-          top="26%"
-          left="16%"
-          width="68%"
-          height="23%"
-          colour="#4caf50"
+        <FieldCard
+          name="🌱 4 Acre Field"
+          colour="#388e3c"
+          sheep="0 Sheep"
+          status="⚪ Empty"
+          height="90px"
         />
 
-        {/* Paddock */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "1fr 1fr",
+            gap: "12px",
+          }}
+        >
+          <FieldCard
+            name="🌱 Paddock"
+            colour="#66bb6a"
+            sheep="0 Sheep"
+            status="⚪ Empty"
+            height="180px"
+          />
 
-        <FieldArea
-          title="🌱 Paddock"
-          top="50%"
-          left="16%"
-          width="22%"
-          height="20%"
-          colour="#8bc34a"
-        />
+          <FieldCard
+            name="🌱 Pond Field"
+            colour="#43a047"
+            sheep="0 Sheep"
+            status="⚪ Empty"
+            height="280px"
+          />
+        </div>
 
-        {/* Pond Field */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "1fr 1fr",
+            gap: "12px",
+            marginTop: "-112px",
+          }}
+        >
+          <FieldCard
+            name="🏠 Home & Yard"
+            colour="#607d8b"
+            sheep="-"
+            status="Buildings"
+            height="90px"
+          />
 
-        <FieldArea
-          title="🌱 Pond Field"
-          top="50%"
-          left="40%"
-          width="44%"
-          height="42%"
-          colour="#66bb6a"
-        />
-
-        {/* Home & Yard */}
-
-        <FieldArea
-          title="🏠 Home & Yard"
-          top="71%"
-          left="16%"
-          width="18%"
-          height="14%"
-          colour="#607d8b"
-        />
+          <div />
+        </div>
       </div>
     </div>
   );
 }
 
-function FieldArea({
-  title,
-  top,
-  left,
-  width,
-  height,
+function FieldCard({
+  name,
   colour,
+  sheep,
+  status,
+  height,
 }) {
   return (
     <div
       style={{
-        position: "absolute",
-        top,
-        left,
-        width,
-        height,
-        background: `${colour}55`,
-        border: `3px solid ${colour}`,
-        borderRadius: "12px",
-        padding: "10px",
-        boxSizing: "border-box",
+        background: colour,
+        borderRadius: "20px",
+        padding: "16px",
         color: "white",
+        height,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        boxShadow:
+          "0 4px 12px rgba(0,0,0,0.3)",
         cursor: "pointer",
-        backdropFilter: "blur(2px)",
       }}
     >
-      <strong>{title}</strong>
+      <strong>{name}</strong>
 
-      <br />
-      <br />
-
-      ⚪ Empty
-
-      <br />
-
-      🐑 0 Sheep
+      <div>
+        <div>{status}</div>
+        <div>🐑 {sheep}</div>
+      </div>
     </div>
   );
 }
