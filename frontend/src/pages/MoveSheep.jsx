@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function MoveSheep({
   farmData,
@@ -7,6 +7,7 @@ export default function MoveSheep({
   setMovements,
 }) {
   const [number, setNumber] = useState("");
+  const [fields, setFields] = useState([]);
 
   const [fromLocation, setFromLocation] =
     useState("Gellidywyll");
@@ -27,7 +28,18 @@ export default function MoveSheep({
       );
       return;
     }
+useEffect(() => {
+  fetch("https://wern-villa-api.onrender.com/fields")
+    .then((response) => response.json())
+    .then((data) => {
+      setFields(data);
 
+      if (data.length > 1) {
+        setFromLocation(data[0].name);
+        setToLocation(data[1].name);
+      }
+    });
+}, []);
     setMovements([
       ...movements,
       {
@@ -108,12 +120,14 @@ export default function MoveSheep({
               padding: "10px",
             }}
           >
-            <option>
-              Gellidywyll
-            </option>
-            <option>
-              Wern Villa
-            </option>
+           {fields.map((field) => (
+  <option
+    key={field.id}
+    value={field.name}
+  >
+    {field.name}
+  </option>
+))}
           </select>
         </div>
 
@@ -138,12 +152,14 @@ export default function MoveSheep({
               padding: "10px",
             }}
           >
-            <option>
-              Wern Villa
-            </option>
-            <option>
-              Gellidywyll
-            </option>
+           {fields.map((field) => (
+  <option
+    key={field.id}
+    value={field.name}
+  >
+    {field.name}
+  </option>
+))}
           </select>
         </div>
 
