@@ -65,6 +65,16 @@ CREATE TABLE IF NOT EXISTS fields (
   name TEXT
 )
 `);
+db.run(`
+CREATE TABLE IF NOT EXISTS treatments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  groupName TEXT,
+  treatment TEXT,
+  treatmentDate TEXT,
+  notes TEXT,
+  administeredBy TEXT
+)
+`);
 app.get("/", (req, res) => {
   res.send("Wern Villa Farm Manager API");
 });
@@ -297,6 +307,62 @@ app.post("/fields", (req, res) => {
     VALUES (?)
     `,
     [name],
+    function (err) {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json({
+        success: true,
+        id: this.lastID,
+      });
+    }
+  );
+});
+app.get("/treatments", (req, res) => {
+  db.all(
+    "SELECT * FROM treatments ORDER BY id DESC",
+    [],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json(rows);
+    }
+  );
+});
+
+app.post("/treatments", (req, res) => {
+  const {
+    groupName,
+    treatment,
+    treatmentDate,
+    notes,
+    administeredBy,
+  } = req.body;
+
+  db.run(
+    `
+    INSERT INTO treatments
+    (
+      groupName,
+      treatment,
+      treatmentDate,
+      notes,
+      administeredBy
+    )
+    VALUES (?, ?, ?, ?, ?)
+    `,
+    [
+      groupName,
+      treatment,
+      treatmentDate,
+      notes,
+      administeredBy,
+    ],
     function (err) {
       if (err) {
         res.status(500).json(err);
