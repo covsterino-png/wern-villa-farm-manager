@@ -1,3 +1,5 @@
+import mapImage from "../assets/wern-villa-map.png";
+
 export default function FarmMap() {
   return (
     <div>
@@ -13,70 +15,56 @@ export default function FarmMap() {
       <div
         style={{
           position: "relative",
-          maxWidth: "1000px",
-          height: "600px",
-          background: "#1f1f1f",
+          width: "100%",
+          maxWidth: "1200px",
+          height: "700px",
+          backgroundImage: `url(${mapImage})`,
+          backgroundSize: "contain",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center",
           borderRadius: "20px",
           overflow: "hidden",
-          border: "2px solid #333",
+          margin: "0 auto",
         }}
       >
-        <FieldBlock
-          name="🏠 Home & Yard"
-          top="55%"
-          left="5%"
-          width="18%"
-          height="18%"
-          colour="#607d8b"
+        <FieldMarker
+          title="🏠 Home & Yard"
+          top="62%"
+          left="12%"
         />
 
-        <FieldBlock
-          name="🌱 Field 1"
-          top="55%"
-          left="25%"
-          width="35%"
-          height="30%"
-          colour="#4caf50"
+        <FieldMarker
+          title="🌱 Field 1"
+          top="72%"
+          left="32%"
         />
 
-        <FieldBlock
-          name="🌱 Field 2"
-          top="20%"
-          left="20%"
-          width="25%"
-          height="25%"
-          colour="#4caf50"
+        <FieldMarker
+          title="🌱 Field 2"
+          top="38%"
+          left="34%"
         />
 
-        <FieldBlock
-          name="🌱 Field 3"
-          top="20%"
-          left="48%"
-          width="22%"
-          height="55%"
-          colour="#4caf50"
+        <FieldMarker
+          title="🌱 Field 3"
+          top="42%"
+          left="58%"
         />
 
-        <FieldBlock
-          name="🌱 Field 4"
-          top="15%"
-          left="72%"
-          width="23%"
-          height="45%"
-          colour="#4caf50"
+        <FieldMarker
+          title="🌱 Field 4"
+          top="30%"
+          left="83%"
         />
       </div>
     </div>
   );
 }
 
-function FieldBlock({
-  name,
+function FieldMarker({
+  title,
   top,
   left,
-  width,
-  height,
-  colour,
 }) {
   return (
     <div
@@ -84,28 +72,26 @@ function FieldBlock({
         position: "absolute",
         top,
         left,
-        width,
-        height,
-        background: `${colour}22`,
-        border: `3px solid ${colour}`,
+        transform: "translate(-50%, -50%)",
+        background: "rgba(0,0,0,0.85)",
+        padding: "12px",
         borderRadius: "12px",
-        padding: "10px",
-        boxSizing: "border-box",
+        border: "2px solid #03a9f4",
+        color: "white",
+        minWidth: "120px",
+        textAlign: "center",
         cursor: "pointer",
       }}
     >
-      <div
-        style={{
-          color: colour,
-          fontWeight: "bold",
-          marginBottom: "10px",
-        }}
-      >
-        {name}
-      </div>
+      <strong>{title}</strong>
 
-      <div>⚪ Empty</div>
-      <div>🐑 0 Sheep</div>
+      <br />
+
+      ⚪ Empty
+
+      <br />
+
+      🐑 0 Sheep
     </div>
   );
 }

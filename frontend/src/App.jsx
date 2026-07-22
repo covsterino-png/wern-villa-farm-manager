@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./App.css";
-import FarmMap from "./pages/FarmMap";
+
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import MoveSheep from "./pages/MoveSheep";
@@ -8,6 +8,7 @@ import MovementHistory from "./pages/MovementHistory";
 import Tasks from "./pages/Tasks";
 import Treatments from "./pages/Treatments";
 import Settings from "./pages/Settings";
+import FarmMap from "./pages/FarmMap";
 
 function App() {
   const [page, setPage] = useState("dashboard");
@@ -250,13 +251,15 @@ function App() {
             setPage={setPage}
           />
         )}
-        {page === "farm-map" && (
-  <FarmMap />
-)}
 
-        {page === "settings" && (
-          <Settings />
+        {page === "farm-map" && (
+          <FarmMap />
         )}
+
+        {page === "settings" &&
+          user === "David" && (
+            <Settings />
+          )}
 
         {page === "move" && (
           <MoveSheep
@@ -273,8 +276,7 @@ function App() {
           <MovementHistory />
         )}
 
-        {page ===
-          "treatments" && (
+        {page === "treatments" && (
           <Treatments />
         )}
 

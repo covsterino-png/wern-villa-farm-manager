@@ -87,7 +87,6 @@ export default function Dashboard({ setPage }) {
         style={{
           color: "#03a9f4",
           marginBottom: "20px",
-          textAlign: "center",
         }}
       >
         🐑 Dashboard
@@ -100,7 +99,6 @@ export default function Dashboard({ setPage }) {
           padding: "30px",
           borderRadius: "16px",
           marginBottom: "20px",
-          textAlign: "center",
         }}
       >
         <h2
@@ -118,8 +116,8 @@ export default function Dashboard({ setPage }) {
             color: "white",
           }}
         >
-          Sheep, treatments, tasks and movements all in
-          one place.
+          Sheep, treatments, tasks and movements
+          all in one place.
         </p>
       </div>
 
@@ -161,13 +159,13 @@ export default function Dashboard({ setPage }) {
           onClick={() => setPage("tasks")}
         />
 
-       <DashboardCard
-  icon="🌱"
-  title="Fields"
-  value={fieldCount}
-  colour="#8bc34a"
-  onClick={() => setPage("farm-map")}
-/>
+        <DashboardCard
+          icon="🌱"
+          title="Fields"
+          value={fieldCount}
+          colour="#8bc34a"
+          onClick={() => setPage("farm-map")}
+        />
 
         <DashboardCard
           icon="💉"
@@ -197,7 +195,6 @@ export default function Dashboard({ setPage }) {
           borderRadius: "16px",
           marginBottom: "20px",
           border: "1px solid #333",
-          textAlign: "center",
         }}
       >
         <h2
@@ -256,9 +253,7 @@ export default function Dashboard({ setPage }) {
 
               <br />
 
-              <small>
-                {item.moveDate}
-              </small>
+              <small>{item.moveDate}</small>
             </div>
           ))
         )}
@@ -282,12 +277,10 @@ function DashboardCard({
         borderRadius: "16px",
         padding: "25px",
         border: `2px solid ${colour}`,
-        boxShadow:
-          `0 0 15px ${colour}20`,
+        boxShadow: `0 0 15px ${colour}20`,
         cursor: onClick
           ? "pointer"
           : "default",
-        textAlign: "center",
         transition: "0.2s",
       }}
     >
@@ -302,8 +295,8 @@ function DashboardCard({
 
       <div
         style={{
-          color: "#ccc",
-          fontSize: "1rem",
+          color: "#aaa",
+          fontSize: "0.9rem",
         }}
       >
         {title}
@@ -311,7 +304,7 @@ function DashboardCard({
 
       <div
         style={{
-          fontSize: "3rem",
+          fontSize: "2.4rem",
           fontWeight: "bold",
           color: colour,
           marginTop: "10px",
