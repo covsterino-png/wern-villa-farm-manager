@@ -5,6 +5,11 @@ export default function Treatments() {
   const [treatment, setTreatment] = useState("");
   const [notes, setNotes] = useState("");
   const [treatments, setTreatments] = useState([]);
+  const [withdrawalDays, setWithdrawalDays] =
+  useState("");
+
+const [cost, setCost] =
+  useState("");
 
   function loadTreatments() {
     fetch(
@@ -32,15 +37,17 @@ export default function Treatments() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          groupName,
-          treatment,
-          treatmentDate:
-            new Date().toLocaleDateString(),
-          notes,
-          administeredBy:
-            localStorage.getItem("user"),
-        }),
+body: JSON.stringify({
+  groupName,
+  treatment,
+  treatmentDate:
+    new Date().toLocaleDateString(),
+  withdrawalDays,
+  cost,
+  notes,
+  administeredBy:
+    localStorage.getItem("user"),
+}),
       }
     ).then(() => {
       setGroupName("");
@@ -80,7 +87,26 @@ export default function Treatments() {
             setTreatment(e.target.value)
           }
         />
+<input
+  placeholder="Cost (£)"
+  type="number"
+  value={cost}
+  onChange={(e) =>
+    setCost(e.target.value)
+  }
+/>
 
+<br />
+<br />
+
+<input
+  placeholder="Withdrawal Days"
+  type="number"
+  value={withdrawalDays}
+  onChange={(e) =>
+    setWithdrawalDays(e.target.value)
+  }
+/>
         <br />
         <br />
 
