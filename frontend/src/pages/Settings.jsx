@@ -6,6 +6,8 @@ export default function Settings() {
 
   const [fields, setFields] = useState([]);
   const [newField, setNewField] = useState("");
+  const [medicines, setMedicines] = useState([]);
+const [newMedicine, setNewMedicine] = useState("");
 
   function loadGroups() {
     fetch(
@@ -16,6 +18,15 @@ export default function Settings() {
         setGroups(data);
       });
   }
+  function loadMedicines() {
+  fetch(
+    "https://wern-villa-api.onrender.com/medicines"
+  )
+    .then((response) => response.json())
+    .then((data) => {
+      setMedicines(data);
+    });
+}
 
   function loadFields() {
     fetch(
@@ -27,11 +38,30 @@ export default function Settings() {
       });
   }
 
-  useEffect(() => {
-    loadGroups();
-    loadFields();
-  }, []);
+useEffect(() => {
+  loadGroups();
+  loadFields();
+  loadMedicines();
+}, []);
+function addMedicine() {
+  if (!newMedicine.trim()) return;
 
+  fetch(
+    "https://wern-villa-api.onrender.com/medicines",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: newMedicine,
+      }),
+    }
+  ).then(() => {
+    setNewMedicine("");
+    loadMedicines();
+  });
+}
   function addGroup() {
     if (!newGroup.trim()) return;
 
@@ -186,7 +216,61 @@ export default function Settings() {
             >
               🌱 {field.name}
             </div>
+            
           ))}
+          <div
+  style={{
+    background: "#1f1f1f",
+    padding: "20px",
+    borderRadius: "12px",
+    marginTop: "20px",
+  }}
+>
+  <h2
+    style={{
+      color: "#03a9f4",
+    }}
+  >
+    💉 Medicines
+  </h2>
+
+  <input
+    value={newMedicine}
+    onChange={(e) =>
+      setNewMedicine(e.target.value)
+    }
+    placeholder="Medicine name..."
+  />
+
+  <button
+    onClick={addMedicine}
+    style={{
+      marginLeft: "10px",
+    }}
+  >
+    Add Medicine
+  </button>
+
+  <div
+    style={{
+      marginTop: "20px",
+    }}
+  >
+    {medicines.map((medicine) => (
+      <div
+        key={medicine.id}
+        style={{
+          background: "#2b2b2b",
+          padding: "10px",
+          borderRadius: "8px",
+          marginBottom: "10px",
+        }}
+      >
+        💉 {medicine.name}
+      </div>
+    ))}
+  </div>
+</div>
         </div>
       </div>
     </div>

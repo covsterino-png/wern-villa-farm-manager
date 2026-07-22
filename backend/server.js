@@ -52,6 +52,12 @@ ADD COLUMN withdrawalDays INTEGER
     console.log("withdrawalDays already exists");
   }
 });
+db.run(`
+CREATE TABLE IF NOT EXISTS medicines (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT
+)
+`);
 
 db.run(`
 ALTER TABLE treatments
@@ -428,6 +434,43 @@ app.post("/flock-groups", (req, res) => {
   db.run(
     `
     INSERT INTO flockGroups (name)
+    VALUES (?)
+    `,
+    [name],
+    function (err) {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json({
+        success: true,
+        id: this.lastID,
+      });
+    }
+  );
+});
+app.get("/medicines", (req, res) => {
+  db.all(
+    "SELECT * FROM medicines ORDER BY name",
+    [],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json(rows);
+    }
+  );
+});
+
+app.post("/medicines", (req, res) => {
+  const { name } = req.body;
+
+  db.run(
+    `
+    INSERT INTO medicines (name)
     VALUES (?)
     `,
     [name],
