@@ -16,55 +16,81 @@ export default function FarmMap() {
         style={{
           position: "relative",
           width: "100%",
-          maxWidth: "1200px",
-          height: "700px",
+          maxWidth: "800px",
+          height: "1400px",
+          margin: "0 auto",
           backgroundImage: `url(${mapImage})`,
           backgroundSize: "contain",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
-          borderRadius: "20px",
-          overflow: "hidden",
-          margin: "0 auto",
         }}
       >
-        <FieldMarker
+        {/* 5 Acre Field */}
+
+        <FieldArea
+          title="🌱 5 Acre Field"
+          top="3%"
+          left="16%"
+          width="68%"
+          height="22%"
+          colour="#4caf50"
+        />
+
+        {/* 4 Acre Field */}
+
+        <FieldArea
+          title="🌱 4 Acre Field"
+          top="26%"
+          left="16%"
+          width="68%"
+          height="23%"
+          colour="#4caf50"
+        />
+
+        {/* Paddock */}
+
+        <FieldArea
+          title="🌱 Paddock"
+          top="50%"
+          left="16%"
+          width="22%"
+          height="20%"
+          colour="#8bc34a"
+        />
+
+        {/* Pond Field */}
+
+        <FieldArea
+          title="🌱 Pond Field"
+          top="50%"
+          left="40%"
+          width="44%"
+          height="42%"
+          colour="#66bb6a"
+        />
+
+        {/* Home & Yard */}
+
+        <FieldArea
           title="🏠 Home & Yard"
-          top="62%"
-          left="12%"
-        />
-
-        <FieldMarker
-          title="🌱 Field 1"
-          top="72%"
-          left="32%"
-        />
-
-        <FieldMarker
-          title="🌱 Field 2"
-          top="38%"
-          left="34%"
-        />
-
-        <FieldMarker
-          title="🌱 Field 3"
-          top="42%"
-          left="58%"
-        />
-
-        <FieldMarker
-          title="🌱 Field 4"
-          top="30%"
-          left="83%"
+          top="71%"
+          left="16%"
+          width="18%"
+          height="14%"
+          colour="#607d8b"
         />
       </div>
     </div>
   );
 }
 
-function FieldMarker({
+function FieldArea({
   title,
   top,
   left,
+  width,
+  height,
+  colour,
 }) {
   return (
     <div
@@ -72,19 +98,21 @@ function FieldMarker({
         position: "absolute",
         top,
         left,
-        transform: "translate(-50%, -50%)",
-        background: "rgba(0,0,0,0.85)",
-        padding: "12px",
+        width,
+        height,
+        background: `${colour}55`,
+        border: `3px solid ${colour}`,
         borderRadius: "12px",
-        border: "2px solid #03a9f4",
+        padding: "10px",
+        boxSizing: "border-box",
         color: "white",
-        minWidth: "120px",
-        textAlign: "center",
         cursor: "pointer",
+        backdropFilter: "blur(2px)",
       }}
     >
       <strong>{title}</strong>
 
+      <br />
       <br />
 
       ⚪ Empty
