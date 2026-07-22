@@ -5,12 +5,10 @@ export default function Treatments() {
   const [treatment, setTreatment] = useState("");
   const [notes, setNotes] = useState("");
   const [treatments, setTreatments] = useState([]);
-  const [withdrawalDays, setWithdrawalDays] =
-  useState("");
-
-const [cost, setCost] =
-  useState("");
+  const [withdrawalDays, setWithdrawalDays] =  useState("");
+  const [cost, setCost] =  useState("");
   const [groups, setGroups] = useState([]);
+  const [medicines, setMedicines] = useState([]);
 
   function loadTreatments() {
     fetch(
@@ -34,8 +32,20 @@ useEffect(() => {
 
       if (data.length > 0) {
         setGroupName(data[0].name);
+        
       }
     });
+    fetch(
+  "https://wern-villa-api.onrender.com/medicines"
+)
+  .then((response) => response.json())
+  .then((data) => {
+    setMedicines(data);
+
+    if (data.length > 0) {
+      setTreatment(data[0].name);
+    }
+  });
 }, []);
 
   function saveTreatment() {
@@ -118,14 +128,25 @@ body: JSON.stringify({
             setTreatment(e.target.value)
           }
         />
-<input
-  placeholder="Cost (£)"
-  type="number"
-  value={cost}
+<select
+  value={treatment}
   onChange={(e) =>
-    setCost(e.target.value)
+    setTreatment(e.target.value)
   }
-/>
+  style={{
+    width: "100%",
+    padding: "10px",
+  }}
+>
+  {medicines.map((medicine) => (
+    <option
+      key={medicine.id}
+      value={medicine.name}
+    >
+      {medicine.name}
+    </option>
+  ))}
+</select>
 
 <br />
 <br />
