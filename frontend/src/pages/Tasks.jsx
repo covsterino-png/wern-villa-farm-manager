@@ -55,7 +55,14 @@ export default function Tasks() {
 
   return (
     <div>
-      <h1>📋 Tasks</h1>
+<h1
+  style={{
+    color: "#03a9f4",
+    marginBottom: "20px",
+  }}
+>
+  📋 Tasks test
+</h1>
 
       <div
         style={{
