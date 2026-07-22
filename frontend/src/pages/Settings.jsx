@@ -80,7 +80,7 @@ export default function Settings() {
           marginBottom: "20px",
         }}
       >
-        ⚙️ Settings
+        ⚙️ Administration
       </h1>
 
       <div
@@ -91,7 +91,13 @@ export default function Settings() {
           marginBottom: "20px",
         }}
       >
-        <h2>🐑 Flock Groups</h2>
+        <h2
+          style={{
+            color: "#03a9f4",
+          }}
+        >
+          🐑 Flock Groups
+        </h2>
 
         <input
           value={newGroup}
@@ -138,7 +144,13 @@ export default function Settings() {
           borderRadius: "12px",
         }}
       >
-        <h2>🌱 Fields</h2>
+        <h2
+          style={{
+            color: "#03a9f4",
+          }}
+        >
+          🌱 Fields
+        </h2>
 
         <input
           value={newField}
