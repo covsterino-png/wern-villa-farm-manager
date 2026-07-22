@@ -20,6 +20,12 @@ ADD COLUMN movedBy TEXT
     console.log("movedBy column already exists");
   }
 });
+db.run(`
+CREATE TABLE IF NOT EXISTS flockGroups (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT
+)
+`);
 
 db.run(`
 ALTER TABLE tasks
@@ -36,6 +42,23 @@ ADD COLUMN completedBy TEXT
 `, (err) => {
   if (err) {
     console.log("completedBy column already exists");
+  }
+});
+db.run(`
+ALTER TABLE treatments
+ADD COLUMN withdrawalDays INTEGER
+`, (err) => {
+  if (err) {
+    console.log("withdrawalDays already exists");
+  }
+});
+
+db.run(`
+ALTER TABLE treatments
+ADD COLUMN cost REAL
+`, (err) => {
+  if (err) {
+    console.log("cost already exists");
   }
 });
 
@@ -71,6 +94,8 @@ CREATE TABLE IF NOT EXISTS treatments (
   groupName TEXT,
   treatment TEXT,
   treatmentDate TEXT,
+  withdrawalDays INTEGER,
+  cost REAL,
   notes TEXT,
   administeredBy TEXT
 )
@@ -336,33 +361,76 @@ app.get("/treatments", (req, res) => {
 });
 
 app.post("/treatments", (req, res) => {
-  const {
-    groupName,
-    treatment,
-    treatmentDate,
-    notes,
-    administeredBy,
-  } = req.body;
+const {
+  groupName,
+  treatment,
+  treatmentDate,
+  withdrawalDays,
+  cost,
+  notes,
+  administeredBy,
+} = req.body;
 
   db.run(
     `
-    INSERT INTO treatments
-    (
-      groupName,
-      treatment,
-      treatmentDate,
-      notes,
-      administeredBy
-    )
-    VALUES (?, ?, ?, ?, ?)
+INSERT INTO treatments
+(
+  groupName,
+  treatment,
+  treatmentDate,
+  withdrawalDays,
+  cost,
+  notes,
+  administeredBy
+)
+VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
-    [
-      groupName,
-      treatment,
-      treatmentDate,
-      notes,
-      administeredBy,
-    ],
+[
+  groupName,
+  treatment,
+  treatmentDate,
+  withdrawalDays,
+  cost,
+  notes,
+  administeredBy,
+],
+    function (err) {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json({
+        success: true,
+        id: this.lastID,
+      });
+    }
+  );
+});
+app.get("/flock-groups", (req, res) => {
+  db.all(
+    "SELECT * FROM flockGroups ORDER BY name",
+    [],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json(rows);
+    }
+  );
+});
+
+app.post("/flock-groups", (req, res) => {
+  const { name } = req.body;
+
+  db.run(
+    `
+    INSERT INTO flockGroups (name)
+    VALUES (?)
+    `,
+    [name],
     function (err) {
       if (err) {
         res.status(500).json(err);
