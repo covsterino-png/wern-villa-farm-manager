@@ -1,27 +1,37 @@
-export default function Fields() {
-  return (
-    <div>
-      <h1>🌱 Fields</h1>
+app.get("/fields", (req, res) => {
+  db.all(
+    "SELECT * FROM fields ORDER BY name",
+    [],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
 
-      <h2>Wern Villa</h2>
-
-      <ul>
-        <li>Paddock</li>
-        <li>Pond Field</li>
-        <li>South Field</li>
-        <li>North Field</li>
-      </ul>
-
-      <h2>Gellidywyll</h2>
-
-      <ul>
-        <li>Middle Field (150 sheep)</li>
-        <li>Kennel Field</li>
-        <li>6 Acre Field</li>
-        <li>Flat Field</li>
-        <li>Wet Field</li>
-        <li>Bryn Mound Field</li>
-      </ul>
-    </div>
+      res.json(rows);
+    }
   );
-}
+});
+
+app.post("/fields", (req, res) => {
+  const { name } = req.body;
+
+  db.run(
+    `
+    INSERT INTO fields (name)
+    VALUES (?)
+    `,
+    [name],
+    function (err) {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json({
+        success: true,
+        id: this.lastID,
+      });
+    }
+  );
+});
