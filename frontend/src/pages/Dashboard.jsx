@@ -10,8 +10,19 @@ export default function Dashboard() {
 
   const [activity, setActivity] = useState([]);
 
+  const [fieldCount, setFieldCount] =
+    useState(0);
+
+  const [treatmentCount, setTreatmentCount] =
+    useState(0);
+
+  const [withdrawalCount, setWithdrawalCount] =
+    useState(0);
+
   useEffect(() => {
-    fetch("https://wern-villa-api.onrender.com/summary")
+    fetch(
+      "https://wern-villa-api.onrender.com/summary"
+    )
       .then((response) => response.json())
       .then((data) => {
         setSummary(data);
@@ -22,13 +33,41 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    fetch("https://wern-villa-api.onrender.com/activity")
+    fetch(
+      "https://wern-villa-api.onrender.com/activity"
+    )
       .then((response) => response.json())
       .then((data) => {
         setActivity(data);
       })
       .catch((error) => {
         console.error(error);
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch(
+      "https://wern-villa-api.onrender.com/fields-count"
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        setFieldCount(data.count);
+      });
+
+    fetch(
+      "https://wern-villa-api.onrender.com/treatments-count"
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        setTreatmentCount(data.count);
+      });
+
+    fetch(
+      "https://wern-villa-api.onrender.com/withdrawals-count"
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        setWithdrawalCount(data.count);
       });
   }, []);
 
@@ -114,6 +153,27 @@ export default function Dashboard() {
           title="Open Tasks"
           value={summary.openTasks}
           colour="#e91e63"
+        />
+
+        <DashboardCard
+          icon="🌱"
+          title="Fields"
+          value={fieldCount}
+          colour="#8bc34a"
+        />
+
+        <DashboardCard
+          icon="💉"
+          title="Treatments"
+          value={treatmentCount}
+          colour="#9c27b0"
+        />
+
+        <DashboardCard
+          icon="⚠️"
+          title="Active Withdrawals"
+          value={withdrawalCount}
+          colour="#f44336"
         />
       </div>
 
