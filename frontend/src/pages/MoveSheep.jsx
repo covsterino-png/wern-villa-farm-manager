@@ -10,10 +10,29 @@ export default function MoveSheep({
   const [fields, setFields] = useState([]);
 
   const [fromLocation, setFromLocation] =
-    useState("Gellidywyll");
+    useState("");
 
   const [toLocation, setToLocation] =
-    useState("Wern Villa");
+    useState("");
+
+  useEffect(() => {
+    fetch("https://wern-villa-api.onrender.com/fields")
+      .then((response) => response.json())
+      .then((data) => {
+        setFields(data);
+
+        if (data.length > 0) {
+          setFromLocation(data[0].name);
+        }
+
+        if (data.length > 1) {
+          setToLocation(data[1].name);
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }, []);
 
   function moveSheep() {
     const qty = parseInt(number);
@@ -28,18 +47,7 @@ export default function MoveSheep({
       );
       return;
     }
-useEffect(() => {
-  fetch("https://wern-villa-api.onrender.com/fields")
-    .then((response) => response.json())
-    .then((data) => {
-      setFields(data);
 
-      if (data.length > 1) {
-        setFromLocation(data[0].name);
-        setToLocation(data[1].name);
-      }
-    });
-}, []);
     setMovements([
       ...movements,
       {
@@ -55,8 +63,7 @@ useEffect(() => {
       {
         method: "POST",
         headers: {
-          "Content-Type":
-            "application/json",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           number: qty,
@@ -102,9 +109,7 @@ useEffect(() => {
             marginBottom: "15px",
           }}
         >
-          <label>
-            From:
-          </label>
+          <label>From:</label>
 
           <br />
 
@@ -120,14 +125,14 @@ useEffect(() => {
               padding: "10px",
             }}
           >
-           {fields.map((field) => (
-  <option
-    key={field.id}
-    value={field.name}
-  >
-    {field.name}
-  </option>
-))}
+            {fields.map((field) => (
+              <option
+                key={field.id}
+                value={field.name}
+              >
+                {field.name}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -152,14 +157,14 @@ useEffect(() => {
               padding: "10px",
             }}
           >
-           {fields.map((field) => (
-  <option
-    key={field.id}
-    value={field.name}
-  >
-    {field.name}
-  </option>
-))}
+            {fields.map((field) => (
+              <option
+                key={field.id}
+                value={field.name}
+              >
+                {field.name}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -189,9 +194,7 @@ useEffect(() => {
           />
         </div>
 
-        <button
-          onClick={moveSheep}
-        >
+        <button onClick={moveSheep}>
           Move Sheep
         </button>
       </div>
