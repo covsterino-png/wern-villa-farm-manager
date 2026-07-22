@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./App.css";
-
+import FarmMap from "./pages/FarmMap";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import MoveSheep from "./pages/MoveSheep";
@@ -250,6 +250,9 @@ function App() {
             setPage={setPage}
           />
         )}
+        {page === "farm-map" && (
+  <FarmMap />
+)}
 
         {page === "settings" && (
           <Settings />

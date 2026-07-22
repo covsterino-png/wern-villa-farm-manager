@@ -161,13 +161,13 @@ export default function Dashboard({ setPage }) {
           onClick={() => setPage("tasks")}
         />
 
-        <DashboardCard
-          icon="🌱"
-          title="Fields"
-          value={fieldCount}
-          colour="#8bc34a"
-          onClick={() => setPage("settings")}
-        />
+       <DashboardCard
+  icon="🌱"
+  title="Fields"
+  value={fieldCount}
+  colour="#8bc34a"
+  onClick={() => setPage("farm-map")}
+/>
 
         <DashboardCard
           icon="💉"
