@@ -1,69 +1,3 @@
-export default function Settings() {
-  return (
-    <div>
-      <h1>⚙️ Settings</h1>
-
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "15px",
-          maxWidth: "500px",
-        }}
-      >
-        <div
-          style={{
-            background: "#1f1f1f",
-            padding: "20px",
-            borderRadius: "12px",
-          }}
-        >
-          🌱 Fields
-        </div>
-
-        <div
-          style={{
-            background: "#1f1f1f",
-            padding: "20px",
-            borderRadius: "12px",
-          }}
-        >
-          🐑 Flock Groups
-        </div>
-
-        <div
-          style={{
-            background: "#1f1f1f",
-            padding: "20px",
-            borderRadius: "12px",
-          }}
-        >
-          💉 Medicines
-        </div>
-
-        <div
-          style={{
-            background: "#1f1f1f",
-            padding: "20px",
-            borderRadius: "12px",
-          }}
-        >
-          👥 Users
-        </div>
-
-        <div
-          style={{
-            background: "#1f1f1f",
-            padding: "20px",
-            borderRadius: "12px",
-          }}
-        >
-          💷 Finance Categories
-        </div>
-      </div>
-    </div>
-  );
-}
 import { useEffect, useState } from "react";
 
 export default function Settings() {
@@ -94,8 +28,7 @@ export default function Settings() {
       {
         method: "POST",
         headers: {
-          "Content-Type":
-            "application/json",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: newGroup,
@@ -131,7 +64,9 @@ export default function Settings() {
 
         <button
           onClick={addGroup}
-          style={{ marginLeft: "10px" }}
+          style={{
+            marginLeft: "10px",
+          }}
         >
           Add Group
         </button>
@@ -145,6 +80,9 @@ export default function Settings() {
             <div
               key={group.id}
               style={{
+                background: "#2b2b2b",
+                padding: "10px",
+                borderRadius: "8px",
                 marginBottom: "10px",
               }}
             >
