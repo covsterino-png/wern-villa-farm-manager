@@ -6,6 +6,7 @@ import MoveSheep from "./pages/MoveSheep";
 import Fields from "./pages/Fields";
 import MovementHistory from "./pages/MovementHistory";
 import Tasks from "./pages/Tasks";
+import Treatments from "./pages/Treatments";
 
 function App() {
   const [page, setPage] = useState("dashboard");
@@ -173,6 +174,14 @@ const buttonStyle = (buttonPage) => ({
           >
             Tasks
           </button>
+          <button
+  style={buttonStyle("treatments")}
+  onClick={() =>
+    setPage("treatments")
+  }
+>
+  Treatments
+</button>
         </div>
       </div>
 
@@ -202,7 +211,9 @@ const buttonStyle = (buttonPage) => ({
         {page === "history" && (
           <MovementHistory />
         )}
-
+{page === "treatments" && (
+  <Treatments />
+)}
         {page === "tasks" && <Tasks />}
       </div>
     </div>
