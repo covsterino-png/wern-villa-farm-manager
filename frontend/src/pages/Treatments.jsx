@@ -10,6 +10,7 @@ export default function Treatments() {
 
 const [cost, setCost] =
   useState("");
+  const [groups, setGroups] = useState([]);
 
   function loadTreatments() {
     fetch(
@@ -21,9 +22,21 @@ const [cost, setCost] =
       });
   }
 
-  useEffect(() => {
-    loadTreatments();
-  }, []);
+useEffect(() => {
+  loadTreatments();
+
+  fetch(
+    "https://wern-villa-api.onrender.com/flock-groups"
+  )
+    .then((response) => response.json())
+    .then((data) => {
+      setGroups(data);
+
+      if (data.length > 0) {
+        setGroupName(data[0].name);
+      }
+    });
+}, []);
 
   function saveTreatment() {
     if (!groupName || !treatment) {
@@ -75,13 +88,25 @@ body: JSON.stringify({
           marginBottom: "20px",
         }}
       >
-        <input
-          placeholder="Group or Animal"
-          value={groupName}
-          onChange={(e) =>
-            setGroupName(e.target.value)
-          }
-        />
+<select
+  value={groupName}
+  onChange={(e) =>
+    setGroupName(e.target.value)
+  }
+  style={{
+    width: "100%",
+    padding: "10px",
+  }}
+>
+  {groups.map((group) => (
+    <option
+      key={group.id}
+      value={group.name}
+    >
+      {group.name}
+    </option>
+  ))}
+</select>
 
         <br />
         <br />
