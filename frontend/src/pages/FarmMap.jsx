@@ -12,39 +12,57 @@ export default function FarmMap() {
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns:
-            "1fr 1fr 1fr",
-          gap: "15px",
+          position: "relative",
           maxWidth: "1000px",
+          height: "600px",
+          background: "#1f1f1f",
+          borderRadius: "20px",
+          overflow: "hidden",
+          border: "2px solid #333",
         }}
       >
-        <FieldCard
+        <FieldBlock
           name="🏠 Home & Yard"
+          top="55%"
+          left="5%"
+          width="18%"
+          height="18%"
           colour="#607d8b"
         />
 
-        <FieldCard
-          name="🌱 Field 2"
-          colour="#4caf50"
-        />
-
-        <FieldCard
-          name="🌱 Field 4"
-          colour="#4caf50"
-        />
-
-        <div />
-
-        <FieldCard
+        <FieldBlock
           name="🌱 Field 1"
+          top="55%"
+          left="25%"
+          width="35%"
+          height="30%"
           colour="#4caf50"
         />
 
-        <div />
+        <FieldBlock
+          name="🌱 Field 2"
+          top="20%"
+          left="20%"
+          width="25%"
+          height="25%"
+          colour="#4caf50"
+        />
 
-        <FieldCard
+        <FieldBlock
           name="🌱 Field 3"
+          top="20%"
+          left="48%"
+          width="22%"
+          height="55%"
+          colour="#4caf50"
+        />
+
+        <FieldBlock
+          name="🌱 Field 4"
+          top="15%"
+          left="72%"
+          width="23%"
+          height="45%"
           colour="#4caf50"
         />
       </div>
@@ -52,32 +70,42 @@ export default function FarmMap() {
   );
 }
 
-function FieldCard({
+function FieldBlock({
   name,
+  top,
+  left,
+  width,
+  height,
   colour,
 }) {
   return (
     <div
       style={{
-        background: "#1f1f1f",
-        border: `2px solid ${colour}`,
-        borderRadius: "16px",
-        padding: "25px",
-        minHeight: "140px",
+        position: "absolute",
+        top,
+        left,
+        width,
+        height,
+        background: `${colour}22`,
+        border: `3px solid ${colour}`,
+        borderRadius: "12px",
+        padding: "10px",
+        boxSizing: "border-box",
+        cursor: "pointer",
       }}
     >
-      <h3
+      <div
         style={{
-          marginTop: 0,
           color: colour,
+          fontWeight: "bold",
+          marginBottom: "10px",
         }}
       >
         {name}
-      </h3>
+      </div>
 
-      <p>⚪ Empty</p>
-
-      <p>🐑 0 Sheep</p>
+      <div>⚪ Empty</div>
+      <div>🐑 0 Sheep</div>
     </div>
   );
 }
