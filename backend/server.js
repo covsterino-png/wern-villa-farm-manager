@@ -487,6 +487,75 @@ app.post("/medicines", (req, res) => {
     }
   );
 });
+app.get("/fields-count", (req, res) => {
+  db.get(
+    "SELECT COUNT(*) AS count FROM fields",
+    [],
+    (err, row) => {
+      if (err) {
+        return res.status(500).json(err);
+      }
+
+      res.json(row);
+    }
+  );
+});
+
+app.get("/treatments-count", (req, res) => {
+  db.get(
+    "SELECT COUNT(*) AS count FROM treatments",
+    [],
+    (err, row) => {
+      if (err) {
+        return res.status(500).json(err);
+      }
+
+      res.json(row);
+    }
+  );
+});
+
+app.get("/withdrawals-count", (req, res) => {
+  db.all(
+    "SELECT * FROM treatments",
+    [],
+    (err, rows) => {
+      if (err) {
+        return res.status(500).json(err);
+      }
+
+      const today = new Date();
+
+      const active = rows.filter((item) => {
+        if (!item.withdrawalDays) return false;
+
+        const parts =
+          item.treatmentDate.split("/");
+
+        const treatmentDate =
+          new Date(
+            parts[2],
+            parts[1] - 1,
+            parts[0]
+          );
+
+        const withdrawalEnd =
+          new Date(treatmentDate);
+
+        withdrawalEnd.setDate(
+          withdrawalEnd.getDate() +
+            Number(item.withdrawalDays)
+        );
+
+        return withdrawalEnd >= today;
+      });
+
+      res.json({
+        count: active.length,
+      });
+    }
+  );
+});
 app.listen(3001, () => {
   console.log(
     "Farm API running on https://wern-villa-api.onrender.com"
