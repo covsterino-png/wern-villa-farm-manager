@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export default function Dashboard() {
+export default function Dashboard({ setPage }) {
   const [summary, setSummary] = useState({
     totalSheep: 150,
     wernVilla: 0,
@@ -52,7 +52,8 @@ export default function Dashboard() {
       .then((response) => response.json())
       .then((data) => {
         setFieldCount(data.count);
-      });
+      })
+      .catch(() => {});
 
     fetch(
       "https://wern-villa-api.onrender.com/treatments-count"
@@ -60,7 +61,8 @@ export default function Dashboard() {
       .then((response) => response.json())
       .then((data) => {
         setTreatmentCount(data.count);
-      });
+      })
+      .catch(() => {});
 
     fetch(
       "https://wern-villa-api.onrender.com/withdrawals-count"
@@ -68,7 +70,8 @@ export default function Dashboard() {
       .then((response) => response.json())
       .then((data) => {
         setWithdrawalCount(data.count);
-      });
+      })
+      .catch(() => {});
   }, []);
 
   return (
@@ -84,6 +87,7 @@ export default function Dashboard() {
         style={{
           color: "#03a9f4",
           marginBottom: "20px",
+          textAlign: "center",
         }}
       >
         🐑 Dashboard
@@ -96,6 +100,7 @@ export default function Dashboard() {
           padding: "30px",
           borderRadius: "16px",
           marginBottom: "20px",
+          textAlign: "center",
         }}
       >
         <h2
@@ -113,8 +118,8 @@ export default function Dashboard() {
             color: "white",
           }}
         >
-          Sheep, treatments, tasks and movements
-          all in one place.
+          Sheep, treatments, tasks and movements all in
+          one place.
         </p>
       </div>
 
@@ -153,6 +158,7 @@ export default function Dashboard() {
           title="Open Tasks"
           value={summary.openTasks}
           colour="#e91e63"
+          onClick={() => setPage("tasks")}
         />
 
         <DashboardCard
@@ -160,6 +166,7 @@ export default function Dashboard() {
           title="Fields"
           value={fieldCount}
           colour="#8bc34a"
+          onClick={() => setPage("settings")}
         />
 
         <DashboardCard
@@ -167,13 +174,19 @@ export default function Dashboard() {
           title="Treatments"
           value={treatmentCount}
           colour="#9c27b0"
+          onClick={() =>
+            setPage("treatments")
+          }
         />
 
         <DashboardCard
           icon="⚠️"
-          title="Active Withdrawals"
+          title="Withdrawals"
           value={withdrawalCount}
           colour="#f44336"
+          onClick={() =>
+            setPage("treatments")
+          }
         />
       </div>
 
@@ -184,6 +197,7 @@ export default function Dashboard() {
           borderRadius: "16px",
           marginBottom: "20px",
           border: "1px solid #333",
+          textAlign: "center",
         }}
       >
         <h2
@@ -226,7 +240,8 @@ export default function Dashboard() {
               style={{
                 marginBottom: "12px",
                 paddingBottom: "12px",
-                borderBottom: "1px solid #333",
+                borderBottom:
+                  "1px solid #333",
               }}
             >
               <strong>
@@ -241,7 +256,9 @@ export default function Dashboard() {
 
               <br />
 
-              <small>{item.moveDate}</small>
+              <small>
+                {item.moveDate}
+              </small>
             </div>
           ))
         )}
@@ -255,15 +272,23 @@ function DashboardCard({
   title,
   value,
   colour,
+  onClick,
 }) {
   return (
     <div
+      onClick={onClick}
       style={{
         background: "#1f1f1f",
         borderRadius: "16px",
         padding: "25px",
         border: `2px solid ${colour}`,
-        boxShadow: `0 0 15px ${colour}20`,
+        boxShadow:
+          `0 0 15px ${colour}20`,
+        cursor: onClick
+          ? "pointer"
+          : "default",
+        textAlign: "center",
+        transition: "0.2s",
       }}
     >
       <div
@@ -277,8 +302,8 @@ function DashboardCard({
 
       <div
         style={{
-          color: "#aaa",
-          fontSize: "0.9rem",
+          color: "#ccc",
+          fontSize: "1rem",
         }}
       >
         {title}
@@ -286,7 +311,7 @@ function DashboardCard({
 
       <div
         style={{
-          fontSize: "2.4rem",
+          fontSize: "3rem",
           fontWeight: "bold",
           color: colour,
           marginTop: "10px",
