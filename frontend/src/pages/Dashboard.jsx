@@ -52,6 +52,73 @@ export default function Dashboard() {
 
       <div
         style={{
+          background:
+            "linear-gradient(135deg, #03a9f4, #1565c0)",
+          padding: "30px",
+          borderRadius: "16px",
+          marginBottom: "20px",
+        }}
+      >
+        <h2
+          style={{
+            margin: 0,
+            color: "white",
+          }}
+        >
+          Welcome to Wern Villa Farm Manager
+        </h2>
+
+        <p
+          style={{
+            marginTop: "10px",
+            color: "white",
+          }}
+        >
+          Sheep, treatments, tasks and movements
+          all in one place.
+        </p>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: "20px",
+          marginBottom: "20px",
+        }}
+      >
+        <DashboardCard
+          icon="🐑"
+          title="Total Sheep"
+          value={summary.totalSheep}
+          colour="#03a9f4"
+        />
+
+        <DashboardCard
+          icon="🏡"
+          title="Wern Villa"
+          value={summary.wernVilla}
+          colour="#4caf50"
+        />
+
+        <DashboardCard
+          icon="🚜"
+          title="Gellidywyll"
+          value={summary.gellidywyll}
+          colour="#ff9800"
+        />
+
+        <DashboardCard
+          icon="📋"
+          title="Open Tasks"
+          value={summary.openTasks}
+          colour="#e91e63"
+        />
+      </div>
+
+      <div
+        style={{
           background: "#1f1f1f",
           padding: "20px",
           borderRadius: "16px",
@@ -71,36 +138,6 @@ export default function Dashboard() {
         <p>Sheep Status: Healthy</p>
         <p>Database: Connected ✅</p>
         <p>Open Tasks: {summary.openTasks}</p>
-      </div>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "20px",
-          marginBottom: "20px",
-        }}
-      >
-        <DashboardCard
-          title="🐑 Total Sheep"
-          value={summary.totalSheep}
-        />
-
-        <DashboardCard
-          title="🏡 Wern Villa"
-          value={summary.wernVilla}
-        />
-
-        <DashboardCard
-          title="🚜 Gellidywyll"
-          value={summary.gellidywyll}
-        />
-
-        <DashboardCard
-          title="📋 Open Tasks"
-          value={summary.openTasks}
-        />
       </div>
 
       <div
@@ -153,20 +190,35 @@ export default function Dashboard() {
   );
 }
 
-function DashboardCard({ title, value }) {
+function DashboardCard({
+  icon,
+  title,
+  value,
+  colour,
+}) {
   return (
     <div
       style={{
         background: "#1f1f1f",
         borderRadius: "16px",
-        padding: "20px",
-        border: "1px solid #333",
+        padding: "25px",
+        border: `2px solid ${colour}`,
+        boxShadow: `0 0 15px ${colour}20`,
       }}
     >
       <div
         style={{
-          color: "#03a9f4",
+          fontSize: "2rem",
           marginBottom: "10px",
+        }}
+      >
+        {icon}
+      </div>
+
+      <div
+        style={{
+          color: "#aaa",
+          fontSize: "0.9rem",
         }}
       >
         {title}
@@ -174,8 +226,10 @@ function DashboardCard({ title, value }) {
 
       <div
         style={{
-          fontSize: "2rem",
+          fontSize: "2.4rem",
           fontWeight: "bold",
+          color: colour,
+          marginTop: "10px",
         }}
       >
         {value}
