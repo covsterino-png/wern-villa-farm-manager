@@ -59,8 +59,14 @@ body: JSON.stringify({
 
   return (
     <div>
-      <h1>💉 Treatments</h1>
-
+<h1
+  style={{
+    color: "#03a9f4",
+    marginBottom: "20px",
+  }}
+>
+  💉 Treatments
+</h1>
       <div
         style={{
           background: "#1f1f1f",

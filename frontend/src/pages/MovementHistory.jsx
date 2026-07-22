@@ -16,8 +16,14 @@ export default function MovementHistory() {
 
   return (
     <div>
-      <h1>📜 Movement History</h1>
-
+<h1
+  style={{
+    color: "#03a9f4",
+    marginBottom: "20px",
+  }}
+>
+  📜 History
+</h1>
       {movements.length === 0 ? (
         <p>No movements recorded.</p>
       ) : (

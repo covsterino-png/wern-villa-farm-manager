@@ -157,13 +157,6 @@ const buttonStyle = (buttonPage) => ({
           </button>
 
           <button
-            style={buttonStyle("fields")}
-            onClick={() => setPage("fields")}
-          >
-            Fields
-          </button>
-
-          <button
             style={buttonStyle("history")}
             onClick={() => setPage("history")}
           >
@@ -229,8 +222,6 @@ const buttonStyle = (buttonPage) => ({
             setMovements={setMovements}
           />
         )}
-
-        {page === "fields" && <Fields />}
 
         {page === "history" && (
           <MovementHistory />

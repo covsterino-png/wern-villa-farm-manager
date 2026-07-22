@@ -61,7 +61,7 @@ export default function Tasks() {
     marginBottom: "20px",
   }}
 >
-  📋 Tasks test
+  📋 Tasks
 </h1>
 
       <div

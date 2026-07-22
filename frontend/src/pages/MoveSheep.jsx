@@ -94,8 +94,14 @@ export default function MoveSheep({
 
   return (
     <div>
-      <h1>🚜 Move Sheep</h1>
-
+<h1
+  style={{
+    color: "#03a9f4",
+    marginBottom: "20px",
+  }}
+>
+  🚜 Move Sheep
+</h1>
       <div
         style={{
           background: "#1f1f1f",
