@@ -44,41 +44,38 @@ app.get("/movements", (req, res) => {
     }
   );
 });
-app.get("/tasks", (req, res) => {
-  db.all(
-    "SELECT * FROM tasks ORDER BY id DESC",
-    [],
-    (err, rows) => {
-      if (err) {
-        res.status(500).json(err);
-        return;
-      }
+app.get("/tasks", async (req, res) => {
+  try {
+    const result = await turso.execute(
+      "SELECT * FROM tasks ORDER BY id DESC"
+    );
 
-      res.json(rows);
-    }
-  );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
+  }
 });
 
-app.post("/tasks", (req, res) => {
-const { task, createdBy } = req.body;
-  db.run(
-    `
-INSERT INTO tasks (task, createdBy)
-VALUES (?, ?)
-    `,
-    [task, createdBy],
-    function (err) {
-      if (err) {
-        res.status(500).json(err);
-        return;
-      }
+app.post("/tasks", async (req, res) => {
+  try {
+    const { task, createdBy } = req.body;
 
-      res.json({
-        success: true,
-        id: this.lastID,
-      });
-    }
-  );
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO tasks
+        (task, createdBy)
+        VALUES (?, ?)
+      `,
+      args: [task, createdBy],
+    });
+
+    res.json({
+      success: true,
+      id: Number(result.lastInsertRowid),
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
 });
 
 app.post("/movements", (req, res) => {
@@ -161,30 +158,27 @@ app.get("/summary", (req, res) => {
     }
   );
 });
-app.put("/tasks/:id/complete", (req, res) => {
-  const { id } = req.params;
-  const { completedBy } = req.body;
+app.put("/tasks/:id/complete", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { completedBy } = req.body;
 
-  db.run(
-    `
-    UPDATE tasks
-    SET completed = 1,
-        completedBy = ?
-    WHERE id = ?
-    `,
-    [completedBy, id],
-    
-    function (err) {
-      if (err) {
-        res.status(500).json(err);
-        return;
-      }
+    await turso.execute({
+      sql: `
+        UPDATE tasks
+        SET completed = 1,
+            completedBy = ?
+        WHERE id = ?
+      `,
+      args: [completedBy, id],
+    });
 
-      res.json({
-        success: true,
-      });
-    }
-  );
+    res.json({
+      success: true,
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
 });
 app.get("/activity", (req, res) => {
   db.all(
