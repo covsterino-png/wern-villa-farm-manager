@@ -8,6 +8,9 @@ export default function Settings() {
   const [newField, setNewField] = useState("");
   const [medicines, setMedicines] = useState([]);
 const [newMedicine, setNewMedicine] = useState("");
+const [doseRate, setDoseRate] =  useState("");
+const [withdrawalDays,  setWithdrawalDays,] = useState("");
+const [administrationMethod, setAdministrationMethod,] = useState("");
 
   function loadGroups() {
     fetch(
@@ -53,14 +56,19 @@ function addMedicine() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        name: newMedicine,
-      }),
-    }
-  ).then(() => {
-    setNewMedicine("");
-    loadMedicines();
-  });
+body: JSON.stringify({
+  name: newMedicine,
+  doseRate,
+  withdrawalDays,
+  administrationMethod,
+})
+}).then(() => {
+  setNewMedicine("");
+  setDoseRate("");
+  setWithdrawalDays("");
+  setAdministrationMethod("");
+  loadMedicines();
+});
 }
   function addGroup() {
     if (!newGroup.trim()) return;
@@ -276,6 +284,33 @@ function addMedicine() {
     }
     placeholder="Medicine name..."
   />
+  <input
+  value={doseRate}
+  onChange={(e) =>
+    setDoseRate(e.target.value)
+  }
+  placeholder="Dose rate..."
+/>
+
+<input
+  value={withdrawalDays}
+  onChange={(e) =>
+    setWithdrawalDays(
+      e.target.value
+    )
+  }
+  placeholder="Withdrawal days..."
+/>
+
+<input
+  value={administrationMethod}
+  onChange={(e) =>
+    setAdministrationMethod(
+      e.target.value
+    )
+  }
+  placeholder="Administration..."
+/>
 
   <button
     onClick={addMedicine}
@@ -301,8 +336,28 @@ function addMedicine() {
           marginBottom: "10px",
         }}
       >
-        💉 {medicine.name}
-      </div>
+<div>
+  <strong>
+    💉 {medicine.name}
+  </strong>
+
+  <div>
+    Dose: {medicine.doseRate}
+  </div>
+
+  <div>
+    Withdrawal:
+    {" "}
+    {medicine.withdrawalDays}
+    {" "}days
+  </div>
+
+  <div>
+    Method:
+    {" "}
+    {medicine.administrationMethod}
+  </div>
+</div>      </div>
     ))}
   </div>
 </div>
