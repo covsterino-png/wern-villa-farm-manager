@@ -186,24 +186,6 @@ app.get("/activity", async (req, res) => {
     res.status(500).json(error);
   }
 });
-app.get("/debug-tasks", (req, res) => {
-  db.all(
-    "SELECT * FROM tasks",
-    [],
-    (err, rows) => {
-      res.json(rows);
-    }
-  );
-});
-app.get("/debug-movements", (req, res) => {
-  db.all(
-    "SELECT * FROM movements",
-    [],
-    (err, rows) => {
-      res.json(rows);
-    }
-  );
-});
 app.get("/fields", async (req, res) => {
   try {
     const result =
@@ -431,7 +413,4 @@ app.listen(3001, () => {
   console.log(
     "Farm API running on https://wern-villa-api.onrender.com"
   );
-});
-app.get("/backup", (req, res) => {
-  res.download("./farm.db");
 });
