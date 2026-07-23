@@ -358,27 +358,6 @@ app.post("/fields", async (req, res) => {
     res.status(500).json(error);
   }
 });
-  const { name } = req.body;
-
-  db.run(
-    `
-    INSERT INTO fields (name)
-    VALUES (?)
-    `,
-    [name],
-    function (err) {
-      if (err) {
-        res.status(500).json(err);
-        return;
-      }
-
-      res.json({
-        success: true,
-        id: this.lastID,
-      });
-    }
-  );
-});
 app.get("/treatments", (req, res) => {
   db.all(
     "SELECT * FROM treatments ORDER BY id DESC",
@@ -590,7 +569,5 @@ app.listen(3001, () => {
   );
 });
 app.get("/backup", (req, res) => {
-2
-res.download("./farm.db");
-3
+  res.download("./farm.db");
 });
