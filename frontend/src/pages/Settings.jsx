@@ -145,6 +145,34 @@ function addMedicine() {
         >
           Add Group
         </button>
+        <button
+  onClick={async () => {
+    const newName = prompt(
+      "New field name:",
+      field.name
+    );
+
+    if (!newName) return;
+
+    await fetch(
+      `https://wern-villa-api.onrender.com/fields/${field.id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+        body: JSON.stringify({
+          name: newName,
+        }),
+      }
+    );
+
+    loadFields();
+  }}
+>
+  ✏️ Rename
+</button>
 
         <div
           style={{

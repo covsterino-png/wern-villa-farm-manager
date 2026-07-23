@@ -145,6 +145,7 @@ app.get("/summary", async (req, res) => {
     res.status(500).json(error);
   }
 });
+
 app.put("/tasks/:id/complete", async (req, res) => {
   try {
     const { id } = req.params;
@@ -215,6 +216,27 @@ app.post("/fields", async (req, res) => {
     res.json({
       success: true,
       id: Number(result.lastInsertRowid),
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+app.put("/fields/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    await turso.execute({
+      sql: `
+        UPDATE fields
+        SET name = ?
+        WHERE id = ?
+      `,
+      args: [name, id],
+    });
+
+    res.json({
+      success: true,
     });
   } catch (error) {
     res.status(500).json(error);
