@@ -1,0 +1,573 @@
+require("dotenv").config();
+
+const { createClient } =
+  require("@libsql/client");
+
+const turso = createClient({
+  url: process.env.TURSO_DATABASE_URL,
+  authToken:
+    process.env.TURSO_AUTH_TOKEN,
+});
+const express = require("express");
+const cors = require("cors");
+const sqlite3 = require("sqlite3").verbose();
+
+const app = express();
+
+app.use(
+  cors({
+    origin: "*"
+  })
+);app.use(express.json());
+
+const db = new sqlite3.Database("./farm.db");
+
+db.run(`
+ALTER TABLE movements
+ADD COLUMN movedBy TEXT
+`, (err) => {
+  if (err) {
+    console.log("movedBy column already exists");
+  }
+});
+db.run(`
+CREATE TABLE IF NOT EXISTS flockGroups (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT
+)
+`);
+
+db.run(`
+ALTER TABLE tasks
+ADD COLUMN createdBy TEXT
+`, (err) => {
+  if (err) {
+    console.log("createdBy column already exists");
+  }
+});
+
+db.run(`
+ALTER TABLE tasks
+ADD COLUMN completedBy TEXT
+`, (err) => {
+  if (err) {
+    console.log("completedBy column already exists");
+  }
+});
+db.run(`
+ALTER TABLE treatments
+ADD COLUMN withdrawalDays INTEGER
+`, (err) => {
+  if (err) {
+    console.log("withdrawalDays already exists");
+  }
+});
+db.run(`
+CREATE TABLE IF NOT EXISTS medicines (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT
+)
+`);
+
+db.run(`
+ALTER TABLE treatments
+ADD COLUMN cost REAL
+`, (err) => {
+  if (err) {
+    console.log("cost already exists");
+  }
+});
+
+// Create movements table
+
+db.run(`
+CREATE TABLE IF NOT EXISTS movements (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  number INTEGER,
+  fromLocation TEXT,
+  toLocation TEXT,
+  moveDate TEXT
+)
+`);
+db.run(`
+CREATE TABLE IF NOT EXISTS tasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  task TEXT,
+  completed INTEGER DEFAULT 0,
+  createdBy TEXT,
+  completedBy TEXT
+)
+`);
+db.run(`
+CREATE TABLE IF NOT EXISTS fields (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT
+)
+`);
+db.run(`
+CREATE TABLE IF NOT EXISTS treatments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  groupName TEXT,
+  treatment TEXT,
+  treatmentDate TEXT,
+  withdrawalDays INTEGER,
+  cost REAL,
+  notes TEXT,
+  administeredBy TEXT
+)
+`);
+app.get("/", (req, res) => {
+  res.send("Wern Villa Farm Manager API");
+});
+app.get("/test-fields", (req, res) => {
+  res.json({
+    success: true,
+    message: "Fields route is alive",
+  });
+});
+
+app.get("/movements", (req, res) => {
+  db.all(
+    "SELECT * FROM movements ORDER BY id DESC",
+    [],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json(rows);
+    }
+  );
+});
+app.get("/tasks", (req, res) => {
+  db.all(
+    "SELECT * FROM tasks ORDER BY id DESC",
+    [],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json(rows);
+    }
+  );
+});
+
+app.post("/tasks", (req, res) => {
+const { task, createdBy } = req.body;
+  db.run(
+    `
+INSERT INTO tasks (task, createdBy)
+VALUES (?, ?)
+    `,
+    [task, createdBy],
+    function (err) {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json({
+        success: true,
+        id: this.lastID,
+      });
+    }
+  );
+});
+
+app.post("/movements", (req, res) => {
+const {
+  number,
+  fromLocation,
+  toLocation,
+  moveDate,
+  movedBy,
+} = req.body;
+  db.run(
+    `
+INSERT INTO movements
+(
+  number,
+  fromLocation,
+  toLocation,
+  moveDate,
+  movedBy
+)
+VALUES (?, ?, ?, ?, ?)
+    `,
+[
+  number,
+  fromLocation,
+  toLocation,
+  moveDate,
+  movedBy,
+],
+    function (err) {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json({
+        success: true,
+        id: this.lastID,
+      });
+    }
+  );
+});
+app.get("/summary", (req, res) => {
+  db.all(
+    "SELECT * FROM movements",
+    [],
+    (err, movementRows) => {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      let totalMoved = 0;
+
+      movementRows.forEach((move) => {
+        totalMoved += move.number;
+      });
+
+      db.get(
+        `
+        SELECT COUNT(*) AS openTasks
+        FROM tasks
+        WHERE completed = 0
+        `,
+        [],
+        (err, taskRow) => {
+          if (err) {
+            res.status(500).json(err);
+            return;
+          }
+
+          res.json({
+            totalSheep: 150,
+            wernVilla: totalMoved,
+            gellidywyll: 150 - totalMoved,
+            openTasks: taskRow.openTasks,
+          });
+        }
+      );
+    }
+  );
+});
+app.put("/tasks/:id/complete", (req, res) => {
+  const { id } = req.params;
+  const { completedBy } = req.body;
+
+  db.run(
+    `
+    UPDATE tasks
+    SET completed = 1,
+        completedBy = ?
+    WHERE id = ?
+    `,
+    [completedBy, id],
+    
+    function (err) {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json({
+        success: true,
+      });
+    }
+  );
+});
+app.get("/activity", (req, res) => {
+  db.all(
+    `
+    SELECT
+      id,
+      number,
+      fromLocation,
+      toLocation,
+      moveDate
+    FROM movements
+    ORDER BY id DESC
+    LIMIT 10
+    `,
+    [],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json(rows);
+    }
+  );
+});
+app.get("/debug-tasks", (req, res) => {
+  db.all(
+    "SELECT * FROM tasks",
+    [],
+    (err, rows) => {
+      res.json(rows);
+    }
+  );
+});
+app.get("/debug-movements", (req, res) => {
+  db.all(
+    "SELECT * FROM movements",
+    [],
+    (err, rows) => {
+      res.json(rows);
+    }
+  );
+});
+app.get("/fields", async (req, res) => {
+  try {
+    const result =
+      await turso.execute(
+        "SELECT * FROM fields ORDER BY name"
+      );
+
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+app.post("/fields", async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    const result =
+      await turso.execute({
+        sql: `
+          INSERT INTO fields (name)
+          VALUES (?)
+        `,
+        args: [name],
+      });
+
+    res.json({
+      success: true,
+      id: Number(result.lastInsertRowid),
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+app.get("/treatments", (req, res) => {
+  db.all(
+    "SELECT * FROM treatments ORDER BY id DESC",
+    [],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json(rows);
+    }
+  );
+});
+
+app.post("/treatments", (req, res) => {
+const {
+  groupName,
+  treatment,
+  treatmentDate,
+  withdrawalDays,
+  cost,
+  notes,
+  administeredBy,
+} = req.body;
+
+  db.run(
+    `
+INSERT INTO treatments
+(
+  groupName,
+  treatment,
+  treatmentDate,
+  withdrawalDays,
+  cost,
+  notes,
+  administeredBy
+)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+[
+  groupName,
+  treatment,
+  treatmentDate,
+  withdrawalDays,
+  cost,
+  notes,
+  administeredBy,
+],
+    function (err) {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json({
+        success: true,
+        id: this.lastID,
+      });
+    }
+  );
+});
+app.get("/flock-groups", (req, res) => {
+  db.all(
+    "SELECT * FROM flockGroups ORDER BY name",
+    [],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json(rows);
+    }
+  );
+});
+
+app.post("/flock-groups", (req, res) => {
+  const { name } = req.body;
+
+  db.run(
+    `
+    INSERT INTO flockGroups (name)
+    VALUES (?)
+    `,
+    [name],
+    function (err) {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json({
+        success: true,
+        id: this.lastID,
+      });
+    }
+  );
+});
+app.get("/medicines", (req, res) => {
+  db.all(
+    "SELECT * FROM medicines ORDER BY name",
+    [],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json(rows);
+    }
+  );
+});
+
+app.post("/medicines", (req, res) => {
+  const { name } = req.body;
+
+  db.run(
+    `
+    INSERT INTO medicines (name)
+    VALUES (?)
+    `,
+    [name],
+    function (err) {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
+
+      res.json({
+        success: true,
+        id: this.lastID,
+      });
+    }
+  );
+});
+app.get("/fields-count", (req, res) => {
+  db.get(
+    "SELECT COUNT(*) AS count FROM fields",
+    [],
+    (err, row) => {
+      if (err) {
+        return res.status(500).json(err);
+      }
+
+      res.json(row);
+    }
+  );
+});
+
+app.get("/treatments-count", (req, res) => {
+  db.get(
+    "SELECT COUNT(*) AS count FROM treatments",
+    [],
+    (err, row) => {
+      if (err) {
+        return res.status(500).json(err);
+      }
+
+      res.json(row);
+    }
+  );
+});
+
+app.get("/withdrawals-count", (req, res) => {
+  db.all(
+    "SELECT * FROM treatments",
+    [],
+    (err, rows) => {
+      if (err) {
+        return res.status(500).json(err);
+      }
+
+      const today = new Date();
+
+      const active = rows.filter((item) => {
+        if (!item.withdrawalDays) return false;
+
+        const parts =
+          item.treatmentDate.split("/");
+
+        const treatmentDate =
+          new Date(
+            parts[2],
+            parts[1] - 1,
+            parts[0]
+          );
+
+        const withdrawalEnd =
+          new Date(treatmentDate);
+
+        withdrawalEnd.setDate(
+          withdrawalEnd.getDate() +
+            Number(item.withdrawalDays)
+        );
+
+        return withdrawalEnd >= today;
+      });
+
+      res.json({
+        count: active.length,
+      });
+    }
+  );
+});
+app.listen(3001, () => {
+  console.log(
+    "Farm API running on https://wern-villa-api.onrender.com"
+  );
+});
+app.get("/backup", (req, res) => {
+  res.download("./farm.db");
+});
