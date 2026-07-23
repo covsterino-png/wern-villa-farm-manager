@@ -360,18 +360,18 @@ app.post("/medicines", async (req, res) => {
   }
 });
 
-app.get("/fields-count", (req, res) => {
-  db.get(
-    "SELECT COUNT(*) AS count FROM fields",
-    [],
-    (err, row) => {
-      if (err) {
-        return res.status(500).json(err);
-      }
+app.get("/fields-count", async (req, res) => {
+  try {
+    const result = await turso.execute(
+      "SELECT COUNT(*) AS count FROM fields"
+    );
 
-      res.json(row);
-    }
-  );
+    res.json({
+      count: Number(result.rows[0].count),
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
 });
 
 app.get("/treatments-count", (req, res) => {
