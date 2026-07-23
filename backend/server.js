@@ -374,60 +374,58 @@ app.get("/fields-count", async (req, res) => {
   }
 });
 
-app.get("/treatments-count", (req, res) => {
-  db.get(
-    "SELECT COUNT(*) AS count FROM treatments",
-    [],
-    (err, row) => {
-      if (err) {
-        return res.status(500).json(err);
-      }
+app.get("/treatments-count", async (req, res) => {
+  try {
+    const result = await turso.execute(
+      "SELECT COUNT(*) AS count FROM treatments"
+    );
 
-      res.json(row);
-    }
-  );
+    res.json({
+      count: Number(result.rows[0].count),
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
 });
+app.get("/withdrawals-count", async (req, res) => {
+  try {
+    const result = await turso.execute(
+      "SELECT * FROM treatments"
+    );
 
-app.get("/withdrawals-count", (req, res) => {
-  db.all(
-    "SELECT * FROM treatments",
-    [],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json(err);
+    const today = new Date();
+
+    const active = result.rows.filter((item) => {
+      if (!item.withdrawalDays) {
+        return false;
       }
 
-      const today = new Date();
+      const parts =
+        item.treatmentDate.split("/");
 
-      const active = rows.filter((item) => {
-        if (!item.withdrawalDays) return false;
+      const treatmentDate = new Date(
+        parts[2],
+        parts[1] - 1,
+        parts[0]
+      );
 
-        const parts =
-          item.treatmentDate.split("/");
+      const withdrawalEnd =
+        new Date(treatmentDate);
 
-        const treatmentDate =
-          new Date(
-            parts[2],
-            parts[1] - 1,
-            parts[0]
-          );
+      withdrawalEnd.setDate(
+        withdrawalEnd.getDate() +
+          Number(item.withdrawalDays)
+      );
 
-        const withdrawalEnd =
-          new Date(treatmentDate);
+      return withdrawalEnd >= today;
+    });
 
-        withdrawalEnd.setDate(
-          withdrawalEnd.getDate() +
-            Number(item.withdrawalDays)
-        );
-
-        return withdrawalEnd >= today;
-      });
-
-      res.json({
-        count: active.length,
-      });
-    }
-  );
+    res.json({
+      count: active.length,
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
 });
 app.listen(3001, () => {
   console.log(
