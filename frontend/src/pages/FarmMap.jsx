@@ -87,7 +87,7 @@ export default function FarmMap() {
             colour="#607d8b"
             sheep="-"
             status="Buildings"
-            height="90px"
+            height="80px"
           />
 
           <div />
