@@ -114,45 +114,36 @@ app.post("/movements", async (req, res) => {
     res.status(500).json(error);
   }
 });
-app.get("/summary", (req, res) => {
-  db.all(
-    "SELECT * FROM movements",
-    [],
-    (err, movementRows) => {
-      if (err) {
-        res.status(500).json(err);
-        return;
-      }
+app.get("/summary", async (req, res) => {
+  try {
+    const movementResult = await turso.execute(
+      "SELECT * FROM movements"
+    );
 
-      let totalMoved = 0;
+    let totalMoved = 0;
 
-      movementRows.forEach((move) => {
-        totalMoved += move.number;
-      });
+    movementResult.rows.forEach((move) => {
+      totalMoved += Number(move.number || 0);
+    });
 
-      db.get(
-        `
-        SELECT COUNT(*) AS openTasks
-        FROM tasks
-        WHERE completed = 0
-        `,
-        [],
-        (err, taskRow) => {
-          if (err) {
-            res.status(500).json(err);
-            return;
-          }
+    const taskResult = await turso.execute(`
+      SELECT COUNT(*) AS openTasks
+      FROM tasks
+      WHERE completed = 0
+    `);
 
-          res.json({
-            totalSheep: 150,
-            wernVilla: totalMoved,
-            gellidywyll: 150 - totalMoved,
-            openTasks: taskRow.openTasks,
-          });
-        }
-      );
-    }
-  );
+    res.json({
+      totalSheep: 150,
+      wernVilla: totalMoved,
+      gellidywyll: 150 - totalMoved,
+      openTasks: Number(
+        taskResult.rows[0].openTasks
+      ),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(error);
+  }
 });
 app.put("/tasks/:id/complete", async (req, res) => {
   try {
