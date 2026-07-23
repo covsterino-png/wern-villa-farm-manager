@@ -324,42 +324,37 @@ VALUES (?, ?, ?, ?, ?, ?, ?)
     }
   );
 });
-app.get("/flock-groups", (req, res) => {
-  db.all(
-    "SELECT * FROM flockGroups ORDER BY name",
-    [],
-    (err, rows) => {
-      if (err) {
-        res.status(500).json(err);
-        return;
-      }
+app.get("/flock-groups", async (req, res) => {
+  try {
+    const result = await turso.execute(
+      "SELECT * FROM flockGroups ORDER BY name"
+    );
 
-      res.json(rows);
-    }
-  );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
+  }
 });
 
-app.post("/flock-groups", (req, res) => {
-  const { name } = req.body;
+app.post("/flock-groups", async (req, res) => {
+  try {
+    const { name } = req.body;
 
-  db.run(
-    `
-    INSERT INTO flockGroups (name)
-    VALUES (?)
-    `,
-    [name],
-    function (err) {
-      if (err) {
-        res.status(500).json(err);
-        return;
-      }
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO flockGroups (name)
+        VALUES (?)
+      `,
+      args: [name],
+    });
 
-      res.json({
-        success: true,
-        id: this.lastID,
-      });
-    }
-  );
+    res.json({
+      success: true,
+      id: Number(result.lastInsertRowid),
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
 });
 app.get("/medicines", async (req, res) => {
   try {
