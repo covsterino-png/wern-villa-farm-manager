@@ -247,67 +247,62 @@ app.post("/fields", async (req, res) => {
     res.status(500).json(error);
   }
 });
-app.get("/treatments", (req, res) => {
-  db.all(
-    "SELECT * FROM treatments ORDER BY id DESC",
-    [],
-    (err, rows) => {
-      if (err) {
-        res.status(500).json(err);
-        return;
-      }
+app.get("/treatments", async (req, res) => {
+  try {
+    const result = await turso.execute(
+      "SELECT * FROM treatments ORDER BY id DESC"
+    );
 
-      res.json(rows);
-    }
-  );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
+  }
 });
 
-app.post("/treatments", (req, res) => {
-const {
-  groupName,
-  treatment,
-  treatmentDate,
-  withdrawalDays,
-  cost,
-  notes,
-  administeredBy,
-} = req.body;
+app.post("/treatments", async (req, res) => {
+  try {
+    const {
+      groupName,
+      treatment,
+      treatmentDate,
+      withdrawalDays,
+      cost,
+      notes,
+      administeredBy,
+    } = req.body;
 
-  db.run(
-    `
-INSERT INTO treatments
-(
-  groupName,
-  treatment,
-  treatmentDate,
-  withdrawalDays,
-  cost,
-  notes,
-  administeredBy
-)
-VALUES (?, ?, ?, ?, ?, ?, ?)
-    `,
-[
-  groupName,
-  treatment,
-  treatmentDate,
-  withdrawalDays,
-  cost,
-  notes,
-  administeredBy,
-],
-    function (err) {
-      if (err) {
-        res.status(500).json(err);
-        return;
-      }
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO treatments
+        (
+          groupName,
+          treatment,
+          treatmentDate,
+          withdrawalDays,
+          cost,
+          notes,
+          administeredBy
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `,
+      args: [
+        groupName,
+        treatment,
+        treatmentDate,
+        withdrawalDays,
+        cost,
+        notes,
+        administeredBy,
+      ],
+    });
 
-      res.json({
-        success: true,
-        id: this.lastID,
-      });
-    }
-  );
+    res.json({
+      success: true,
+      id: Number(result.lastInsertRowid),
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
 });
 app.get("/flock-groups", async (req, res) => {
   try {
