@@ -62,7 +62,7 @@ export default function FarmMap() {
             colour="#66bb6a"
             sheep="0 Sheep"
             status="⚪ Empty"
-            height="180px"
+            height="160px"
           />
 
           <FieldCard
@@ -87,7 +87,7 @@ export default function FarmMap() {
             colour="#607d8b"
             sheep="-"
             status="Buildings"
-            height="60px"
+            height="65px"
           />
 
           <div />
