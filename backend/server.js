@@ -30,19 +30,16 @@ app.get("/test-fields", (req, res) => {
   });
 });
 
-app.get("/movements", (req, res) => {
-  db.all(
-    "SELECT * FROM movements ORDER BY id DESC",
-    [],
-    (err, rows) => {
-      if (err) {
-        res.status(500).json(err);
-        return;
-      }
+app.get("/movements", async (req, res) => {
+  try {
+    const result = await turso.execute(
+      "SELECT * FROM movements ORDER BY id DESC"
+    );
 
-      res.json(rows);
-    }
-  );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
+  }
 });
 app.get("/tasks", async (req, res) => {
   try {
@@ -78,45 +75,44 @@ app.post("/tasks", async (req, res) => {
   }
 });
 
-app.post("/movements", (req, res) => {
-const {
-  number,
-  fromLocation,
-  toLocation,
-  moveDate,
-  movedBy,
-} = req.body;
-  db.run(
-    `
-INSERT INTO movements
-(
-  number,
-  fromLocation,
-  toLocation,
-  moveDate,
-  movedBy
-)
-VALUES (?, ?, ?, ?, ?)
-    `,
-[
-  number,
-  fromLocation,
-  toLocation,
-  moveDate,
-  movedBy,
-],
-    function (err) {
-      if (err) {
-        res.status(500).json(err);
-        return;
-      }
+app.post("/movements", async (req, res) => {
+  try {
+    const {
+      number,
+      fromLocation,
+      toLocation,
+      moveDate,
+      movedBy,
+    } = req.body;
 
-      res.json({
-        success: true,
-        id: this.lastID,
-      });
-    }
-  );
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO movements
+        (
+          number,
+          fromLocation,
+          toLocation,
+          moveDate,
+          movedBy
+        )
+        VALUES (?, ?, ?, ?, ?)
+      `,
+      args: [
+        number,
+        fromLocation,
+        toLocation,
+        moveDate,
+        movedBy,
+      ],
+    });
+
+    res.json({
+      success: true,
+      id: Number(result.lastInsertRowid),
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
 });
 app.get("/summary", (req, res) => {
   db.all(
@@ -180,29 +176,24 @@ app.put("/tasks/:id/complete", async (req, res) => {
     res.status(500).json(error);
   }
 });
-app.get("/activity", (req, res) => {
-  db.all(
-    `
-    SELECT
-      id,
-      number,
-      fromLocation,
-      toLocation,
-      moveDate
-    FROM movements
-    ORDER BY id DESC
-    LIMIT 10
-    `,
-    [],
-    (err, rows) => {
-      if (err) {
-        res.status(500).json(err);
-        return;
-      }
+app.get("/activity", async (req, res) => {
+  try {
+    const result = await turso.execute(`
+      SELECT
+        id,
+        number,
+        fromLocation,
+        toLocation,
+        moveDate
+      FROM movements
+      ORDER BY id DESC
+      LIMIT 10
+    `);
 
-      res.json(rows);
-    }
-  );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
+  }
 });
 app.get("/debug-tasks", (req, res) => {
   db.all(
