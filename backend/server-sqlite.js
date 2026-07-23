@@ -1,13 +1,3 @@
-require("dotenv").config();
-
-const { createClient } =
-  require("@libsql/client");
-
-const turso = createClient({
-  url: process.env.TURSO_DATABASE_URL,
-  authToken:
-    process.env.TURSO_AUTH_TOKEN,
-});
 const express = require("express");
 const cors = require("cors");
 const sqlite3 = require("sqlite3").verbose();
@@ -324,40 +314,22 @@ app.get("/debug-movements", (req, res) => {
     }
   );
 });
-app.get("/fields", async (req, res) => {
-  try {
-    const result =
-      await turso.execute(
-        "SELECT * FROM fields ORDER BY name"
-      );
+app.get("/fields", (req, res) => {
+  db.all(
+    "SELECT * FROM fields ORDER BY name",
+    [],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json(err);
+        return;
+      }
 
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json(error);
-  }
+      res.json(rows);
+    }
+  );
 });
 
-app.post("/fields", async (req, res) => {
-  try {
-    const { name } = req.body;
-
-    const result =
-      await turso.execute({
-        sql: `
-          INSERT INTO fields (name)
-          VALUES (?)
-        `,
-        args: [name],
-      });
-
-    res.json({
-      success: true,
-      id: Number(result.lastInsertRowid),
-    });
-  } catch (error) {
-    res.status(500).json(error);
-  }
-});
+app.post("/fields", (req, res) => {
   const { name } = req.body;
 
   db.run(
