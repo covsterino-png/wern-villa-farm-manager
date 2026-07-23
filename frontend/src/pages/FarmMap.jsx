@@ -1,15 +1,21 @@
 import { useEffect, useState } from "react";
+
 export default function FarmMap() {
   const [fields, setFields] = useState([]);
 
   useEffect(() => {
-    fetch(
-      "https://wern-villa-api.onrender.com/fields"
-    )
+    fetch("https://wern-villa-api.onrender.com/fields")
       .then((res) => res.json())
       .then((data) => setFields(data))
       .catch(console.error);
-  }, []);  return (
+  }, []);
+
+  const field1 = fields[0];
+  const field2 = fields[1];
+  const field3 = fields[2];
+  const field4 = fields[3];
+
+  return (
     <div>
       <h1
         style={{
@@ -28,21 +34,50 @@ export default function FarmMap() {
           gap: "12px",
         }}
       >
-{fields.map((field) => (
-  <FieldCard
-    key={field.id}
-    name={`🌱 ${field.name}`}
-    colour="#43a047"
-    sheep="0 Sheep"
-    status="⚪ Empty"
-    height="120px"
-  />
-))}
+        <FieldCard
+          name={`🌱 ${field1?.name || "Loading..."}`}
+          colour="#2e7d32"
+          sheep="0 Sheep"
+          status="⚪ Empty"
+          height="90px"
+        />
+
+        <FieldCard
+          name={`🌱 ${field2?.name || "Loading..."}`}
+          colour="#388e3c"
+          sheep="0 Sheep"
+          status="⚪ Empty"
+          height="90px"
+        />
+
         <div
           style={{
             display: "grid",
-            gridTemplateColumns:
-              "1fr 1fr",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "12px",
+          }}
+        >
+          <FieldCard
+            name={`🌱 ${field3?.name || "Loading..."}`}
+            colour="#66bb6a"
+            sheep="0 Sheep"
+            status="⚪ Empty"
+            height="180px"
+          />
+
+          <FieldCard
+            name={`🌱 ${field4?.name || "Loading..."}`}
+            colour="#43a047"
+            sheep="0 Sheep"
+            status="⚪ Empty"
+            height="280px"
+          />
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
             gap: "12px",
             marginTop: "-112px",
           }}
@@ -80,8 +115,7 @@ function FieldCard({
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        boxShadow:
-          "0 4px 12px rgba(0,0,0,0.3)",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
         cursor: "pointer",
       }}
     >
