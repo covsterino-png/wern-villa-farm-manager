@@ -145,34 +145,6 @@ function addMedicine() {
         >
           Add Group
         </button>
-        <button
-  onClick={async () => {
-    const newName = prompt(
-      "New field name:",
-      field.name
-    );
-
-    if (!newName) return;
-
-    await fetch(
-      `https://wern-villa-api.onrender.com/fields/${field.id}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-        body: JSON.stringify({
-          name: newName,
-        }),
-      }
-    );
-
-    loadFields();
-  }}
->
-  ✏️ Rename
-</button>
 
         <div
           style={{
@@ -232,20 +204,55 @@ function addMedicine() {
             marginTop: "20px",
           }}
         >
-          {fields.map((field) => (
-            <div
-              key={field.id}
-              style={{
-                background: "#2b2b2b",
-                padding: "10px",
-                borderRadius: "8px",
-                marginBottom: "10px",
-              }}
-            >
-              🌱 {field.name}
-            </div>
-            
-          ))}
+{fields.map((field) => (
+  <div
+    key={field.id}
+    style={{
+      background: "#2b2b2b",
+      padding: "10px",
+      borderRadius: "8px",
+      marginBottom: "10px",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+    }}
+  >
+    <span>🌱 {field.name}</span>
+
+    <button
+      onClick={async () => {
+        const newName = prompt(
+          "Rename field:",
+          field.name
+        );
+
+        if (!newName) return;
+
+        await fetch(
+          `https://wern-villa-api.onrender.com/fields/${field.id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              name: newName,
+            }),
+          }
+        );
+
+        loadFields();
+      }}
+      style={{
+        padding: "6px 10px",
+        cursor: "pointer",
+      }}
+    >
+      ✏️ Rename
+    </button>
+  </div>
+))}
           <div
   style={{
     background: "#1f1f1f",
