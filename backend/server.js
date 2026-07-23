@@ -345,19 +345,36 @@ app.get("/medicines", async (req, res) => {
 
 app.post("/medicines", async (req, res) => {
   try {
-    const { name } = req.body;
+    const {
+      name,
+      doseRate,
+      withdrawalDays,
+      administrationMethod,
+    } = req.body;
 
     const result = await turso.execute({
       sql: `
-        INSERT INTO medicines (name)
-        VALUES (?)
+        INSERT INTO medicines (
+          name,
+          doseRate,
+          withdrawalDays,
+          administrationMethod
+        )
+        VALUES (?, ?, ?, ?)
       `,
-      args: [name],
+      args: [
+        name,
+        doseRate,
+        withdrawalDays,
+        administrationMethod,
+      ],
     });
 
     res.json({
       success: true,
-      id: Number(result.lastInsertRowid),
+      id: Number(
+        result.lastInsertRowid
+      ),
     });
   } catch (error) {
     res.status(500).json(error);

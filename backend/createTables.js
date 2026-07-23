@@ -16,11 +16,14 @@ async function createTables() {
   `);
 
   await db.execute(`
-    CREATE TABLE IF NOT EXISTS medicines (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT
-    )
-  `);
+CREATE TABLE IF NOT EXISTS medicines (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT,
+  doseRate TEXT,
+  withdrawalDays INTEGER,
+  administrationMethod TEXT
+)
+    `);
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS fields (
