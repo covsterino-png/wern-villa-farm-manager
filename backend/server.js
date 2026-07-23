@@ -561,3 +561,8 @@ app.listen(3001, () => {
     "Farm API running on https://wern-villa-api.onrender.com"
   );
 });
+app.get("/backup", (req, res) => {
+2
+res.download("./farm.db");
+3
+});
