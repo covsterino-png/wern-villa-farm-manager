@@ -1,19 +1,40 @@
 import { useEffect, useState } from "react";
 
 export default function FarmMap() {
-  const [fields, setFields] = useState([]);
+  const [fieldStatus, setFieldStatus] =
+    useState([]);
 
   useEffect(() => {
-    fetch("https://wern-villa-api.onrender.com/fields")
+    fetch(
+      "https://wern-villa-api.onrender.com/field-status"
+    )
       .then((res) => res.json())
-      .then((data) => setFields(data))
+      .then((data) => setFieldStatus(data))
       .catch(console.error);
   }, []);
 
-  const field1 = fields[0];
-  const field2 = fields[1];
-  const field3 = fields[2];
-  const field4 = fields[3];
+  const field1 = fieldStatus[0];
+  const field2 = fieldStatus[1];
+  const field3 = fieldStatus[2];
+  const field4 = fieldStatus[3];
+
+  const getColour = (field) => {
+    if (!field) return "#555";
+
+    if (field.occupied) {
+      return "#2196f3";
+    }
+
+    if (field.daysEmpty >= 30) {
+      return "#4caf50";
+    }
+
+    if (field.daysEmpty >= 14) {
+      return "#ff9800";
+    }
+
+    return "#f44336";
+  };
 
   return (
     <div>
@@ -35,18 +56,24 @@ export default function FarmMap() {
         }}
       >
         <FieldCard
-          name={`🌱 ${field1?.name || "Loading..."}`}
-          colour="#2e7d32"
-          sheep="0 Sheep"
-          status="⚪ Empty"
+          name={`🌱 ${
+            field1?.name || "Loading..."
+          }`}
+          colour={getColour(field1)}
+          sheep={field1?.sheepCount ?? 0}
+          occupied={field1?.occupied}
+          daysEmpty={field1?.daysEmpty ?? 0}
           height="90px"
         />
 
         <FieldCard
-          name={`🌱 ${field2?.name || "Loading..."}`}
-          colour="#388e3c"
-          sheep="0 Sheep"
-          status="⚪ Empty"
+          name={`🌱 ${
+            field2?.name || "Loading..."
+          }`}
+          colour={getColour(field2)}
+          sheep={field2?.sheepCount ?? 0}
+          occupied={field2?.occupied}
+          daysEmpty={field2?.daysEmpty ?? 0}
           height="90px"
         />
 
@@ -58,18 +85,24 @@ export default function FarmMap() {
           }}
         >
           <FieldCard
-            name={`🌱 ${field3?.name || "Loading..."}`}
-            colour="#66bb6a"
-            sheep="0 Sheep"
-            status="⚪ Empty"
+            name={`🌱 ${
+              field3?.name || "Loading..."
+            }`}
+            colour={getColour(field3)}
+            sheep={field3?.sheepCount ?? 0}
+            occupied={field3?.occupied}
+            daysEmpty={field3?.daysEmpty ?? 0}
             height="168px"
           />
 
           <FieldCard
-            name={`🌱 ${field4?.name || "Loading..."}`}
-            colour="#43a047"
-            sheep="0 Sheep"
-            status="⚪ Empty"
+            name={`🌱 ${
+              field4?.name || "Loading..."
+            }`}
+            colour={getColour(field4)}
+            sheep={field4?.sheepCount ?? 0}
+            occupied={field4?.occupied}
+            daysEmpty={field4?.daysEmpty ?? 0}
             height="280px"
           />
         </div>
@@ -88,6 +121,7 @@ export default function FarmMap() {
             sheep="-"
             status="Buildings"
             height="65px"
+            building
           />
 
           <div />
@@ -101,8 +135,10 @@ function FieldCard({
   name,
   colour,
   sheep,
-  status,
+  occupied,
+  daysEmpty,
   height,
+  building,
 }) {
   return (
     <div
@@ -115,16 +151,33 @@ function FieldCard({
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-        cursor: "pointer",
+        boxShadow:
+          "0 4px 12px rgba(0,0,0,0.3)",
       }}
     >
       <strong>{name}</strong>
 
-      <div>
-        <div>{status}</div>
-        <div>🐑 {sheep}</div>
-      </div>
+      {building ? (
+        <div>Buildings</div>
+      ) : (
+        <div>
+          <div>
+            {occupied
+              ? "🔵 Occupied"
+              : "⚪ Empty"}
+          </div>
+
+          <div>
+            🐑 {sheep} Sheep
+          </div>
+
+          {!occupied && (
+            <div>
+              🌱 {daysEmpty} Days Empty
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -41,6 +41,72 @@ app.get("/movements", async (req, res) => {
     res.status(500).json(error);
   }
 });
+app.get("/field-status", async (req, res) => {
+  try {
+    const fieldsResult = await turso.execute(
+      "SELECT * FROM fields ORDER BY name"
+    );
+
+    const movementsResult = await turso.execute(
+      "SELECT * FROM movements ORDER BY id ASC"
+    );
+
+    const today = new Date();
+
+    const fieldStatus = fieldsResult.rows.map(
+      (field) => {
+        const fieldName = field.name;
+
+        let sheepCount = 0;
+        let lastMoveOut = null;
+
+        movementsResult.rows.forEach((move) => {
+          const count = Number(move.number || 0);
+
+          if (move.toLocation === fieldName) {
+            sheepCount += count;
+          }
+
+          if (move.fromLocation === fieldName) {
+            sheepCount -= count;
+            lastMoveOut = move.moveDate;
+          }
+        });
+
+        let daysEmpty = 0;
+
+        if (sheepCount <= 0 && lastMoveOut) {
+          const parts = lastMoveOut.split("/");
+
+          const moveDate = new Date(
+            parts[2],
+            parts[1] - 1,
+            parts[0]
+          );
+
+          const diffMs =
+            today.getTime() - moveDate.getTime();
+
+          daysEmpty = Math.floor(
+            diffMs / (1000 * 60 * 60 * 24)
+          );
+        }
+
+        return {
+          name: fieldName,
+          sheepCount,
+          daysEmpty,
+          occupied: sheepCount > 0,
+        };
+      }
+    );
+
+    res.json(fieldStatus);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(error);
+  }
+});
 app.get("/tasks", async (req, res) => {
   try {
     const result = await turso.execute(
@@ -406,6 +472,72 @@ app.get("/withdrawals-count", async (req, res) => {
       count: active.length,
     });
   } catch (error) {
+    res.status(500).json(error);
+  }
+});
+app.get("/field-status", async (req, res) => {
+  try {
+    const fieldsResult = await turso.execute(
+      "SELECT * FROM fields ORDER BY name"
+    );
+
+    const movementsResult = await turso.execute(
+      "SELECT * FROM movements ORDER BY id ASC"
+    );
+
+    const today = new Date();
+
+    const fieldStatus = fieldsResult.rows.map(
+      (field) => {
+        const fieldName = field.name;
+
+        let sheepCount = 0;
+        let lastMoveOut = null;
+
+        movementsResult.rows.forEach((move) => {
+          const count = Number(move.number || 0);
+
+          if (move.toLocation === fieldName) {
+            sheepCount += count;
+          }
+
+          if (move.fromLocation === fieldName) {
+            sheepCount -= count;
+            lastMoveOut = move.moveDate;
+          }
+        });
+
+        let daysEmpty = 0;
+
+        if (sheepCount <= 0 && lastMoveOut) {
+          const parts = lastMoveOut.split("/");
+
+          const moveDate = new Date(
+            parts[2],
+            parts[1] - 1,
+            parts[0]
+          );
+
+          const diffMs =
+            today.getTime() - moveDate.getTime();
+
+          daysEmpty = Math.floor(
+            diffMs / (1000 * 60 * 60 * 24)
+          );
+        }
+
+        return {
+          name: fieldName,
+          sheepCount,
+          daysEmpty,
+          occupied: sheepCount > 0,
+        };
+      }
+    );
+
+    res.json(fieldStatus);
+  } catch (error) {
+    console.error(error);
     res.status(500).json(error);
   }
 });
