@@ -10,7 +10,6 @@ const turso = createClient({
 });
 const express = require("express");
 const cors = require("cors");
-const sqlite3 = require("sqlite3").verbose();
 
 const app = express();
 
@@ -20,102 +19,7 @@ app.use(
   })
 );app.use(express.json());
 
-const db = new sqlite3.Database("./farm.db");
 
-db.run(`
-ALTER TABLE movements
-ADD COLUMN movedBy TEXT
-`, (err) => {
-  if (err) {
-    console.log("movedBy column already exists");
-  }
-});
-db.run(`
-CREATE TABLE IF NOT EXISTS flockGroups (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT
-)
-`);
-
-db.run(`
-ALTER TABLE tasks
-ADD COLUMN createdBy TEXT
-`, (err) => {
-  if (err) {
-    console.log("createdBy column already exists");
-  }
-});
-
-db.run(`
-ALTER TABLE tasks
-ADD COLUMN completedBy TEXT
-`, (err) => {
-  if (err) {
-    console.log("completedBy column already exists");
-  }
-});
-db.run(`
-ALTER TABLE treatments
-ADD COLUMN withdrawalDays INTEGER
-`, (err) => {
-  if (err) {
-    console.log("withdrawalDays already exists");
-  }
-});
-db.run(`
-CREATE TABLE IF NOT EXISTS medicines (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT
-)
-`);
-
-db.run(`
-ALTER TABLE treatments
-ADD COLUMN cost REAL
-`, (err) => {
-  if (err) {
-    console.log("cost already exists");
-  }
-});
-
-// Create movements table
-
-db.run(`
-CREATE TABLE IF NOT EXISTS movements (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  number INTEGER,
-  fromLocation TEXT,
-  toLocation TEXT,
-  moveDate TEXT
-)
-`);
-db.run(`
-CREATE TABLE IF NOT EXISTS tasks (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  task TEXT,
-  completed INTEGER DEFAULT 0,
-  createdBy TEXT,
-  completedBy TEXT
-)
-`);
-db.run(`
-CREATE TABLE IF NOT EXISTS fields (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT
-)
-`);
-db.run(`
-CREATE TABLE IF NOT EXISTS treatments (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  groupName TEXT,
-  treatment TEXT,
-  treatmentDate TEXT,
-  withdrawalDays INTEGER,
-  cost REAL,
-  notes TEXT,
-  administeredBy TEXT
-)
-`);
 app.get("/", (req, res) => {
   res.send("Wern Villa Farm Manager API");
 });
@@ -457,43 +361,39 @@ app.post("/flock-groups", (req, res) => {
     }
   );
 });
-app.get("/medicines", (req, res) => {
-  db.all(
-    "SELECT * FROM medicines ORDER BY name",
-    [],
-    (err, rows) => {
-      if (err) {
-        res.status(500).json(err);
-        return;
-      }
+app.get("/medicines", async (req, res) => {
+  try {
+    const result = await turso.execute(
+      "SELECT * FROM medicines ORDER BY name"
+    );
 
-      res.json(rows);
-    }
-  );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
+  }
 });
 
-app.post("/medicines", (req, res) => {
-  const { name } = req.body;
+app.post("/medicines", async (req, res) => {
+  try {
+    const { name } = req.body;
 
-  db.run(
-    `
-    INSERT INTO medicines (name)
-    VALUES (?)
-    `,
-    [name],
-    function (err) {
-      if (err) {
-        res.status(500).json(err);
-        return;
-      }
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO medicines (name)
+        VALUES (?)
+      `,
+      args: [name],
+    });
 
-      res.json({
-        success: true,
-        id: this.lastID,
-      });
-    }
-  );
+    res.json({
+      success: true,
+      id: Number(result.lastInsertRowid),
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
 });
+
 app.get("/fields-count", (req, res) => {
   db.get(
     "SELECT COUNT(*) AS count FROM fields",
