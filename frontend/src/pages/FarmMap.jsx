@@ -1,5 +1,15 @@
+import { useEffect, useState } from "react";
 export default function FarmMap() {
-  return (
+  const [fields, setFields] = useState([]);
+
+  useEffect(() => {
+    fetch(
+      "https://wern-villa-api.onrender.com/fields"
+    )
+      .then((res) => res.json())
+      .then((data) => setFields(data))
+      .catch(console.error);
+  }, []);  return (
     <div>
       <h1
         style={{
@@ -18,47 +28,16 @@ export default function FarmMap() {
           gap: "12px",
         }}
       >
-        <FieldCard
-          name="🌱 5 Acre Field"
-          colour="#2e7d32"
-          sheep="0 Sheep"
-          status="⚪ Empty"
-          height="90px"
-        />
-
-        <FieldCard
-          name="🌱 4 Acre Field"
-          colour="#388e3c"
-          sheep="0 Sheep"
-          status="⚪ Empty"
-          height="90px"
-        />
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "1fr 1fr",
-            gap: "12px",
-          }}
-        >
-          <FieldCard
-            name="🌱 Paddock"
-            colour="#66bb6a"
-            sheep="0 Sheep"
-            status="⚪ Empty"
-            height="180px"
-          />
-
-          <FieldCard
-            name="🌱 Pond Field"
-            colour="#43a047"
-            sheep="0 Sheep"
-            status="⚪ Empty"
-            height="280px"
-          />
-        </div>
-
+{fields.map((field) => (
+  <FieldCard
+    key={field.id}
+    name={`🌱 ${field.name}`}
+    colour="#43a047"
+    sheep="0 Sheep"
+    status="⚪ Empty"
+    height="120px"
+  />
+))}
         <div
           style={{
             display: "grid",
