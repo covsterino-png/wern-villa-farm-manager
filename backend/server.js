@@ -536,10 +536,15 @@ const currentSheep =
   sheepCount < 0 ? 0 : sheepCount;
 
 return {
+if (sheepCount < 0) {
+  sheepCount = 0;
+}
+
+return {
   name: fieldName,
-  sheepCount: currentSheep,
+  sheepCount,
   daysEmpty,
-  occupied: currentSheep > 0,
+  occupied: sheepCount > 0,
 };
       }
     );
