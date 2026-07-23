@@ -601,6 +601,9 @@ app.get("/field-status", async (req, res) => {
 const currentSheep =
   sheepCount < 0 ? 0 : sheepCount;
 
+const currentSheep =
+  sheepCount < 0 ? 0 : sheepCount;
+
 return {
   name: fieldName,
   sheepCount: currentSheep,
