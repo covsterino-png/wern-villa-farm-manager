@@ -598,15 +598,15 @@ app.get("/field-status", async (req, res) => {
           );
         }
 
-        return {
-          name: fieldName,
-          sheepCount:
-            sheepCount < 0
-              ? 0
-              : sheepCount,
-          daysEmpty,
-          occupied: sheepCount > 0,
-        };
+const currentSheep =
+  sheepCount < 0 ? 0 : sheepCount;
+
+return {
+  name: fieldName,
+  sheepCount: currentSheep,
+  daysEmpty,
+  occupied: currentSheep > 0,
+};
       }
     );
 
