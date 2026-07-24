@@ -13,10 +13,21 @@ export default function FarmMap() {
       .catch(console.error);
   }, []);
 
-  const field1 = fieldStatus[0];
-  const field2 = fieldStatus[1];
-  const field3 = fieldStatus[2];
-  const field4 = fieldStatus[3];
+const field1 = fieldStatus.find(
+  (f) => Number(f.position) === 1
+);
+
+const field2 = fieldStatus.find(
+  (f) => Number(f.position) === 2
+);
+
+const field3 = fieldStatus.find(
+  (f) => Number(f.position) === 3
+);
+
+const field4 = fieldStatus.find(
+  (f) => Number(f.position) === 4
+);
 
   const getColour = (field) => {
     if (!field) return "#555";
@@ -63,6 +74,7 @@ export default function FarmMap() {
           sheep={field1?.sheepCount ?? 0}
           occupied={field1?.occupied}
           daysEmpty={field1?.daysEmpty ?? 0}
+          size={field1?.size ?? 0}
           height="90px"
         />
 
@@ -74,6 +86,7 @@ export default function FarmMap() {
           sheep={field2?.sheepCount ?? 0}
           occupied={field2?.occupied}
           daysEmpty={field2?.daysEmpty ?? 0}
+          size={field1?.size ?? 0}
           height="90px"
         />
 
@@ -92,6 +105,7 @@ export default function FarmMap() {
             sheep={field3?.sheepCount ?? 0}
             occupied={field3?.occupied}
             daysEmpty={field3?.daysEmpty ?? 0}
+            size={field1?.size ?? 0}
             height="168px"
           />
 
@@ -103,6 +117,7 @@ export default function FarmMap() {
             sheep={field4?.sheepCount ?? 0}
             occupied={field4?.occupied}
             daysEmpty={field4?.daysEmpty ?? 0}
+            size={field1?.size ?? 0}
             height="280px"
           />
         </div>
@@ -137,6 +152,7 @@ function FieldCard({
   sheep,
   occupied,
   daysEmpty,
+  size,
   height,
   building,
 }) {
@@ -170,7 +186,9 @@ function FieldCard({
           <div>
             🐑 {sheep} Sheep
           </div>
-
+<div>
+  📏 {size} acres
+</div>
           {!occupied && (
             <div>
               🌱 {daysEmpty} Days Empty
