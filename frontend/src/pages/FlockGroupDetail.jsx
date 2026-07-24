@@ -48,37 +48,10 @@ export default function FlockGroupDetail({
             padding: "12px",
             borderRadius: "10px",
             marginBottom: "10px",
+            cursor: "pointer",
           }}
         >
-          <h3>
-            🐑 {animal.name}
-          </h3>
-
-          <div>
-            Sex: {animal.sex}
-          </div>
-
-          <div>
-            EID:{" "}
-            {animal.eid ||
-              "Not Tagged"}
-          </div>
-
-          <div>
-            Field:{" "}
-            {animal.currentField}
-          </div>
-
-          <div>
-            Mother:{" "}
-            {animal.mother ||
-              "Unknown"}
-          </div>
-
-          <div>
-            Status:{" "}
-            {animal.status}
-          </div>
+          🐑 {animal.name}
         </div>
       ))}
     </div>
