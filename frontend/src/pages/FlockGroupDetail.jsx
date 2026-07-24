@@ -44,10 +44,13 @@ export default function FlockGroupDetail({
         🐑 {groupName}
       </h1>
 
-      <h3>
-        Total Sheep: {sheep.length}
-      </h3>
-
+<h3
+  style={{
+    color: "#03a9f4",
+  }}
+>
+  {sheep.length} Sheep
+</h3>
       {sheep.length === 0 && (
         <div>
           No sheep assigned to this
@@ -63,14 +66,17 @@ export default function FlockGroupDetail({
   }
   style={{
     background: "#2b2b2b",
-    padding: "12px",
-    borderRadius: "10px",
-    marginBottom: "10px",
+    padding: "16px",
+    borderRadius: "12px",
+    marginBottom: "12px",
     cursor: "pointer",
+    border: "1px solid #444",
+    fontSize: "18px",
+    fontWeight: "bold",
   }}
 >
-            🐑 {animal.name}
-        </div>
+  🐑 {animal.name} →
+</div>
       ))}
     </div>
   );

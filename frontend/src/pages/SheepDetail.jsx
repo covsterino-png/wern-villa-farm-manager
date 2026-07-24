@@ -4,14 +4,28 @@ export default function SheepDetail({
 }) {
   return (
     <div>
-      <button onClick={onBack}>
-        ← Back
-      </button>
-
-      <h1>
-        🐑 {sheep.name}
-      </h1>
-
+<button
+  onClick={onBack}
+  style={{
+    background: "#03a9f4",
+    color: "white",
+    border: "none",
+    padding: "12px 18px",
+    borderRadius: "10px",
+    cursor: "pointer",
+    fontWeight: "bold",
+    marginBottom: "20px",
+  }}
+>
+  ← Breeding Ewes
+</button>
+<h1
+  style={{
+    color: "#03a9f4",
+  }}
+>
+  🐑 {sheep.name}
+</h1>
       <div
         style={{
           background: "#2b2b2b",
@@ -26,9 +40,8 @@ export default function SheepDetail({
         </p>
 
         <p>
-          <strong>EID:</strong>{" "}
-          {sheep.eid ||
-            "Not Tagged"}
+<strong>EID:</strong>{" "}
+{sheep.eid || "Not Tagged Yet"}
         </p>
 
         <p>

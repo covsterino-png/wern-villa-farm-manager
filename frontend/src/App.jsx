@@ -203,7 +203,7 @@ function App() {
     )
   }
 >
-  🐑 Sheep Register
+  🐑 Sheep
 </button>
 
           <button
