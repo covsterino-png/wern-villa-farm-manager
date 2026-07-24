@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 
 export default function Settings() {
-  const [groups, setGroups] = useState([]);
-  const [newGroup, setNewGroup] = useState("");
+const [groups, setGroups] = useState([]);
+const [newGroup, setNewGroup] = useState("");
 
-  const [fields, setFields] = useState([]);
-  const [newField, setNewField] = useState("");
-  const [medicines, setMedicines] = useState([]);
+const [fields, setFields] = useState([]);
+const [newField, setNewField] = useState("");
+const [fieldSize, setFieldSize] =  useState("");
+const [medicines, setMedicines] = useState([]);
 const [newMedicine, setNewMedicine] = useState("");
 const [doseRate, setDoseRate] =  useState("");
 const [withdrawalDays,  setWithdrawalDays,] = useState("");
@@ -100,12 +101,14 @@ body: JSON.stringify({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name: newField,
-        }),
+body: JSON.stringify({
+  name: newField,
+  size: fieldSize,
+})
       }
     ).then(() => {
       setNewField("");
+      setFieldSize("");
       loadFields();
     });
   }
@@ -197,6 +200,16 @@ body: JSON.stringify({
           }
           placeholder="Field name..."
         />
+        <input
+  value={fieldSize}
+  onChange={(e) =>
+    setFieldSize(e.target.value)
+  }
+  placeholder="Field size (acres)..."
+  style={{
+    marginLeft: "10px",
+  }}
+/>
 
         <button
           onClick={addField}
@@ -225,8 +238,12 @@ body: JSON.stringify({
       alignItems: "center",
     }}
   >
-    <span>🌱 {field.name}</span>
-
+<span>
+  🌱 {field.name}
+  <br />
+  📏 {field.size || 0} acres
+</span>
+``
     <button
       onClick={async () => {
         const newName = prompt(

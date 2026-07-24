@@ -26,11 +26,12 @@ CREATE TABLE IF NOT EXISTS medicines (
     `);
 
   await db.execute(`
-    CREATE TABLE IF NOT EXISTS fields (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT
-    )
-  `);
+CREATE TABLE IF NOT EXISTS fields (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT,
+  size REAL
+)
+    `);
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS tasks (

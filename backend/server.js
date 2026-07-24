@@ -202,15 +202,17 @@ app.get("/fields", async (req, res) => {
 
 app.post("/fields", async (req, res) => {
   try {
-    const { name } = req.body;
-
+const { name, size } = req.body;
     const result =
       await turso.execute({
         sql: `
-          INSERT INTO fields (name)
-          VALUES (?)
+INSERT INTO fields (
+  name,
+  size
+)
+VALUES (?, ?)
         `,
-        args: [name],
+        args: [name, size],
       });
 
     res.json({
