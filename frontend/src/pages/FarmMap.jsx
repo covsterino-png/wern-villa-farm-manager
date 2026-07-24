@@ -75,7 +75,7 @@ const field4 = fieldStatus.find(
           occupied={field1?.occupied}
           daysEmpty={field1?.daysEmpty ?? 0}
           size={field1?.size ?? 0}
-          height="90px"
+          height="120px"
         />
 
         <FieldCard
@@ -87,7 +87,7 @@ const field4 = fieldStatus.find(
           occupied={field2?.occupied}
           daysEmpty={field2?.daysEmpty ?? 0}
           size={field1?.size ?? 0}
-          height="90px"
+          height="120px"
         />
 
         <div
