@@ -86,7 +86,7 @@ const field4 = fieldStatus.find(
           sheep={field2?.sheepCount ?? 0}
           occupied={field2?.occupied}
           daysEmpty={field2?.daysEmpty ?? 0}
-          size={field1?.size ?? 0}
+          size={field2?.size ?? 0}
           height="120px"
         />
 
@@ -105,7 +105,7 @@ const field4 = fieldStatus.find(
             sheep={field3?.sheepCount ?? 0}
             occupied={field3?.occupied}
             daysEmpty={field3?.daysEmpty ?? 0}
-            size={field1?.size ?? 0}
+            size={field3?.size ?? 0}
             height="168px"
           />
 
@@ -117,7 +117,7 @@ const field4 = fieldStatus.find(
             sheep={field4?.sheepCount ?? 0}
             occupied={field4?.occupied}
             daysEmpty={field4?.daysEmpty ?? 0}
-            size={field1?.size ?? 0}
+            size={field4?.size ?? 0}
             height="280px"
           />
         </div>
