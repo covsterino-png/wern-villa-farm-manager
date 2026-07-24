@@ -242,40 +242,57 @@ body: JSON.stringify({
   🌱 {field.name}
   <br />
   📏 {field.size || 0} acres
+  <br />
+  🗺️ Position:{" "}
+  {field.position || "-"}
 </span>
 ``
-    <button
-      onClick={async () => {
-        const newName = prompt(
-          "Rename field:",
-          field.name
-        );
+<button
+  onClick={async () => {
+    const newName = prompt(
+      "Field name:",
+      field.name
+    );
 
-        if (!newName) return;
+    if (newName === null) return;
 
-        await fetch(
-          `https://wern-villa-api.onrender.com/fields/${field.id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-            body: JSON.stringify({
-              name: newName,
-            }),
-          }
-        );
+    const newSize = prompt(
+      "Field size (acres):",
+      field.size || ""
+    );
 
-        loadFields();
-      }}
-      style={{
-        padding: "6px 10px",
-        cursor: "pointer",
-      }}
-    >
-      ✏️ Rename
-    </button>
+    if (newSize === null) return;
+
+    const newPosition = prompt(
+      "Map position (1-4):",
+      field.position || ""
+    );
+
+    if (newPosition === null) return;
+
+    await fetch(
+      `https://wern-villa-api.onrender.com/fields/${field.id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+        body: JSON.stringify({
+          name: newName,
+          size: Number(newSize),
+          position: Number(
+            newPosition
+          ),
+        }),
+      }
+    );
+
+    loadFields();
+  }}
+>
+  ⚙️ Edit Field
+</button>
   </div>
 ))}
           <div

@@ -29,9 +29,10 @@ CREATE TABLE IF NOT EXISTS medicines (
 CREATE TABLE IF NOT EXISTS fields (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT,
-  size REAL
+  size REAL,
+  position INTEGER
 )
-    `);
+      `);
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS tasks (

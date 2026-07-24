@@ -226,15 +226,28 @@ VALUES (?, ?)
 app.put("/fields/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name } = req.body;
+
+    const {
+      name,
+      size,
+      position,
+    } = req.body;
 
     await turso.execute({
       sql: `
         UPDATE fields
-        SET name = ?
+        SET
+          name = ?,
+          size = ?,
+          position = ?
         WHERE id = ?
       `,
-      args: [name, id],
+      args: [
+        name,
+        size,
+        position,
+        id,
+      ],
     });
 
     res.json({
