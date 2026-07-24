@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import FlockGroupDetail
+  from "./FlockGroupDetail";
+  import { useEffect, useState } from "react";
 
 export default function FlockRegister() {
   const [groups, setGroups] =
@@ -15,6 +17,10 @@ export default function FlockRegister() {
 
   const [notes, setNotes] =
     useState("");
+    const [
+  selectedGroup,
+  setSelectedGroup,
+] = useState(null);
 
   function loadGroups() {
     fetch(
@@ -52,6 +58,43 @@ export default function FlockRegister() {
       loadGroups();
     });
   }
+  export default function FlockRegister() {
+  const [groups, setGroups] = useState([]);
+
+  const [
+    selectedGroup,
+    setSelectedGroup,
+  ] = useState(null);
+
+  function loadGroups() {
+    ...
+  }
+
+  useEffect(() => {
+    loadGroups();
+  }, []);
+
+  // 👇 PUT STEP 5 HERE
+
+  if (selectedGroup) {
+    return (
+      <FlockGroupDetail
+        groupName={selectedGroup}
+        onBack={() =>
+          setSelectedGroup(null)
+        }
+      />
+    );
+  }
+
+  // 👇 EXISTING RETURN STAYS BELOW
+
+  return (
+    <div>
+      ...
+    </div>
+  );
+}
 
   return (
     <div>
@@ -106,17 +149,21 @@ export default function FlockRegister() {
           marginTop: "20px",
         }}
       >
-        {groups.map((group) => (
-          <div
-            key={group.id}
-            style={{
-              background: "#2b2b2b",
-              padding: "12px",
-              borderRadius: "10px",
-              marginBottom: "10px",
-            }}
-          >
-            <h3>
+{groups.map((group) => (
+  <div
+    key={group.id}
+    onClick={() =>
+      setSelectedGroup(group.name)
+    }
+    style={{
+      background: "#2b2b2b",
+      padding: "12px",
+      borderRadius: "10px",
+      marginBottom: "10px",
+      cursor: "pointer",
+    }}
+  >
+                <h3>
               🐑 {group.name}
             </h3>
 
