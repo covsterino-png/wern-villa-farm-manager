@@ -518,12 +518,14 @@ app.get("/field-status", async (req, res) => {
           sheepCount = 0;
         }
 
-        return {
-          name: fieldName,
-          sheepCount,
-          daysEmpty,
-          occupied: sheepCount > 0,
-        };
+return {
+  name: fieldName,
+  size: field.size,
+  position: field.position,
+  sheepCount,
+  daysEmpty,
+  occupied: sheepCount > 0,
+};
       }
     );
 
