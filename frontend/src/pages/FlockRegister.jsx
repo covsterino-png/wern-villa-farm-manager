@@ -70,7 +70,7 @@ export default function FlockRegister() {
           color: "#03a9f4",
         }}
       >
-        🐑 Flock Register
+        🐑 Flock Management
       </h1>
 
       <input

@@ -22,7 +22,7 @@ async function createTable() {
     `);
 
     console.log(
-      "✅ Flock Register table created"
+      "✅ Flock Management table created"
     );
   } catch (error) {
     console.error(error);
