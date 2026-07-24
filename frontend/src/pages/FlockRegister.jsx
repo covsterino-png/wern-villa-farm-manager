@@ -1,26 +1,19 @@
-import FlockGroupDetail
-  from "./FlockGroupDetail";
-  import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import FlockGroupDetail from "./FlockGroupDetail";
 
 export default function FlockRegister() {
-  const [groups, setGroups] =
-    useState([]);
+  const [groups, setGroups] = useState([]);
 
-  const [name, setName] =
-    useState("");
-
-  const [count, setCount] =
-    useState("");
-
+  const [name, setName] = useState("");
+  const [count, setCount] = useState("");
   const [currentField, setCurrentField] =
     useState("");
+  const [notes, setNotes] = useState("");
 
-  const [notes, setNotes] =
-    useState("");
-    const [
-  selectedGroup,
-  setSelectedGroup,
-] = useState(null);
+  const [
+    selectedGroup,
+    setSelectedGroup,
+  ] = useState(null);
 
   function loadGroups() {
     fetch(
@@ -58,23 +51,6 @@ export default function FlockRegister() {
       loadGroups();
     });
   }
-  export default function FlockRegister() {
-  const [groups, setGroups] = useState([]);
-
-  const [
-    selectedGroup,
-    setSelectedGroup,
-  ] = useState(null);
-
-  function loadGroups() {
-    ...
-  }
-
-  useEffect(() => {
-    loadGroups();
-  }, []);
-
-  // 👇 PUT STEP 5 HERE
 
   if (selectedGroup) {
     return (
@@ -86,15 +62,6 @@ export default function FlockRegister() {
       />
     );
   }
-
-  // 👇 EXISTING RETURN STAYS BELOW
-
-  return (
-    <div>
-      ...
-    </div>
-  );
-}
 
   return (
     <div>
@@ -149,21 +116,23 @@ export default function FlockRegister() {
           marginTop: "20px",
         }}
       >
-{groups.map((group) => (
-  <div
-    key={group.id}
-    onClick={() =>
-      setSelectedGroup(group.name)
-    }
-    style={{
-      background: "#2b2b2b",
-      padding: "12px",
-      borderRadius: "10px",
-      marginBottom: "10px",
-      cursor: "pointer",
-    }}
-  >
-                <h3>
+        {groups.map((group) => (
+          <div
+            key={group.id}
+            onClick={() =>
+              setSelectedGroup(
+                group.name
+              )
+            }
+            style={{
+              background: "#2b2b2b",
+              padding: "12px",
+              borderRadius: "10px",
+              marginBottom: "10px",
+              cursor: "pointer",
+            }}
+          >
+            <h3>
               🐑 {group.name}
             </h3>
 
@@ -172,15 +141,12 @@ export default function FlockRegister() {
             </div>
 
             <div>
-              Field:
-              {" "}
+              Field:{" "}
               {group.currentField}
             </div>
 
             <div>
-              Notes:
-              {" "}
-              {group.notes}
+              Notes: {group.notes}
             </div>
           </div>
         ))}
