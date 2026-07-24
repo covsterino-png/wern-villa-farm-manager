@@ -29,6 +29,18 @@ app.get("/test-fields", (req, res) => {
     message: "Fields route is alive",
   });
 });
+app.get("/sheep", async (req, res) => {
+  try {
+    const result = await turso.execute(
+      "SELECT * FROM sheep ORDER BY name"
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
 app.get("/flock-register", async (req, res) => {
   try {
     const result = await turso.execute(
@@ -60,6 +72,59 @@ app.get("/tasks", async (req, res) => {
     );
 
     res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+app.post("/sheep", async (req, res) => {
+  try {
+    const {
+      name,
+      eid,
+      sex,
+      dob,
+      groupName,
+      mother,
+      currentField,
+      status,
+      notes,
+    } = req.body;
+
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO sheep
+        (
+          name,
+          eid,
+          sex,
+          dob,
+          groupName,
+          mother,
+          currentField,
+          status,
+          notes
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      args: [
+        name,
+        eid,
+        sex,
+        dob,
+        groupName,
+        mother,
+        currentField,
+        status,
+        notes,
+      ],
+    });
+
+    res.json({
+      success: true,
+      id: Number(
+        result.lastInsertRowid
+      ),
+    });
   } catch (error) {
     res.status(500).json(error);
   }
