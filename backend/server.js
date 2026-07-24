@@ -18,6 +18,25 @@ app.use(
     origin: "*"
   })
 );app.use(express.json());
+app.get("/sheep/group/:groupName", async (req, res) => {
+  try {
+    const { groupName } = req.params;
+
+    const result = await turso.execute({
+      sql: `
+        SELECT *
+        FROM sheep
+        WHERE groupName = ?
+        ORDER BY name
+      `,
+      args: [groupName],
+    });
+
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
 
 
 app.get("/", (req, res) => {
