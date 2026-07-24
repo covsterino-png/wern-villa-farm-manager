@@ -95,6 +95,42 @@ app.get("/tasks", async (req, res) => {
     res.status(500).json(error);
   }
 });
+app.post("/flock-register", async (req, res) => {
+  try {
+    const {
+      name,
+      count,
+      currentField,
+      notes,
+    } = req.body;
+
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO flockRegister
+        (
+          name,
+          count,
+          currentField,
+          notes
+        )
+        VALUES (?, ?, ?, ?)
+      `,
+      args: [
+        name,
+        count,
+        currentField,
+        notes,
+      ],
+    });
+
+    res.json({
+      success: true,
+      id: Number(result.lastInsertRowid),
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
 app.post("/sheep", async (req, res) => {
   try {
     const {
