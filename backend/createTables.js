@@ -67,6 +67,15 @@ CREATE TABLE IF NOT EXISTS fields (
       administeredBy TEXT
     )
   `);
+  await db.execute(`
+  CREATE TABLE IF NOT EXISTS flockRegister (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    count INTEGER,
+    currentField TEXT,
+    notes TEXT
+  )
+`);
 
   console.log("✅ Tables created");
 }

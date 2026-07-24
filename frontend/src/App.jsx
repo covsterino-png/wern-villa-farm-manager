@@ -9,6 +9,7 @@ import Tasks from "./pages/Tasks";
 import Treatments from "./pages/Treatments";
 import Settings from "./pages/Settings";
 import FarmMap from "./pages/FarmMap";
+import FlockRegister from "./pages/FlockRegister";
 
 function App() {
   const [page, setPage] = useState("dashboard");
@@ -179,6 +180,18 @@ function App() {
           >
             Move Sheep
           </button>
+          <button
+  style={buttonStyle(
+    "flock-register"
+  )}
+  onClick={() =>
+    setPage(
+      "flock-register"
+    )
+  }
+>
+  Flock Register
+</button>
 
           <button
             style={buttonStyle(
@@ -251,6 +264,9 @@ function App() {
             setPage={setPage}
           />
         )}
+        {page === "flock-register" && (
+  <FlockRegister />
+)}
 
         {page === "farm-map" && (
           <FarmMap />

@@ -29,6 +29,18 @@ app.get("/test-fields", (req, res) => {
     message: "Fields route is alive",
   });
 });
+app.get("/flock-register", async (req, res) => {
+  try {
+    const result = await turso.execute(
+      "SELECT * FROM flockRegister ORDER BY name"
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
 
 app.get("/movements", async (req, res) => {
   try {
@@ -65,6 +77,44 @@ app.post("/tasks", async (req, res) => {
       `,
       args: [task, createdBy],
     });
+    app.post("/flock-register", async (req, res) => {
+  try {
+    const {
+      name,
+      count,
+      currentField,
+      notes,
+    } = req.body;
+
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO flockRegister
+        (
+          name,
+          count,
+          currentField,
+          notes
+        )
+        VALUES (?, ?, ?, ?)
+      `,
+      args: [
+        name,
+        count,
+        currentField,
+        notes,
+      ],
+    });
+
+    res.json({
+      success: true,
+      id: Number(
+        result.lastInsertRowid
+      ),
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
 
     res.json({
       success: true,
