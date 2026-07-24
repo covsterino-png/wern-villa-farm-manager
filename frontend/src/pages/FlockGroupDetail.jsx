@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import SheepDetail from "./SheepDetail";
 
 export default function FlockGroupDetail({
   groupName,
@@ -6,6 +7,10 @@ export default function FlockGroupDetail({
 }) {
   const [sheep, setSheep] =
     useState([]);
+    const [
+  selectedSheep,
+  setSelectedSheep,
+] = useState(null);
 
   function loadSheep() {
     fetch(
@@ -18,6 +23,16 @@ export default function FlockGroupDetail({
   useEffect(() => {
     loadSheep();
   }, [groupName]);
+  if (selectedSheep) {
+  return (
+    <SheepDetail
+      sheep={selectedSheep}
+      onBack={() =>
+        setSelectedSheep(null)
+      }
+    />
+  );
+}
 
   return (
     <div>
@@ -41,17 +56,20 @@ export default function FlockGroupDetail({
       )}
 
       {sheep.map((animal) => (
-        <div
-          key={animal.id}
-          style={{
-            background: "#2b2b2b",
-            padding: "12px",
-            borderRadius: "10px",
-            marginBottom: "10px",
-            cursor: "pointer",
-          }}
-        >
-          🐑 {animal.name}
+<div
+  key={animal.id}
+  onClick={() =>
+    setSelectedSheep(animal)
+  }
+  style={{
+    background: "#2b2b2b",
+    padding: "12px",
+    borderRadius: "10px",
+    marginBottom: "10px",
+    cursor: "pointer",
+  }}
+>
+            🐑 {animal.name}
         </div>
       ))}
     </div>
