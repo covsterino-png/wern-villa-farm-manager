@@ -15,10 +15,9 @@ export default function FlockRegister() {
     setSelectedGroup,
   ] = useState(null);
 
-  function loadGroups() {
-    fetch(
-      "https://wern-villa-api.onrender.com/flock-register"
-    )
+fetch(
+  "https://wern-villa-api.onrender.com/flock-register-summary"
+)
       .then((res) => res.json())
       .then((data) => setGroups(data));
   }
@@ -81,15 +80,7 @@ export default function FlockRegister() {
         placeholder="Group Name"
       />
 
-      <input
-        value={count}
-        onChange={(e) =>
-          setCount(e.target.value)
-        }
-        placeholder="Number"
-      />
-
-      <input
+            <input
         value={currentField}
         onChange={(e) =>
           setCurrentField(
@@ -137,7 +128,14 @@ export default function FlockRegister() {
             </h3>
 
             <div>
-              Count: {group.count}
+<div
+  style={{
+    color: "#03a9f4",
+    fontWeight: "bold",
+  }}
+>
+  {group.sheepCount} Sheep
+</div>
             </div>
 
             <div>

@@ -95,6 +95,35 @@ app.get("/tasks", async (req, res) => {
     res.status(500).json(error);
   }
 });
+app.get("/flock-register-summary", async (req, res) => {
+  try {
+    const groups = await turso.execute(
+      "SELECT * FROM flockRegister ORDER BY name"
+    );
+
+    const sheep = await turso.execute(
+      "SELECT groupName FROM sheep"
+    );
+
+    const summary = groups.rows.map(
+      (group) => {
+        const count = sheep.rows.filter(
+          (s) =>
+            s.groupName === group.name
+        ).length;
+
+        return {
+          ...group,
+          sheepCount: count,
+        };
+      }
+    );
+
+    res.json(summary);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
 
 app.put("/sheep/:id", async (req, res) => {
   try {
