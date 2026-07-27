@@ -114,49 +114,73 @@ useEffect(() => {
           ← Cancel
         </button>
 
-        <h1>✏️ Edit Sheep</h1>
+<h1
+  style={{
+    color: "#03a9f4",
+    fontSize: "2rem",
+    marginBottom: "20px",
+  }}
+>
+  ✏️ Edit {sheep.name}
+</h1>
 
-        <input
-          value={name}
-          onChange={(e) =>
-            setName(e.target.value)
-          }
-          placeholder="Name"
-        />
+<label>Name</label>
+<br />
 
+<input
+  value={name}
+  onChange={(e) =>
+    setName(e.target.value)
+  }
+/>
+
+<br />
+<br />
         <br />
         <br />
 
-        <input
-          value={eid}
-          onChange={(e) =>
-            setEid(e.target.value)
-          }
-          placeholder="EID"
-        />
+<label>Name</label>
+<br />
 
+<input
+  value={EID}
+  onChange={(e) =>
+    setName(e.target.value)
+  }
+/>
+
+<br />
+<br />
         <br />
         <br />
 
-        <input
-          value={sex}
-          onChange={(e) =>
-            setSex(e.target.value)
-          }
-          placeholder="Sex"
-        />
+<label>Name</label>
+<br />
 
+<input
+  value={sex}
+  onChange={(e) =>
+    setName(e.target.value)
+  }
+/>
+
+<br />
+<br />
         <br />
         <br />
 
-        <input
-          value={dob}
-          onChange={(e) =>
-            setDob(e.target.value)
-          }
-          placeholder="DOB"
-        />
+<label>Name</label>
+<br />
 
+<input
+  value={dob}
+  onChange={(e) =>
+    setName(e.target.value)
+  }
+/>
+
+<br />
+<br />
         <br />
         <br />
 
