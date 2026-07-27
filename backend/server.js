@@ -95,6 +95,60 @@ app.get("/tasks", async (req, res) => {
     res.status(500).json(error);
   }
 });
+
+app.put("/sheep/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      name,
+      eid,
+      sex,
+      dob,
+      groupName,
+      mother,
+      currentField,
+      status,
+      notes,
+    } = req.body;
+
+    await turso.execute({
+      sql: `
+        UPDATE sheep
+        SET
+          name = ?,
+          eid = ?,
+          sex = ?,
+          dob = ?,
+          groupName = ?,
+          mother = ?,
+          currentField = ?,
+          status = ?,
+          notes = ?
+        WHERE id = ?
+      `,
+      args: [
+        name,
+        eid,
+        sex,
+        dob,
+        groupName,
+        mother,
+        currentField,
+        status,
+        notes,
+        id,
+      ],
+    });
+
+    res.json({
+      success: true,
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
 app.post("/flock-register", async (req, res) => {
   try {
     const {
