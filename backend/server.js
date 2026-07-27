@@ -177,6 +177,34 @@ app.post("/move-group", async (req, res) => {
       `,
       args: [newField, groupName],
     });
+    const sheepResult =
+  await turso.execute({
+    sql: `
+      SELECT id
+      FROM sheep
+      WHERE groupName = ?
+    `,
+    args: [groupName],
+  });
+
+for (const sheep of sheepResult.rows) {
+  await turso.execute({
+    sql: `
+      INSERT INTO sheepHistory
+      (
+        sheepId,
+        eventType,
+        details
+      )
+      VALUES (?, ?, ?)
+    `,
+    args: [
+      sheep.id,
+      "Movement",
+      `Moved to ${newField}`,
+    ],
+  });
+}
 
     res.json({
       success: true,
