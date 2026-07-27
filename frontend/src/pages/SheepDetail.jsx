@@ -143,7 +143,7 @@ useEffect(() => {
 <br />
 
 <input
-  value={EID}
+  value={eid}
   onChange={(e) =>
     setName(e.target.value)
   }
