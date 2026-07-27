@@ -38,6 +38,17 @@ app.get("/sheep/group/:groupName", async (req, res) => {
   }
 });
 
+app.get("/sheep-history", async (req, res) => {
+  try {
+    const result = await turso.execute(
+      "SELECT * FROM sheepHistory ORDER BY id DESC"
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
 
 app.get("/", (req, res) => {
   res.send("Wern Villa Farm Manager API");
