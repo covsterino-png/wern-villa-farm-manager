@@ -59,7 +59,27 @@ app.get("/sheep", async (req, res) => {
     res.status(500).json(error);
   }
 });
+app.get(
+  "/sheep/:id/history",
+  async (req, res) => {
+    try {
+      const result =
+        await turso.execute({
+          sql: `
+            SELECT *
+            FROM sheepHistory
+            WHERE sheepId = ?
+            ORDER BY eventDate DESC
+          `,
+          args: [req.params.id],
+        });
 
+      res.json(result.rows);
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  }
+);
 app.get("/flock-register", async (req, res) => {
   try {
     const result = await turso.execute(
@@ -137,27 +157,7 @@ app.post("/move-group", async (req, res) => {
       `,
       args: [newField, groupName],
     });
-app.get(
-  "/sheep/:id/history",
-  async (req, res) => {
-    try {
-      const result =
-        await turso.execute({
-          sql: `
-            SELECT *
-            FROM sheepHistory
-            WHERE sheepId = ?
-            ORDER BY eventDate DESC
-          `,
-          args: [req.params.id],
-        });
 
-      res.json(result.rows);
-    } catch (error) {
-      res.status(500).json(error);
-    }
-  }
-);
     await turso.execute({
       sql: `
         UPDATE sheep
@@ -174,7 +174,6 @@ app.get(
     res.status(500).json(error);
   }
 });
-
 app.put("/sheep/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -330,14 +329,6 @@ app.post("/tasks", async (req, res) => {
       `,
       args: [task, createdBy],
     });
-    app.post("/flock-register", async (req, res) => {
-  try {
-    const {
-      name,
-      count,
-      currentField,
-      notes,
-    } = req.body;
 
     const result = await turso.execute({
       sql: `
