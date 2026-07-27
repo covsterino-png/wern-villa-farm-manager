@@ -292,6 +292,7 @@ export default function SheepDetail({
           💾 Save Changes
         </button>
       </div>
+      
     );
   }
 
@@ -388,10 +389,7 @@ export default function SheepDetail({
             "None"}
         </p>
       </div>
-    </div>
-  );
-}
-<h2
+      <h2
   style={{
     color: "#03a9f4",
     marginTop: "30px",
@@ -400,7 +398,8 @@ export default function SheepDetail({
   📜 Timeline
 </h2>
 
-{history.length === 0 ? (
+{!Array.isArray(history) ||
+history.length === 0 ? (
   <p>No history yet</p>
 ) : (
   history.map((event) => (
@@ -427,7 +426,9 @@ export default function SheepDetail({
     </div>
   ))
 )}
-
+    </div>
+  );
+}
 const inputStyle = {
   width: "100%",
   padding: "10px",
