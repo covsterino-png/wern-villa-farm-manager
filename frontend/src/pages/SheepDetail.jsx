@@ -6,6 +6,9 @@ export default function SheepDetail({
 }) {
   const [editing, setEditing] =
     useState(false);
+    
+    const [history, setHistory] =
+  useState([]);
 
   const [groups, setGroups] =
     useState([]);
@@ -59,6 +62,12 @@ export default function SheepDetail({
     )
       .then((res) => res.json())
       .then((data) => setGroups(data));
+     
+      fetch(
+  `https://wern-villa-api.onrender.com/sheep/${sheep.id}/history`
+)
+  .then((res) => res.json())
+  .then((data) => setHistory(data));
 
     fetch(
       "https://wern-villa-api.onrender.com/fields"
@@ -382,6 +391,42 @@ export default function SheepDetail({
     </div>
   );
 }
+<h2
+  style={{
+    color: "#03a9f4",
+    marginTop: "30px",
+  }}
+>
+  📜 Timeline
+</h2>
+
+{history.length === 0 ? (
+  <p>No history yet</p>
+) : (
+  history.map((event) => (
+    <div
+      key={event.id}
+      style={{
+        background: "#2b2b2b",
+        padding: "12px",
+        borderRadius: "10px",
+        marginBottom: "10px",
+      }}
+    >
+      <strong>
+        {event.eventType}
+      </strong>
+
+      <div>
+        {event.details}
+      </div>
+
+      <small>
+        {event.eventDate}
+      </small>
+    </div>
+  ))
+)}
 
 const inputStyle = {
   width: "100%",
