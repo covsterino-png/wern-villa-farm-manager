@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+
 export default function SheepDetail({
   sheep,
   onBack,
@@ -6,21 +7,22 @@ export default function SheepDetail({
   const [editing, setEditing] =
     useState(false);
 
+  const [groups, setGroups] =
+    useState([]);
+
+  const [fields, setFields] =
+    useState([]);
+
+  const [allSheep, setAllSheep] =
+    useState([]);
+
   const [name, setName] = useState(
     sheep.name || ""
   );
-  const [fields, setFields] = useState([]);
 
   const [eid, setEid] = useState(
     sheep.eid || ""
   );
-  const [allSheep, setAllSheep] =
-  useState([]);
-  fetch(
-  "https://wern-villa-api.onrender.com/sheep"
-)
-  .then((res) => res.json())
-  .then((data) => setAllSheep(data));
 
   const [sex, setSex] = useState(
     sheep.sex || ""
@@ -29,16 +31,6 @@ export default function SheepDetail({
   const [dob, setDob] = useState(
     sheep.dob || ""
   );
-  const [groups, setGroups] = useState([]);
-
-useEffect(() => {
-  fetch(
-    "https://wern-villa-api.onrender.com/flock-register"
-  )
-    .then((res) => res.json())
-    .then((data) => setGroups(data));
-}, []);
-``
 
   const [mother, setMother] =
     useState(sheep.mother || "");
@@ -52,11 +44,6 @@ useEffect(() => {
   ] = useState(
     sheep.currentField || ""
   );
-  fetch(
-  "https://wern-villa-api.onrender.com/fields"
-)
-  .then((res) => res.json())
-  .then((data) => setFields(data));
 
   const [status, setStatus] =
     useState(
@@ -65,6 +52,28 @@ useEffect(() => {
 
   const [notes, setNotes] =
     useState(sheep.notes || "");
+
+  useEffect(() => {
+    fetch(
+      "https://wern-villa-api.onrender.com/flock-register"
+    )
+      .then((res) => res.json())
+      .then((data) => setGroups(data));
+
+    fetch(
+      "https://wern-villa-api.onrender.com/fields"
+    )
+      .then((res) => res.json())
+      .then((data) => setFields(data));
+
+    fetch(
+      "https://wern-villa-api.onrender.com/sheep"
+    )
+      .then((res) => res.json())
+      .then((data) =>
+        setAllSheep(data)
+      );
+  }, []);
 
   function saveSheep() {
     fetch(
@@ -80,8 +89,8 @@ useEffect(() => {
           eid,
           sex,
           dob,
-          groupName,
           mother,
+          groupName,
           currentField,
           status,
           notes,
@@ -96,7 +105,12 @@ useEffect(() => {
 
   if (editing) {
     return (
-      <div>
+      <div
+        style={{
+          maxWidth: "500px",
+          margin: "0 auto",
+        }}
+      >
         <button
           onClick={() =>
             setEditing(false)
@@ -111,195 +125,167 @@ useEffect(() => {
             marginBottom: "20px",
           }}
         >
-          ← Cancel
+          ← Back to Sheep
         </button>
 
-<h1
-  style={{
-    color: "#03a9f4",
-    fontSize: "2rem",
-    marginBottom: "20px",
-  }}
->
-  ✏️ Edit {sheep.name}
-</h1>
+        <h1
+          style={{
+            color: "#03a9f4",
+            fontSize: "2rem",
+          }}
+        >
+          ✏️ Edit {sheep.name}
+        </h1>
 
-<label>Name</label>
-<br />
-
-<input
-  value={name}
-  onChange={(e) =>
-    setName(e.target.value)
-  }
-/>
-
-<br />
-<br />
-        <br />
-        <br />
-
-<label>Name</label>
-<br />
-
-<input
-  value={eid}
-  onChange={(e) =>
-    setName(e.target.value)
-  }
-/>
-
-<br />
-<br />
-        <br />
-        <br />
-
-<label>Name</label>
-<br />
-
-<select
-  value={sex}
-  onChange={(e) =>
-    setSex(e.target.value)
-  }
->
-  <option value="Ewe">
-    Ewe
-  </option>
-
-  <option value="Ram">
-    Ram
-  </option>
-</select>
-
-<br />
-<br />
-        <br />
-        <br />
-
-<label>Name</label>
-<br />
-
-<input
-  value={dob}
-  onChange={(e) =>
-    setName(e.target.value)
-  }
-/>
-
-<br />
-<br />
-        <br />
-        <br />
-
-<select
-  value={mother}
-  onChange={(e) =>
-    setMother(e.target.value)
-  }
->
-  <option value="">
-    Unknown
-  </option>
-
-  {allSheep.map((animal) => (
-    <option
-      key={animal.id}
-      value={animal.name}
-    >
-      {animal.name}
-    </option>
-  ))}
-</select>
-        <br />
-        <br />
-
-<select
-  value={groupName}
-  onChange={(e) =>
-    setGroupName(e.target.value)
-  }
->
-  {groups.map((group) => (
-    <option
-      key={group.id}
-      value={group.name}
-    >
-      {group.name}
-    </option>
-  ))}
-</select>
-
-        <br />
-        <br />
-
-<select
-  value={currentField}
-  onChange={(e) =>
-    setCurrentField(
-      e.target.value
-    )
-  }
->
-  {fields.map((field) => (
-    <option
-      key={field.id}
-      value={field.name}
-    >
-      {field.name}
-    </option>
-  ))}
-</select>
-
-        <br />
-        <br />
-
-<select
-  value={status}
-  onChange={(e) =>
-    setStatus(e.target.value)
-  }
->
-  <option value="Active">
-    Active
-  </option>
-
-  <option value="Breeding">
-    Breeding
-  </option>
-
-  <option value="Store Lamb">
-    Store Lamb
-  </option>
-
-  <option value="Replacement">
-    Replacement
-  </option>
-
-  <option value="Sold">
-    Sold
-  </option>
-
-  <option value="Deceased">
-    Deceased
-  </option>
-</select>
-
-        <br />
-        <br />
-
-        <textarea
-          value={notes}
+        <label>Name</label>
+        <input
+          style={inputStyle}
+          value={name}
           onChange={(e) =>
-            setNotes(
+            setName(e.target.value)
+          }
+        />
+
+        <label>EID</label>
+        <input
+          style={inputStyle}
+          value={eid}
+          onChange={(e) =>
+            setEid(e.target.value)
+          }
+        />
+
+        <label>Sex</label>
+        <select
+          style={inputStyle}
+          value={sex}
+          onChange={(e) =>
+            setSex(e.target.value)
+          }
+        >
+          <option value="Ewe">
+            Ewe
+          </option>
+          <option value="Ram">
+            Ram
+          </option>
+        </select>
+
+        <label>Date of Birth</label>
+        <input
+          style={inputStyle}
+          type="date"
+          value={dob}
+          onChange={(e) =>
+            setDob(e.target.value)
+          }
+        />
+
+        <label>Mother</label>
+        <select
+          style={inputStyle}
+          value={mother}
+          onChange={(e) =>
+            setMother(
               e.target.value
             )
           }
-          placeholder="Notes"
-        />
+        >
+          <option value="">
+            Unknown
+          </option>
 
-        <br />
-        <br />
+          {allSheep.map((animal) => (
+            <option
+              key={animal.id}
+              value={animal.name}
+            >
+              {animal.name}
+            </option>
+          ))}
+        </select>
+
+        <label>Group</label>
+        <select
+          style={inputStyle}
+          value={groupName}
+          onChange={(e) =>
+            setGroupName(
+              e.target.value
+            )
+          }
+        >
+          {groups.map((group) => (
+            <option
+              key={group.id}
+              value={group.name}
+            >
+              {group.name}
+            </option>
+          ))}
+        </select>
+
+        <label>Field</label>
+        <select
+          style={inputStyle}
+          value={currentField}
+          onChange={(e) =>
+            setCurrentField(
+              e.target.value
+            )
+          }
+        >
+          {fields.map((field) => (
+            <option
+              key={field.id}
+              value={field.name}
+            >
+              {field.name}
+            </option>
+          ))}
+        </select>
+
+        <label>Status</label>
+        <select
+          style={inputStyle}
+          value={status}
+          onChange={(e) =>
+            setStatus(
+              e.target.value
+            )
+          }
+        >
+          <option value="Active">
+            Active
+          </option>
+          <option value="Breeding">
+            Breeding
+          </option>
+          <option value="Replacement">
+            Replacement
+          </option>
+          <option value="Store Lamb">
+            Store Lamb
+          </option>
+          <option value="Sold">
+            Sold
+          </option>
+          <option value="Deceased">
+            Deceased
+          </option>
+        </select>
+
+        <label>Notes</label>
+        <textarea
+          style={{
+            ...inputStyle,
+            minHeight: "80px",
+          }}
+          value={notes}
+          onChange={(e) =>
+            setNotes(e.target.value)
+          }
+        />
 
         <button
           onClick={saveSheep}
@@ -310,9 +296,10 @@ useEffect(() => {
             padding: "12px 18px",
             borderRadius: "10px",
             cursor: "pointer",
+            marginTop: "20px",
           }}
         >
-          💾 Save Sheep
+          💾 Save Changes
         </button>
       </div>
     );
@@ -329,11 +316,10 @@ useEffect(() => {
           padding: "12px 18px",
           borderRadius: "10px",
           cursor: "pointer",
-          fontWeight: "bold",
           marginBottom: "20px",
         }}
       >
-        ← Breeding Ewes
+        ← Back
       </button>
 
       <h1
@@ -352,7 +338,7 @@ useEffect(() => {
           background: "#ff9800",
           color: "white",
           border: "none",
-          padding: "10px 16px",
+          padding: "12px 18px",
           borderRadius: "10px",
           cursor: "pointer",
           marginBottom: "20px",
@@ -415,3 +401,13 @@ useEffect(() => {
     </div>
   );
 }
+
+const inputStyle = {
+  width: "100%",
+  padding: "10px",
+  marginTop: "5px",
+  marginBottom: "15px",
+  borderRadius: "8px",
+  border: "1px solid #444",
+  boxSizing: "border-box",
+};
