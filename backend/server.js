@@ -137,7 +137,27 @@ app.post("/move-group", async (req, res) => {
       `,
       args: [newField, groupName],
     });
+app.get(
+  "/sheep/:id/history",
+  async (req, res) => {
+    try {
+      const result =
+        await turso.execute({
+          sql: `
+            SELECT *
+            FROM sheepHistory
+            WHERE sheepId = ?
+            ORDER BY eventDate DESC
+          `,
+          args: [req.params.id],
+        });
 
+      res.json(result.rows);
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  }
+);
     await turso.execute({
       sql: `
         UPDATE sheep

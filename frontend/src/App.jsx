@@ -297,7 +297,7 @@ function App() {
 {page === "move" && (
   <MoveGroup />
 )}
-``
+
         {page === "history" && (
           <MovementHistory />
         )}

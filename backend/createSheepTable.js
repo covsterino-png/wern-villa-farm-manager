@@ -25,6 +25,16 @@ async function createTable() {
         notes TEXT
       )
     `);
+    await db.execute(`
+  CREATE TABLE IF NOT EXISTS sheepHistory (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sheepId INTEGER NOT NULL,
+    eventType TEXT NOT NULL,
+    details TEXT,
+    createdBy TEXT,
+    eventDate DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 
     console.log(
       "✅ Sheep table created"

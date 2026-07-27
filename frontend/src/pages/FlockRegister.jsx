@@ -5,7 +5,6 @@ export default function FlockRegister() {
   const [groups, setGroups] = useState([]);
 
   const [name, setName] = useState("");
-  const [count, setCount] = useState("");
   const [currentField, setCurrentField] =
     useState("");
   const [notes, setNotes] = useState("");
@@ -37,7 +36,6 @@ function loadGroups() {
         },
         body: JSON.stringify({
           name,
-          count,
           currentField,
           notes,
         }),
