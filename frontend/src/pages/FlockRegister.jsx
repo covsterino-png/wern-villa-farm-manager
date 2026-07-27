@@ -15,13 +15,13 @@ export default function FlockRegister() {
     setSelectedGroup,
   ] = useState(null);
 
-fetch(
-  "https://wern-villa-api.onrender.com/flock-register-summary"
-)
-      .then((res) => res.json())
-      .then((data) => setGroups(data));
-  }
-
+function loadGroups() {
+  fetch(
+    "https://wern-villa-api.onrender.com/flock-register-summary"
+  )
+    .then((res) => res.json())
+    .then((data) => setGroups(data));
+}
   useEffect(() => {
     loadGroups();
   }, []);
