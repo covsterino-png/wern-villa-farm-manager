@@ -157,12 +157,20 @@ useEffect(() => {
 <label>Name</label>
 <br />
 
-<input
+<select
   value={sex}
   onChange={(e) =>
-    setName(e.target.value)
+    setSex(e.target.value)
   }
-/>
+>
+  <option value="Ewe">
+    Ewe
+  </option>
+
+  <option value="Ram">
+    Ram
+  </option>
+</select>
 
 <br />
 <br />
