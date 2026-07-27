@@ -13,21 +13,21 @@ export default function FarmMap() {
       .catch(console.error);
   }, []);
 
-const field1 = fieldStatus.find(
-  (f) => Number(f.position) === 1
-);
+  const field1 = fieldStatus.find(
+    (f) => Number(f.position) === 1
+  );
 
-const field2 = fieldStatus.find(
-  (f) => Number(f.position) === 2
-);
+  const field2 = fieldStatus.find(
+    (f) => Number(f.position) === 2
+  );
 
-const field3 = fieldStatus.find(
-  (f) => Number(f.position) === 3
-);
+  const field3 = fieldStatus.find(
+    (f) => Number(f.position) === 3
+  );
 
-const field4 = fieldStatus.find(
-  (f) => Number(f.position) === 4
-);
+  const field4 = fieldStatus.find(
+    (f) => Number(f.position) === 4
+  );
 
   const getColour = (field) => {
     if (!field) return "#555";
@@ -72,6 +72,7 @@ const field4 = fieldStatus.find(
           }`}
           colour={getColour(field1)}
           sheep={field1?.sheepCount ?? 0}
+          groups={field1?.groups ?? []}
           occupied={field1?.occupied}
           daysEmpty={field1?.daysEmpty ?? 0}
           size={field1?.size ?? 0}
@@ -84,6 +85,7 @@ const field4 = fieldStatus.find(
           }`}
           colour={getColour(field2)}
           sheep={field2?.sheepCount ?? 0}
+          groups={field2?.groups ?? []}
           occupied={field2?.occupied}
           daysEmpty={field2?.daysEmpty ?? 0}
           size={field2?.size ?? 0}
@@ -103,6 +105,7 @@ const field4 = fieldStatus.find(
             }`}
             colour={getColour(field3)}
             sheep={field3?.sheepCount ?? 0}
+            groups={field3?.groups ?? []}
             occupied={field3?.occupied}
             daysEmpty={field3?.daysEmpty ?? 0}
             size={field3?.size ?? 0}
@@ -115,6 +118,7 @@ const field4 = fieldStatus.find(
             }`}
             colour={getColour(field4)}
             sheep={field4?.sheepCount ?? 0}
+            groups={field4?.groups ?? []}
             occupied={field4?.occupied}
             daysEmpty={field4?.daysEmpty ?? 0}
             size={field4?.size ?? 0}
@@ -134,7 +138,6 @@ const field4 = fieldStatus.find(
             name="🏠 Home & Yard"
             colour="#607d8b"
             sheep="-"
-            status="Buildings"
             height="65px"
             building
           />
@@ -150,6 +153,7 @@ function FieldCard({
   name,
   colour,
   sheep,
+  groups,
   occupied,
   daysEmpty,
   size,
@@ -186,9 +190,26 @@ function FieldCard({
           <div>
             🐑 {sheep} Sheep
           </div>
-<div>
-  📏 {size} acres
-</div>
+
+          <div>
+            📏 {size} acres
+          </div>
+
+          {groups?.length > 0 && (
+            <div
+              style={{
+                marginTop: "8px",
+                fontSize: "0.85rem",
+              }}
+            >
+              {groups.map((group) => (
+                <div key={group}>
+                  • {group}
+                </div>
+              ))}
+            </div>
+          )}
+
           {!occupied && (
             <div>
               🌱 {daysEmpty} Days Empty
