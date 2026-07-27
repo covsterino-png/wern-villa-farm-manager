@@ -10,10 +10,18 @@ export default function SheepDetail({
   const [name, setName] = useState(
     sheep.name || ""
   );
+  const [fields, setFields] = useState([]);
 
   const [eid, setEid] = useState(
     sheep.eid || ""
   );
+  const [allSheep, setAllSheep] =
+  useState([]);
+  fetch(
+  "https://wern-villa-api.onrender.com/sheep"
+)
+  .then((res) => res.json())
+  .then((data) => setAllSheep(data));
 
   const [sex, setSex] = useState(
     sheep.sex || ""
@@ -22,6 +30,16 @@ export default function SheepDetail({
   const [dob, setDob] = useState(
     sheep.dob || ""
   );
+  const [groups, setGroups] = useState([]);
+
+useEffect(() => {
+  fetch(
+    "https://wern-villa-api.onrender.com/flock-register"
+  )
+    .then((res) => res.json())
+    .then((data) => setGroups(data));
+}, []);
+``
 
   const [mother, setMother] =
     useState(sheep.mother || "");
@@ -35,6 +53,11 @@ export default function SheepDetail({
   ] = useState(
     sheep.currentField || ""
   );
+  fetch(
+  "https://wern-villa-api.onrender.com/fields"
+)
+  .then((res) => res.json())
+  .then((data) => setFields(data));
 
   const [status, setStatus] =
     useState(
@@ -138,52 +161,98 @@ export default function SheepDetail({
         <br />
         <br />
 
-        <input
-          value={mother}
-          onChange={(e) =>
-            setMother(e.target.value)
-          }
-          placeholder="Mother"
-        />
+<select
+  value={mother}
+  onChange={(e) =>
+    setMother(e.target.value)
+  }
+>
+  <option value="">
+    Unknown
+  </option>
+
+  {allSheep.map((animal) => (
+    <option
+      key={animal.id}
+      value={animal.name}
+    >
+      {animal.name}
+    </option>
+  ))}
+</select>
+        <br />
+        <br />
+
+<select
+  value={groupName}
+  onChange={(e) =>
+    setGroupName(e.target.value)
+  }
+>
+  {groups.map((group) => (
+    <option
+      key={group.id}
+      value={group.name}
+    >
+      {group.name}
+    </option>
+  ))}
+</select>
 
         <br />
         <br />
 
-        <input
-          value={groupName}
-          onChange={(e) =>
-            setGroupName(
-              e.target.value
-            )
-          }
-          placeholder="Group"
-        />
+<select
+  value={currentField}
+  onChange={(e) =>
+    setCurrentField(
+      e.target.value
+    )
+  }
+>
+  {fields.map((field) => (
+    <option
+      key={field.id}
+      value={field.name}
+    >
+      {field.name}
+    </option>
+  ))}
+</select>
 
         <br />
         <br />
 
-        <input
-          value={currentField}
-          onChange={(e) =>
-            setCurrentField(
-              e.target.value
-            )
-          }
-          placeholder="Field"
-        />
+<select
+  value={status}
+  onChange={(e) =>
+    setStatus(e.target.value)
+  }
+>
+  <option value="Active">
+    Active
+  </option>
 
-        <br />
-        <br />
+  <option value="Breeding">
+    Breeding
+  </option>
 
-        <input
-          value={status}
-          onChange={(e) =>
-            setStatus(
-              e.target.value
-            )
-          }
-          placeholder="Status"
-        />
+  <option value="Store Lamb">
+    Store Lamb
+  </option>
+
+  <option value="Replacement">
+    Replacement
+  </option>
+
+  <option value="Sold">
+    Sold
+  </option>
+
+  <option value="Deceased">
+    Deceased
+  </option>
+</select>
 
         <br />
         <br />
