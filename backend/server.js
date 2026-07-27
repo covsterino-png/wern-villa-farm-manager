@@ -305,13 +305,31 @@ app.post("/sheep", async (req, res) => {
         notes,
       ],
     });
+    const sheepId = Number(
+  result.lastInsertRowid
+);
 
-    res.json({
-      success: true,
-      id: Number(
-        result.lastInsertRowid
-      ),
-    });
+await turso.execute({
+  sql: `
+    INSERT INTO sheepHistory
+    (
+      sheepId,
+      eventType,
+      details
+    )
+    VALUES (?, ?, ?)
+  `,
+  args: [
+    sheepId,
+    "Created",
+    "Sheep record created",
+  ],
+});
+
+res.json({
+  success: true,
+  id: sheepId,
+});
   } catch (error) {
     res.status(500).json(error);
   }
