@@ -67,8 +67,13 @@ export default function SheepDetail({
   `https://wern-villa-api.onrender.com/sheep/${sheep.id}/history`
 )
   .then((res) => res.json())
-  .then((data) => setHistory(data));
-
+.then((data) =>
+  setHistory(
+    Array.isArray(data)
+      ? data
+      : []
+  )
+);
     fetch(
       "https://wern-villa-api.onrender.com/fields"
     )
