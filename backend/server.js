@@ -330,36 +330,6 @@ app.post("/tasks", async (req, res) => {
       args: [task, createdBy],
     });
 
-    const result = await turso.execute({
-      sql: `
-        INSERT INTO flockRegister
-        (
-          name,
-          count,
-          currentField,
-          notes
-        )
-        VALUES (?, ?, ?, ?)
-      `,
-      args: [
-        name,
-        count,
-        currentField,
-        notes,
-      ],
-    });
-
-    res.json({
-      success: true,
-      id: Number(
-        result.lastInsertRowid
-      ),
-    });
-  } catch (error) {
-    res.status(500).json(error);
-  }
-});
-
     res.json({
       success: true,
       id: Number(result.lastInsertRowid),
@@ -368,7 +338,6 @@ app.post("/tasks", async (req, res) => {
     res.status(500).json(error);
   }
 });
-
 app.post("/movements", async (req, res) => {
   try {
     const {
