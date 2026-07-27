@@ -3,7 +3,7 @@ import "./App.css";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import MoveSheep from "./pages/MoveSheep";
+import MoveGroup from "./pages/MoveGroup";
 import MovementHistory from "./pages/MovementHistory";
 import Tasks from "./pages/Tasks";
 import Treatments from "./pages/Treatments";
@@ -179,7 +179,7 @@ function App() {
               setPage("move")
             }
           >
-            Move Sheep
+🌱 Move Group
           </button>
           <button
   style={buttonStyle(
@@ -294,17 +294,10 @@ function App() {
             <Settings />
           )}
 
-        {page === "move" && (
-          <MoveSheep
-            farmData={farmData}
-            setFarmData={setFarmData}
-            movements={movements}
-            setMovements={
-              setMovements
-            }
-          />
-        )}
-
+{page === "move" && (
+  <MoveGroup />
+)}
+``
         {page === "history" && (
           <MovementHistory />
         )}

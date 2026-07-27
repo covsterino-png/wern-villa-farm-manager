@@ -225,25 +225,6 @@ export default function SheepDetail({
           ))}
         </select>
 
-        <label>Field</label>
-        <select
-          style={inputStyle}
-          value={currentField}
-          onChange={(e) =>
-            setCurrentField(
-              e.target.value
-            )
-          }
-        >
-          {fields.map((field) => (
-            <option
-              key={field.id}
-              value={field.name}
-            >
-              {field.name}
-            </option>
-          ))}
-        </select>
 
         <label>Status</label>
         <select

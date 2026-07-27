@@ -124,6 +124,36 @@ app.get("/flock-register-summary", async (req, res) => {
     res.status(500).json(error);
   }
 });
+app.post("/move-group", async (req, res) => {
+  try {
+    const { groupName, newField } =
+      req.body;
+
+    await turso.execute({
+      sql: `
+        UPDATE flockRegister
+        SET currentField = ?
+        WHERE name = ?
+      `,
+      args: [newField, groupName],
+    });
+
+    await turso.execute({
+      sql: `
+        UPDATE sheep
+        SET currentField = ?
+        WHERE groupName = ?
+      `,
+      args: [newField, groupName],
+    });
+
+    res.json({
+      success: true,
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
 
 app.put("/sheep/:id", async (req, res) => {
   try {
