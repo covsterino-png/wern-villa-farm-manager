@@ -102,7 +102,20 @@ app.get("/flock-register", async (req, res) => {
     res.status(500).json(error);
   }
 });
+app.get("/recent-history", async (req, res) => {
+  try {
+    const result = await turso.execute(`
+      SELECT *
+      FROM sheepHistory
+      ORDER BY eventDate DESC
+      LIMIT 20
+    `);
 
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
 
 app.get("/movements", async (req, res) => {
   try {
