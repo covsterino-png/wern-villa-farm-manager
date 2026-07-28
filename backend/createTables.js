@@ -24,6 +24,14 @@ CREATE TABLE IF NOT EXISTS medicines (
   administrationMethod TEXT
 )
     `);
+  await db.execute(`  
+    CREATE TABLE IF NOT EXISTS pregnancyScans (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sheepId INTEGER,
+  scanDate TEXT,
+  result TEXT
+  )
+`);
 
   await db.execute(`
 CREATE TABLE IF NOT EXISTS fields (

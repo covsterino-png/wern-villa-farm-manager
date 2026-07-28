@@ -116,6 +116,70 @@ app.get("/recent-history", async (req, res) => {
     res.status(500).json(error);
   }
 });
+app.get("/sheep/:id/scans", async (req, res) => {
+  try {
+    const result = await turso.execute({
+      sql: `
+        SELECT *
+        FROM pregnancyScans
+        WHERE sheepId = ?
+        ORDER BY scanDate DESC
+      `,
+      args: [req.params.id],
+    });
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(error);
+  }
+});
+app.post("/sheep/:id/scans", async (req, res) => {
+  try {
+    const { scanDate, result } = req.body;
+
+    await turso.execute({
+      sql: `
+        INSERT INTO pregnancyScans
+        (
+          sheepId,
+          scanDate,
+          result
+        )
+        VALUES (?, ?, ?)
+      `,
+      args: [
+        req.params.id,
+        scanDate,
+        result,
+      ],
+    });
+
+    await turso.execute({
+      sql: `
+        INSERT INTO sheepHistory
+        (
+          sheepId,
+          eventType,
+          details
+        )
+        VALUES (?, ?, ?)
+      `,
+      args: [
+        req.params.id,
+        "Pregnancy Scan",
+        result,
+      ],
+    });
+
+    res.json({
+      success: true,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(error);
+  }
+});
 
 app.get("/movements", async (req, res) => {
   try {
