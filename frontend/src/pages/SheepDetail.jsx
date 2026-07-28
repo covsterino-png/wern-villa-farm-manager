@@ -14,15 +14,7 @@ export default function SheepDetail({
 
   const [toast, setToast] = useState("");
 
-  const [motherId, setMotherId] =
-  useState("");
-
-const [fatherId, setFatherId] =
-  useState("");
-
-const [allSheep, setAllSheep] =
-  useState([]);
-  
+ 
   const [showScanForm, setShowScanForm] = useState(false);
 
 const [scanDate, setScanDate] = useState(
