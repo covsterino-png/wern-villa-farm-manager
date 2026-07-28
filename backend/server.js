@@ -229,7 +229,7 @@ app.get(
             SELECT *
             FROM sheepHistory
             WHERE sheepId = ?
-            ORDER BY eventDate DESC
+            ORDER BY id DESC
           `,
           args: [req.params.id],
         });
