@@ -11,6 +11,8 @@ export default function SheepDetail({
     const [history, setHistory] = useState([]);
 
   const [scans, setScans] = useState([]);
+
+  const [toast, setToast] = useState("");
   
   const [showScanForm, setShowScanForm] = useState(false);
 
@@ -149,9 +151,24 @@ const [scanResult, setScanResult] = useState("Single");
     }
   )
     .then((res) => res.json())
-    .then(() => {
-      window.location.reload();
-    });
+.then(() => {
+  setToast(
+    "✅ Scan saved successfully"
+  );
+
+  setTimeout(() => {
+    setToast("");
+  }, 3000);
+
+  return fetch(
+    `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scans`
+  );
+})
+.then((res) => res.json())
+.then((data) => {
+  setScans(data);
+  setShowScanForm(false);
+});
 }
 
   if (editing) {
@@ -362,6 +379,21 @@ const [scanResult, setScanResult] = useState("Single");
       >
         🐑 {sheep.name}
       </h1>
+      {toast && (
+  <div
+    style={{
+      background: "#4caf50",
+      color: "white",
+      padding: "12px",
+      borderRadius: "10px",
+      textAlign: "center",
+      marginBottom: "20px",
+      fontWeight: "bold",
+    }}
+  >
+    {toast}
+  </div>
+)}
       <div
   style={{
     textAlign: "center",
