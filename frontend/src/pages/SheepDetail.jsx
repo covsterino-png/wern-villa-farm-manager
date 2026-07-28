@@ -22,6 +22,22 @@ const [scanDate, setScanDate] = useState(
       .split("T")[0]
   );
 
+  const [weights, setWeights] =
+  useState([]);
+
+const [showWeightForm, setShowWeightForm] =
+  useState(false);
+
+const [weight, setWeight] =
+  useState("");
+
+const [weightDate, setWeightDate] =
+  useState(
+    new Date()
+      .toISOString()
+      .split("T")[0]
+  );
+
 const [scanResult, setScanResult] = useState("Single");
 
   const [groups, setGroups] = useState([]);
@@ -70,6 +86,12 @@ const [scanResult, setScanResult] = useState("Single");
     )
       .then((res) => res.json())
       .then((data) => setGroups(data));
+
+      fetch(
+  `https://wern-villa-api.onrender.com/sheep/${sheep.id}/weights`
+)
+  .then((res) => res.json())
+  .then((data) => setWeights(data));
 
       fetch(
   `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scans`
@@ -136,6 +158,44 @@ const [scanResult, setScanResult] = useState("Single");
         window.location.reload();
       });
   }
+
+  function saveWeight() {
+  fetch(
+    `https://wern-villa-api.onrender.com/sheep/${sheep.id}/weights`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+      body: JSON.stringify({
+        weight,
+        weightDate,
+      }),
+    }
+  )
+    .then((res) => res.json())
+    .then(() => {
+      setToast(
+        "✅ Weight saved successfully"
+      );
+
+      setTimeout(() => {
+        setToast("");
+      }, 3000);
+
+      return fetch(
+        `https://wern-villa-api.onrender.com/sheep/${sheep.id}/weights`
+      );
+    })
+    .then((res) => res.json())
+    .then((data) => {
+      setWeights(data);
+      setShowWeightForm(false);
+      setWeight("");
+    });
+}
+
   function saveScan() {
   fetch(
     `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scans`,
@@ -585,7 +645,109 @@ const [scanResult, setScanResult] = useState("Single");
     }}
   >
     <h2>⚖️ Weights</h2>
-    <p>No weight records yet.</p>
+
+    <button
+      onClick={() =>
+        setShowWeightForm(
+          !showWeightForm
+        )
+      }
+      style={{
+        background: "#03a9f4",
+        color: "white",
+        border: "none",
+        padding: "10px 16px",
+        borderRadius: "10px",
+        cursor: "pointer",
+        marginBottom: "15px",
+      }}
+    >
+      ➕ Record Weight
+    </button>
+
+    {showWeightForm && (
+      <div
+        style={{
+          background: "#1f1f1f",
+          padding: "15px",
+          borderRadius: "10px",
+          marginBottom: "20px",
+        }}
+      >
+        <label>
+          Weight (kg)
+        </label>
+
+        <input
+          type="number"
+          step="0.1"
+          value={weight}
+          onChange={(e) =>
+            setWeight(
+              e.target.value
+            )
+          }
+          style={inputStyle}
+        />
+
+        <label>
+          Date
+        </label>
+
+        <input
+          type="date"
+          value={weightDate}
+          onChange={(e) =>
+            setWeightDate(
+              e.target.value
+            )
+          }
+          style={inputStyle}
+        />
+
+        <button
+          onClick={saveWeight}
+          style={{
+            background: "#4caf50",
+            color: "white",
+            border: "none",
+            padding: "10px 16px",
+            borderRadius: "10px",
+            cursor: "pointer",
+          }}
+        >
+          ✅ Save Weight
+        </button>
+      </div>
+    )}
+
+    {weights.length === 0 ? (
+      <p>
+        No weight records yet.
+      </p>
+    ) : (
+      weights.map((entry) => (
+        <div
+          key={entry.id}
+          style={{
+            background: "#1f1f1f",
+            padding: "12px",
+            borderRadius: "10px",
+            marginBottom: "10px",
+          }}
+        >
+          <strong>
+            {entry.weight} kg
+          </strong>
+
+          <br />
+
+          <small>
+            {entry.weightDate}
+          </small>
+        </div>
+      ))
+    )}
   </div>
 )}
 
