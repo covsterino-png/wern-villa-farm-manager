@@ -42,6 +42,15 @@ CREATE TABLE IF NOT EXISTS fields (
 )
       `);
 
+      await db.execute(`
+  CREATE TABLE IF NOT EXISTS weights (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sheepId INTEGER,
+    weight REAL,
+    weightDate TEXT
+  )
+`);
+
   await db.execute(`
     CREATE TABLE IF NOT EXISTS tasks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

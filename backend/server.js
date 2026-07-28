@@ -38,6 +38,74 @@ app.get("/sheep/group/:groupName", async (req, res) => {
   }
 });
 
+app.get("/sheep/:id/weights", async (req, res) => {
+  try {
+    const result = await turso.execute({
+      sql: `
+        SELECT *
+        FROM weights
+        WHERE sheepId = ?
+        ORDER BY weightDate DESC
+      `,
+      args: [req.params.id],
+    });
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(error);
+  }
+});
+
+app.post("/sheep/:id/weights", async (req, res) => {
+  try {
+    const { weight, weightDate } =
+      req.body;
+
+    await turso.execute({
+      sql: `
+        INSERT INTO weights
+        (
+          sheepId,
+          weight,
+          weightDate
+        )
+        VALUES (?, ?, ?)
+      `,
+      args: [
+        req.params.id,
+        weight,
+        weightDate,
+      ],
+    });
+
+    await turso.execute({
+      sql: `
+        INSERT INTO sheepHistory
+        (
+          sheepId,
+          eventType,
+          details
+        )
+        VALUES (?, ?, ?)
+      `,
+      args: [
+        req.params.id,
+        "Weight Recorded",
+        `${weight} kg`,
+      ],
+    });
+
+    res.json({
+      success: true,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(error);
+  }
+});
+
+
 app.get("/sheep-history", async (req, res) => {
   try {
     const result = await turso.execute(
