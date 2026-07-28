@@ -4,34 +4,37 @@ export default function SheepDetail({
   sheep,
   onBack,
 }) {
-  const [editing, setEditing] =
-    useState(false);
+  const [editing, setEditing] = useState(false);
 
-    const [activeTab, setActiveTab] =
-  useState("overview");
+    const [activeTab, setActiveTab] = useState("overview");
     
-    const [history, setHistory] =
-  useState([]);
+    const [history, setHistory] = useState([]);
 
-  const [groups, setGroups] =
-    useState([]);
+  const [scans, setScans] = useState([]);
+  
+  const [showScanForm, setShowScanForm] = useState(false);
 
-  const [fields, setFields] =
-    useState([]);
-
-  const [allSheep, setAllSheep] =
-    useState([]);
-
-  const [name, setName] = useState(
-    sheep.name || ""
+const [scanDate, setScanDate] = useState(
+    new Date()
+      .toISOString()
+      .split("T")[0]
   );
 
-  const [eid, setEid] = useState(
-    sheep.eid || ""
+const [scanResult, setScanResult] = useState("Single");
+
+  const [groups, setGroups] = useState([]);
+
+  const [fields, setFields] = useState([]);
+
+  const [allSheep, setAllSheep] = useState([]);
+
+  const [name, setName] = useState( sheep.name || ""
   );
 
-  const [sex, setSex] = useState(
-    sheep.sex || ""
+  const [eid, setEid] = useState( sheep.eid || ""
+  );
+
+  const [sex, setSex] = useState( sheep.sex || ""
   );
 
   const [dob, setDob] = useState(
@@ -65,6 +68,18 @@ export default function SheepDetail({
     )
       .then((res) => res.json())
       .then((data) => setGroups(data));
+
+      fetch(
+  `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scans`
+)
+  .then((res) => res.json())
+  .then((data) => setScans(data));
+
+      fetch(
+  `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scans`
+)
+  .then((res) => res.json())
+  .then((data) => setScans(data));
      
       fetch(
   `https://wern-villa-api.onrender.com/sheep/${sheep.id}/history`
@@ -119,6 +134,25 @@ export default function SheepDetail({
         window.location.reload();
       });
   }
+  function saveScan() {
+  fetch(
+    `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scans`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        scanDate,
+        result: scanResult,
+      }),
+    }
+  )
+    .then((res) => res.json())
+    .then(() => {
+      window.location.reload();
+    });
+}
 
   if (editing) {
     return (
@@ -532,7 +566,117 @@ export default function SheepDetail({
     }}
   >
     <h2>🤰 Pregnancy Scans</h2>
-    <p>No scan records yet.</p>
+
+    <button
+      onClick={() =>
+        setShowScanForm(!showScanForm)
+      }
+      style={{
+        background: "#03a9f4",
+        color: "white",
+        border: "none",
+        padding: "10px 16px",
+        borderRadius: "10px",
+        cursor: "pointer",
+        marginBottom: "15px",
+      }}
+    >
+      ➕ Record Scan
+    </button>
+
+    {showScanForm && (
+      <div
+        style={{
+          background: "#1f1f1f",
+          padding: "15px",
+          borderRadius: "10px",
+          marginBottom: "20px",
+        }}
+      >
+        <label>Scan Date</label>
+
+        <input
+          type="date"
+          value={scanDate}
+          onChange={(e) =>
+            setScanDate(e.target.value)
+          }
+          style={inputStyle}
+        />
+
+        <label>Result</label>
+
+        <select
+          value={scanResult}
+          onChange={(e) =>
+            setScanResult(
+              e.target.value
+            )
+          }
+          style={inputStyle}
+        >
+          <option value="Empty">
+            Empty
+          </option>
+
+          <option value="Single">
+            Single
+          </option>
+
+          <option value="Twin">
+            Twin
+          </option>
+
+          <option value="Triplet">
+            Triplet
+          </option>
+
+          <option value="Quad">
+            Quad
+          </option>
+        </select>
+
+        <button
+          onClick={saveScan}
+          style={{
+            background: "#4caf50",
+            color: "white",
+            border: "none",
+            padding: "10px 16px",
+            borderRadius: "10px",
+            cursor: "pointer",
+          }}
+        >
+          ✅ Save Scan
+        </button>
+      </div>
+    )}
+
+    {scans.length === 0 ? (
+      <p>No scan records yet.</p>
+    ) : (
+      scans.map((scan) => (
+        <div
+          key={scan.id}
+          style={{
+            background: "#1f1f1f",
+            padding: "12px",
+            borderRadius: "10px",
+            marginBottom: "10px",
+          }}
+        >
+          <strong>
+            {scan.result}
+          </strong>
+
+          <br />
+
+          <small>
+            {scan.scanDate}
+          </small>
+        </div>
+      ))
+    )}
   </div>
 )}
 
