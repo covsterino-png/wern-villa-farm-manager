@@ -101,24 +101,24 @@ export default function Dashboard({ setPage }) {
           marginBottom: "20px",
         }}
       >
-        <h2
-          style={{
-            margin: 0,
-            color: "white",
-          }}
-        >
-          Welcome to Wern Villa Farm Manager
-        </h2>
+<h2
+  style={{
+    margin: 0,
+    color: "white",
+  }}
+>
+  🚜 Farm Control Centre
+</h2>
 
-        <p
-          style={{
-            marginTop: "10px",
-            color: "white",
-          }}
-        >
-          Sheep, treatments, tasks and movements
-          all in one place.
-        </p>
+<p
+  style={{
+    marginTop: "10px",
+    color: "white",
+  }}
+>
+  Manage sheep, groups, fields,
+  treatments and tasks from one place.
+</p>
       </div>
 
       <div
@@ -130,20 +130,19 @@ export default function Dashboard({ setPage }) {
           marginBottom: "20px",
         }}
       >
-        <DashboardCard
-          icon="🐑"
-          title="Total Sheep"
-          value={summary.totalSheep}
-          colour="#03a9f4"
-        />
+<DashboardCard
+  icon="👥"
+  title="Groups"
+  value={summary.groups ?? 0}
+  colour="#4caf50"
+/>
 
-        <DashboardCard
-          icon="🏡"
-          title="Wern Villa"
-          value={summary.wernVilla}
-          colour="#4caf50"
-        />
-
+<DashboardCard
+  icon="🗺️"
+  title="Occupied Fields"
+  value={summary.occupiedFields ?? 0}
+  colour="#ff9800"
+/>
         <DashboardCard
           icon="🚜"
           title="Gellidywyll"
@@ -188,28 +187,49 @@ export default function Dashboard({ setPage }) {
         />
       </div>
 
-      <div
-        style={{
-          background: "#1f1f1f",
-          padding: "20px",
-          borderRadius: "16px",
-          marginBottom: "20px",
-          border: "1px solid #333",
-        }}
-      >
-        <h2
-          style={{
-            marginTop: 0,
-            color: "#03a9f4",
-          }}
-        >
-          🟢 Farm Status
-        </h2>
+<div
+  style={{
+    background: "#1f1f1f",
+    padding: "20px",
+    borderRadius: "16px",
+    marginBottom: "20px",
+    border: "1px solid #333",
+  }}
+>
+  <h2
+    style={{
+      marginTop: 0,
+      color: "#03a9f4",
+    }}
+  >
+    📊 Farm Snapshot
+  </h2>
 
-        <p>Sheep Status: Healthy</p>
-        <p>Database: Connected ✅</p>
-        <p>Open Tasks: {summary.openTasks}</p>
-      </div>
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns:
+        "repeat(auto-fit, minmax(180px, 1fr))",
+      gap: "15px",
+    }}
+  >
+    <div>
+      🐑 Sheep: {summary.totalSheep}
+    </div>
+
+    <div>
+      👥 Groups: {summary.groups ?? 0}
+    </div>
+
+    <div>
+      🌱 Fields: {fieldCount}
+    </div>
+
+    <div>
+      ⚠️ Withdrawals: {withdrawalCount}
+    </div>
+  </div>
+</div>
 
       <div
         style={{

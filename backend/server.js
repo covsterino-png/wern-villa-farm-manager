@@ -436,28 +436,39 @@ app.post("/movements", async (req, res) => {
 });
 app.get("/summary", async (req, res) => {
   try {
-    const movementResult = await turso.execute(
-      "SELECT * FROM movements"
+    const sheepResult = await turso.execute(
+      "SELECT COUNT(*) AS count FROM sheep"
     );
 
-    let totalMoved = 0;
+    const groupsResult = await turso.execute(
+      "SELECT COUNT(*) AS count FROM flockRegister"
+    );
 
-    movementResult.rows.forEach((move) => {
-      totalMoved += Number(move.number || 0);
-    });
+    const fieldsResult = await turso.execute(
+      "SELECT COUNT(*) AS count FROM flockRegister WHERE currentField IS NOT NULL AND currentField != ''"
+    );
 
-    const taskResult = await turso.execute(`
+    const tasksResult = await turso.execute(`
       SELECT COUNT(*) AS openTasks
       FROM tasks
       WHERE completed = 0
     `);
 
     res.json({
-      totalSheep: 150,
-      wernVilla: totalMoved,
-      gellidywyll: 150 - totalMoved,
+      totalSheep: Number(
+        sheepResult.rows[0].count
+      ),
+
+      groups: Number(
+        groupsResult.rows[0].count
+      ),
+
+      occupiedFields: Number(
+        fieldsResult.rows[0].count
+      ),
+
       openTasks: Number(
-        taskResult.rows[0].openTasks
+        tasksResult.rows[0].openTasks
       ),
     });
   } catch (error) {
@@ -465,7 +476,6 @@ app.get("/summary", async (req, res) => {
     res.status(500).json(error);
   }
 });
-
 app.put("/tasks/:id/complete", async (req, res) => {
   try {
     const { id } = req.params;
