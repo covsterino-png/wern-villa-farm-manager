@@ -33,9 +33,9 @@ export default function Dashboard({ setPage }) {
   }, []);
 
   useEffect(() => {
-    fetch(
-      "https://wern-villa-api.onrender.com/activity"
-    )
+fetch(
+  "https://wern-villa-api.onrender.com/recent-history"
+)
       .then((response) => response.json())
       .then((data) => {
         setActivity(data);
@@ -143,13 +143,12 @@ export default function Dashboard({ setPage }) {
   value={summary.occupiedFields ?? 0}
   colour="#ff9800"
 />
-        <DashboardCard
-          icon="🚜"
-          title="Gellidywyll"
-          value={summary.gellidywyll}
-          colour="#ff9800"
-        />
-
+<DashboardCard
+  icon="🐑"
+  title="Total Sheep"
+  value={summary.totalSheep}
+  colour="#03a9f4"
+/>
         <DashboardCard
           icon="📋"
           title="Open Tasks"
@@ -261,19 +260,17 @@ export default function Dashboard({ setPage }) {
                   "1px solid #333",
               }}
             >
-              <strong>
-                {item.number} sheep moved
-              </strong>
+<strong>
+  {item.eventType}
+</strong>
 
-              <br />
+<br />
 
-              {item.fromLocation}
-              {" → "}
-              {item.toLocation}
+{item.details}
 
-              <br />
+<br />
 
-              <small>{item.moveDate}</small>
+<small>{item.eventDate}</small>
             </div>
           ))
         )}
