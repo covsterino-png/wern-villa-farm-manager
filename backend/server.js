@@ -105,6 +105,87 @@ app.post("/sheep/:id/weights", async (req, res) => {
   }
 });
 
+app.get("/sheep/:id/lambings", async (req, res) => {
+  try {
+    const result = await turso.execute({
+      sql: `
+        SELECT *
+        FROM lambings
+        WHERE sheepId = ?
+        ORDER BY lambingDate DESC
+      `,
+      args: [req.params.id],
+    });
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(error);
+  }
+});
+
+app.post("/sheep/:id/lambings", async (req, res) => {
+  try {
+    const {
+      lambingDate,
+      males,
+      females,
+      dead,
+      notes,
+    } = req.body;
+
+    await turso.execute({
+      sql: `
+        INSERT INTO lambings
+        (
+          sheepId,
+          lambingDate,
+          males,
+          females,
+          dead,
+          notes
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+      `,
+      args: [
+        req.params.id,
+        lambingDate,
+        males,
+        females,
+        dead,
+        notes,
+      ],
+    });
+
+    const totalBorn =
+      Number(males) +
+      Number(females);
+
+    await turso.execute({
+      sql: `
+        INSERT INTO sheepHistory
+        (
+          sheepId,
+          eventType,
+          details
+        )
+        VALUES (?, ?, ?)
+      `,
+      args: [
+        req.params.id,
+        "Lambing",
+        `${totalBorn} lambs born (${males} male, ${females} female)`,
+      ],
+    });
+
+    res.json({
+      success: true,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(error);
+  }
+});
 
 app.get("/sheep-history", async (req, res) => {
   try {

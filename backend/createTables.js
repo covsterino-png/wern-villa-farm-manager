@@ -43,6 +43,18 @@ CREATE TABLE IF NOT EXISTS fields (
       `);
 
       await db.execute(`
+  CREATE TABLE IF NOT EXISTS lambings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sheepId INTEGER,
+    lambingDate TEXT,
+    males INTEGER,
+    females INTEGER,
+    dead INTEGER,
+    notes TEXT
+  )
+`);
+
+      await db.execute(`
   CREATE TABLE IF NOT EXISTS weights (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     sheepId INTEGER,
