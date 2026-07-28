@@ -38,6 +38,31 @@ const [weightDate, setWeightDate] =
       .split("T")[0]
   );
 
+const [lambings, setLambings] =
+  useState([]);
+
+const [showLambingForm, setShowLambingForm] =
+  useState(false);
+
+const [lambingDate, setLambingDate] =
+  useState(
+    new Date()
+      .toISOString()
+      .split("T")[0]
+  );
+
+const [maleLambs, setMaleLambs] =
+  useState(0);
+
+const [femaleLambs, setFemaleLambs] =
+  useState(0);
+
+const [deadLambs, setDeadLambs] =
+  useState(0);
+
+const [lambingNotes, setLambingNotes] =
+  useState("");
+
 const [scanResult, setScanResult] = useState("Single");
 
   const [groups, setGroups] = useState([]);
@@ -86,6 +111,12 @@ const [scanResult, setScanResult] = useState("Single");
     )
       .then((res) => res.json())
       .then((data) => setGroups(data));
+
+      fetch(
+  `https://wern-villa-api.onrender.com/sheep/${sheep.id}/lambings`
+)
+  .then((res) => res.json())
+  .then((data) => setLambings(data));
 
       fetch(
   `https://wern-villa-api.onrender.com/sheep/${sheep.id}/weights`
@@ -193,6 +224,51 @@ const [scanResult, setScanResult] = useState("Single");
       setWeights(data);
       setShowWeightForm(false);
       setWeight("");
+    });
+}
+
+function saveLambing() {
+  fetch(
+    `https://wern-villa-api.onrender.com/sheep/${sheep.id}/lambings`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+      body: JSON.stringify({
+        lambingDate,
+        males: maleLambs,
+        females: femaleLambs,
+        dead: deadLambs,
+        notes: lambingNotes,
+      }),
+    }
+  )
+    .then((res) => res.json())
+    .then(() => {
+      setToast(
+        "✅ Lambing saved successfully"
+      );
+
+      setTimeout(() => {
+        setToast("");
+      }, 3000);
+
+      return fetch(
+        `https://wern-villa-api.onrender.com/sheep/${sheep.id}/lambings`
+      );
+    })
+    .then((res) => res.json())
+    .then((data) => {
+      setLambings(data);
+
+      setShowLambingForm(false);
+
+      setMaleLambs(0);
+      setFemaleLambs(0);
+      setDeadLambs(0);
+      setLambingNotes("");
     });
 }
 
@@ -883,10 +959,161 @@ const [scanResult, setScanResult] = useState("Single");
     }}
   >
     <h2>🍼 Lambings</h2>
-    <p>No lambing records yet.</p>
+
+    <button
+      onClick={() =>
+        setShowLambingForm(
+          !showLambingForm
+        )
+      }
+      style={{
+        background: "#03a9f4",
+        color: "white",
+        border: "none",
+        padding: "10px 16px",
+        borderRadius: "10px",
+        cursor: "pointer",
+        marginBottom: "15px",
+      }}
+    >
+      ➕ Record Lambing
+    </button>
+
+    {showLambingForm && (
+      <div
+        style={{
+          background: "#1f1f1f",
+          padding: "15px",
+          borderRadius: "10px",
+          marginBottom: "20px",
+        }}
+      >
+        <label>Date</label>
+
+        <input
+          type="date"
+          value={lambingDate}
+          onChange={(e) =>
+            setLambingDate(
+              e.target.value
+            )
+          }
+          style={inputStyle}
+        />
+
+        <label>Male Lambs</label>
+
+        <input
+          type="number"
+          value={maleLambs}
+          onChange={(e) =>
+            setMaleLambs(
+              e.target.value
+            )
+          }
+          style={inputStyle}
+        />
+
+        <label>Female Lambs</label>
+
+        <input
+          type="number"
+          value={femaleLambs}
+          onChange={(e) =>
+            setFemaleLambs(
+              e.target.value
+            )
+          }
+          style={inputStyle}
+        />
+
+        <label>Dead Lambs</label>
+
+        <input
+          type="number"
+          value={deadLambs}
+          onChange={(e) =>
+            setDeadLambs(
+              e.target.value
+            )
+          }
+          style={inputStyle}
+        />
+
+        <label>Notes</label>
+
+        <textarea
+          value={lambingNotes}
+          onChange={(e) =>
+            setLambingNotes(
+              e.target.value
+            )
+          }
+          style={{
+            ...inputStyle,
+            minHeight: "80px",
+          }}
+        />
+
+        <button
+          onClick={saveLambing}
+          style={{
+            background: "#4caf50",
+            color: "white",
+            border: "none",
+            padding: "10px 16px",
+            borderRadius: "10px",
+            cursor: "pointer",
+          }}
+        >
+          ✅ Save Lambing
+        </button>
+      </div>
+    )}
+
+    {lambings.length === 0 ? (
+      <p>No lambings recorded yet.</p>
+    ) : (
+      lambings.map((lambing) => (
+        <div
+          key={lambing.id}
+          style={{
+            background: "#1f1f1f",
+            padding: "12px",
+            borderRadius: "10px",
+            marginBottom: "10px",
+          }}
+        >
+          <strong>
+            {Number(
+              lambing.males
+            ) +
+              Number(
+                lambing.females
+              )}{" "}
+            lambs born
+          </strong>
+
+          <br />
+
+          ♂ {lambing.males}
+          {" | "}
+          ♀ {lambing.females}
+          {" | "}
+          Dead: {lambing.dead}
+
+          <br />
+
+          <small>
+            {
+              lambing.lambingDate
+            }
+          </small>
+        </div>
+      ))
+    )}
   </div>
-)}
-  
+)}  
 
     </div>
   );
