@@ -6,6 +6,9 @@ export default function SheepDetail({
 }) {
   const [editing, setEditing] =
     useState(false);
+
+    const [activeTab, setActiveTab] =
+  useState("overview");
     
     const [history, setHistory] =
   useState([]);
@@ -325,32 +328,68 @@ export default function SheepDetail({
       >
         🐑 {sheep.name}
       </h1>
+<div
+  style={{
+    display: "flex",
+    gap: "10px",
+    marginBottom: "20px",
+    flexWrap: "wrap",
+  }}
+>
+  {[
+    "overview",
+    "timeline",
+    "weights",
+    "scans",
+    "lambings",
+  ].map((tab) => (
+    <button
+      key={tab}
+      onClick={() => setActiveTab(tab)}
+      style={{
+        background:
+          activeTab === tab
+            ? "#03a9f4"
+            : "#2b2b2b",
+        color: "white",
+        border: "none",
+        borderRadius: "10px",
+        padding: "10px 14px",
+        cursor: "pointer",
+        textTransform: "capitalize",
+      }}
+    >
+      {tab}
+    </button>
+  ))}
+</div>
 
-      <button
-        onClick={() =>
-          setEditing(true)
-        }
-        style={{
-          background: "#ff9800",
-          color: "white",
-          border: "none",
-          padding: "12px 18px",
-          borderRadius: "10px",
-          cursor: "pointer",
-          marginBottom: "20px",
-        }}
-      >
-        ✏️ Edit Sheep
-      </button>
+<button
+  onClick={() =>
+    setEditing(true)
+  }
+  style={{
+    background: "#ff9800",
+    color: "white",
+    border: "none",
+    padding: "12px 18px",
+    borderRadius: "10px",
+    cursor: "pointer",
+    marginBottom: "20px",
+  }}
+>
+  ✏️ Edit Sheep
+</button>
 
-      <div
-        style={{
-          background: "#2b2b2b",
-          padding: "15px",
-          borderRadius: "10px",
-        }}
-      >
-        <p>
+{activeTab === "overview" && (
+  <div
+    style={{
+      background: "#2b2b2b",
+      padding: "15px",
+      borderRadius: "10px",
+    }}
+  >
+            <p>
           <strong>Sex:</strong>{" "}
           {sheep.sex}
         </p>
@@ -394,43 +433,88 @@ export default function SheepDetail({
             "None"}
         </p>
       </div>
-      <h2
-  style={{
-    color: "#03a9f4",
-    marginTop: "30px",
-  }}
->
-  📜 Timeline
-</h2>
-
-{!Array.isArray(history) ||
-history.length === 0 ? (
-  <p>No history yet</p>
-) : (
-  history.map((event) => (
-    <div
-      key={event.id}
+)}
+{activeTab === "timeline" && (
+  <>
+    <h2
       style={{
-        background: "#2b2b2b",
-        padding: "12px",
-        borderRadius: "10px",
-        marginBottom: "10px",
+        color: "#03a9f4",
+        marginTop: "30px",
       }}
     >
-      <strong>
-        {event.eventType}
-      </strong>
+      📜 Timeline
+    </h2>
 
-      <div>
-        {event.details}
-      </div>
+    {!Array.isArray(history) ||
+    history.length === 0 ? (
+      <p>No history yet</p>
+    ) : (
+      history.map((event) => (
+        <div
+          key={event.id}
+          style={{
+            background: "#2b2b2b",
+            padding: "12px",
+            borderRadius: "10px",
+            marginBottom: "10px",
+          }}
+        >
+          <strong>
+            {event.eventType}
+          </strong>
 
-      <small>
-        {event.eventDate}
-      </small>
-    </div>
-  ))
+          <div>
+            {event.details}
+          </div>
+
+          <small>
+            {event.eventDate}
+          </small>
+        </div>
+      ))
+    )}
+  </>
 )}
+{activeTab === "weights" && (
+  <div
+    style={{
+      background: "#2b2b2b",
+      padding: "20px",
+      borderRadius: "10px",
+    }}
+  >
+    <h2>⚖️ Weights</h2>
+    <p>No weight records yet.</p>
+  </div>
+)}
+
+{activeTab === "scans" && (
+  <div
+    style={{
+      background: "#2b2b2b",
+      padding: "20px",
+      borderRadius: "10px",
+    }}
+  >
+    <h2>🤰 Pregnancy Scans</h2>
+    <p>No scan records yet.</p>
+  </div>
+)}
+
+{activeTab === "lambings" && (
+  <div
+    style={{
+      background: "#2b2b2b",
+      padding: "20px",
+      borderRadius: "10px",
+    }}
+  >
+    <h2>🍼 Lambings</h2>
+    <p>No lambing records yet.</p>
+  </div>
+)}
+  
+
     </div>
   );
 }
