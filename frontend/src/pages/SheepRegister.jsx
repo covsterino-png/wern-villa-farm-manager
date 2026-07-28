@@ -27,6 +27,24 @@ export default function SheepRegister() {
   const [fields, setFields] = useState([]);
   const [allSheep, setAllSheep] =
     useState([]);
+    const inputStyle = {
+  width: "100%",
+  padding: "12px",
+  marginBottom: "12px",
+  borderRadius: "8px",
+  border: "1px solid #444",
+  background: "#1f1f1f",
+  color: "white",
+  boxSizing: "border-box",
+};
+
+const cardStyle = {
+  background: "#2b2b2b",
+  padding: "20px",
+  borderRadius: "12px",
+  maxWidth: "700px",
+  margin: "0 auto 30px auto",
+};
 
   function loadSheep() {
     fetch(
@@ -103,17 +121,33 @@ export default function SheepRegister() {
     });
   }
 
-  return (
-    <div>
-      <h1
+return (
+  <div
+    style={{
+      maxWidth: "1000px",
+      margin: "0 auto",
+      padding: "20px",
+    }}
+  >
+          <h1
         style={{
           color: "#03a9f4",
         }}
       >
         🐑 Sheep Register
       </h1>
+      <div style={cardStyle}>
+  <h2
+    style={{
+      color: "#03a9f4",
+      marginTop: 0,
+    }}
+  >
+    ➕ Add Sheep
+  </h2>
 
       <input
+  style={inputStyle}
         value={name}
         onChange={(e) =>
           setName(e.target.value)
@@ -122,6 +156,7 @@ export default function SheepRegister() {
       />
 
       <input
+  style={inputStyle}
         value={eid}
         onChange={(e) =>
           setEid(e.target.value)
@@ -130,6 +165,7 @@ export default function SheepRegister() {
       />
 
       <select
+  style={inputStyle}
         value={sex}
         onChange={(e) =>
           setSex(e.target.value)
@@ -149,6 +185,7 @@ export default function SheepRegister() {
       </select>
 
       <input
+  style={inputStyle}
         type="date"
         value={dob}
         onChange={(e) =>
@@ -157,6 +194,7 @@ export default function SheepRegister() {
       />
 
       <input
+  style={inputStyle}
         list="mother-list"
         value={mother}
         onChange={(e) => {
@@ -186,6 +224,7 @@ export default function SheepRegister() {
       </datalist>
 
       <input
+  style={inputStyle}
         list="father-list"
         value={father}
         onChange={(e) => {
@@ -215,6 +254,7 @@ export default function SheepRegister() {
       </datalist>
 
       <select
+  style={inputStyle}
         value={groupName}
         onChange={(e) =>
           setGroupName(
@@ -237,6 +277,7 @@ export default function SheepRegister() {
       </select>
 
       <select
+  style={inputStyle}
         value={currentField}
         onChange={(e) =>
           setCurrentField(
@@ -258,10 +299,24 @@ export default function SheepRegister() {
         ))}
       </select>
 
-      <button onClick={addSheep}>
-        Add Sheep
-      </button>
+<button
+  onClick={addSheep}
+  style={{
+    background: "#4caf50",
+    color: "white",
+    border: "none",
+    padding: "14px",
+    borderRadius: "10px",
+    width: "100%",
+    cursor: "pointer",
+    fontWeight: "bold",
+    fontSize: "1rem",
+  }}
+>
+  ✅ Add Sheep
+</button>
 
+</div>
       <div
         style={{
           marginTop: "20px",
