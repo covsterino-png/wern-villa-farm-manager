@@ -13,6 +13,15 @@ export default function SheepDetail({
   const [scans, setScans] = useState([]);
 
   const [toast, setToast] = useState("");
+
+  const [motherId, setMotherId] =
+  useState("");
+
+const [fatherId, setFatherId] =
+  useState("");
+
+const [allSheep, setAllSheep] =
+  useState([]);
   
   const [showScanForm, setShowScanForm] = useState(false);
 
@@ -111,6 +120,12 @@ const [scanResult, setScanResult] = useState("Single");
     )
       .then((res) => res.json())
       .then((data) => setGroups(data));
+
+      fetch(
+  "https://wern-villa-api.onrender.com/sheep"
+)
+  .then((res) => res.json())
+  .then((data) => setAllSheep(data));
 
       fetch(
   `https://wern-villa-api.onrender.com/sheep/${sheep.id}/lambings`

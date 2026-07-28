@@ -8,23 +8,35 @@ export default function SheepRegister() {
   const [sex, setSex] = useState("");
   const [dob, setDob] = useState("");
   const [mother, setMother] = useState("");
+  const [father, setFather] = useState("");
+  const [motherId, setMotherId] = useState("");
+  const [fatherId, setFatherId] = useState("");
+
   const [groupName, setGroupName] =
     useState("");
+
   const [currentField, setCurrentField] =
     useState("");
+
   const [status, setStatus] =
     useState("Active");
+
   const [notes, setNotes] = useState("");
 
   const [groups, setGroups] = useState([]);
   const [fields, setFields] = useState([]);
+  const [allSheep, setAllSheep] =
+    useState([]);
 
   function loadSheep() {
     fetch(
       "https://wern-villa-api.onrender.com/sheep"
     )
       .then((res) => res.json())
-      .then((data) => setSheep(data));
+      .then((data) => {
+        setSheep(data);
+        setAllSheep(data);
+      });
   }
 
   function loadGroups() {
@@ -65,6 +77,9 @@ export default function SheepRegister() {
           dob,
           groupName,
           mother,
+          motherId,
+          father,
+          fatherId,
           currentField,
           status,
           notes,
@@ -76,6 +91,9 @@ export default function SheepRegister() {
       setSex("");
       setDob("");
       setMother("");
+      setFather("");
+      setMotherId("");
+      setFatherId("");
       setGroupName("");
       setCurrentField("");
       setStatus("Active");
@@ -120,9 +138,11 @@ export default function SheepRegister() {
         <option value="">
           Select Sex
         </option>
+
         <option value="Ewe">
           Ewe
         </option>
+
         <option value="Ram">
           Ram
         </option>
@@ -137,12 +157,62 @@ export default function SheepRegister() {
       />
 
       <input
+        list="mother-list"
         value={mother}
-        onChange={(e) =>
-          setMother(e.target.value)
-        }
+        onChange={(e) => {
+          setMother(e.target.value);
+
+          const match =
+            allSheep.find(
+              (s) =>
+                s.name ===
+                e.target.value
+            );
+
+          setMotherId(
+            match ? match.id : ""
+          );
+        }}
         placeholder="Mother"
       />
+
+      <datalist id="mother-list">
+        {allSheep.map((s) => (
+          <option
+            key={s.id}
+            value={s.name}
+          />
+        ))}
+      </datalist>
+
+      <input
+        list="father-list"
+        value={father}
+        onChange={(e) => {
+          setFather(e.target.value);
+
+          const match =
+            allSheep.find(
+              (s) =>
+                s.name ===
+                e.target.value
+            );
+
+          setFatherId(
+            match ? match.id : ""
+          );
+        }}
+        placeholder="Father"
+      />
+
+      <datalist id="father-list">
+        {allSheep.map((s) => (
+          <option
+            key={s.id}
+            value={s.name}
+          />
+        ))}
+      </datalist>
 
       <select
         value={groupName}
