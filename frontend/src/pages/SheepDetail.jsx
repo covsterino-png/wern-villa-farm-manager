@@ -328,42 +328,71 @@ export default function SheepDetail({
       >
         🐑 {sheep.name}
       </h1>
+      <div
+  style={{
+    textAlign: "center",
+    color: "#aaa",
+    marginTop: "-10px",
+    marginBottom: "20px",
+    fontSize: "1rem",
+  }}
+>
+  {sheep.sex} • {sheep.groupName}
+
+  <br />
+
+  🌱 {sheep.currentField}
+</div>
 <div
   style={{
     display: "flex",
-    gap: "10px",
-    marginBottom: "20px",
+    justifyContent: "center",
+    gap: "12px",
     flexWrap: "wrap",
+    marginTop: "20px",
+    marginBottom: "30px",
   }}
 >
-  {[
-    "overview",
-    "timeline",
-    "weights",
-    "scans",
-    "lambings",
-  ].map((tab) => (
-    <button
-      key={tab}
-      onClick={() => setActiveTab(tab)}
-      style={{
-        background:
-          activeTab === tab
-            ? "#03a9f4"
-            : "#2b2b2b",
-        color: "white",
-        border: "none",
-        borderRadius: "10px",
-        padding: "10px 14px",
-        cursor: "pointer",
-        textTransform: "capitalize",
-      }}
-    >
-      {tab}
-    </button>
-  ))}
-</div>
+  <TabButton
+    label="Overview"
+    active={activeTab === "overview"}
+    onClick={() =>
+      setActiveTab("overview")
+    }
+  />
 
+  <TabButton
+    label="Timeline"
+    active={activeTab === "timeline"}
+    onClick={() =>
+      setActiveTab("timeline")
+    }
+  />
+
+  <TabButton
+    label="Weights"
+    active={activeTab === "weights"}
+    onClick={() =>
+      setActiveTab("weights")
+    }
+  />
+
+  <TabButton
+    label="Scans"
+    active={activeTab === "scans"}
+    onClick={() =>
+      setActiveTab("scans")
+    }
+  />
+
+  <TabButton
+    label="Lambings"
+    active={activeTab === "lambings"}
+    onClick={() =>
+      setActiveTab("lambings")
+    }
+  />
+</div>
 <button
   onClick={() =>
     setEditing(true)
@@ -459,10 +488,16 @@ export default function SheepDetail({
             marginBottom: "10px",
           }}
         >
-          <strong>
-            {event.eventType}
-          </strong>
-
+<div
+  style={{
+    color: "#03a9f4",
+    fontWeight: "bold",
+    fontSize: "1.1rem",
+    marginBottom: "6px",
+  }}
+>
+  {event.eventType}
+</div>
           <div>
             {event.details}
           </div>
@@ -516,6 +551,32 @@ export default function SheepDetail({
   
 
     </div>
+  );
+}
+function TabButton({
+  label,
+  active,
+  onClick,
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        background: active
+          ? "#03a9f4"
+          : "#2b2b2b",
+        color: "white",
+        border: active
+          ? "2px solid #03a9f4"
+          : "2px solid #444",
+        borderRadius: "12px",
+        padding: "12px 20px",
+        cursor: "pointer",
+        fontWeight: "bold",
+      }}
+    >
+      {label}
+    </button>
   );
 }
 const inputStyle = {
