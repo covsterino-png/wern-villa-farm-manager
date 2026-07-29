@@ -169,7 +169,7 @@ fetch(
     marginTop: 0,
   }}
 >
-  📋 Due Today
+  📋 Today's tasks
 </h2>
 
   {todayTasks.length === 0 ? (
@@ -180,7 +180,7 @@ fetch(
     fontSize: "1.1rem",
   }}
 >
-  ✅ No jobs due today
+  ✅ All tasks complete
 </p>
   ) : (
     todayTasks.map((task) => (
@@ -190,7 +190,7 @@ fetch(
     padding: "20px",
     borderRadius: "16px",
     marginBottom: "20px",
-    border: "1px solid #333",
+border: "1px solid #4caf50",
     textAlign: "center",
   }}
 >
