@@ -205,6 +205,27 @@ const [scanResult, setScanResult] = useState("Single");
       );
   }, []);
 
+  function completeScheduledEvent(
+  eventId
+) {
+  fetch(
+    `https://wern-villa-api.onrender.com/scheduled/${eventId}/complete`,
+    {
+      method: "PUT",
+    }
+  )
+    .then((res) => res.json())
+    .then(() => {
+      return fetch(
+        `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scheduled`
+      );
+    })
+    .then((res) => res.json())
+    .then((data) => {
+      setScheduledEvents(data);
+    });
+}
+
   function saveSheep() {
     fetch(
       `https://wern-villa-api.onrender.com/sheep/${sheep.id}`,
@@ -1313,6 +1334,26 @@ function saveEvent() {
           <small>
             Due: {event.dueDate}
           </small>
+          <br />
+
+<button
+  onClick={() =>
+    completeScheduledEvent(
+      event.id
+    )
+  }
+  style={{
+    background: "#4caf50",
+    color: "white",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    cursor: "pointer",
+    marginTop: "10px",
+  }}
+>
+  ✅ Complete
+</button>
         </div>
       ))
     )}

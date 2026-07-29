@@ -38,6 +38,54 @@ app.get("/sheep/group/:groupName", async (req, res) => {
   }
 });
 
+app.put("/scheduled/:id/complete", async (req, res) => {
+  const event = await turso.execute({
+    sql: `
+      SELECT *
+      FROM sheepEvents
+      WHERE id = ?
+    `,
+    args: [req.params.id],
+  });
+
+  const scheduledEvent =
+    event.rows[0];
+
+  await turso.execute({
+    sql: `
+      UPDATE sheepEvents
+      SET status = 'completed'
+      WHERE id = ?
+    `,
+    args: [req.params.id],
+  });
+
+  await turso.execute({
+    sql: `
+      INSERT INTO sheepHistory
+      (
+        sheepId,
+        eventType,
+        details,
+        eventDate
+      )
+      VALUES (?, ?, ?, ?)
+    `,
+    args: [
+      scheduledEvent.sheepId,
+      scheduledEvent.eventType,
+      scheduledEvent.notes,
+      new Date()
+        .toISOString()
+        .split("T")[0],
+    ],
+  });
+
+  res.json({
+    success: true,
+  });
+});
+
 app.get("/sheep/:id/scheduled", async (req, res) => {
   const result = await turso.execute({
     sql: `
