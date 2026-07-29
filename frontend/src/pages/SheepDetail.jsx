@@ -7,6 +7,12 @@ export default function SheepDetail({
   const [editing, setEditing] = useState(false);
 
     const [activeTab, setActiveTab] = useState("overview");
+
+    const [repeatEvery, setRepeatEvery] =
+  useState(1);
+
+const [numberOfEvents, setNumberOfEvents] =
+  useState(1);
     
     const [history, setHistory] = useState([]);
 
@@ -432,6 +438,17 @@ function saveEvent() {
 }
 
 function saveScheduledEvent() {
+
+  if (
+    numberOfEvents > 1 &&
+    repeatEvery < 1
+  ) {
+    alert(
+      "Repeat Every must be at least 1 day."
+    );
+    return;
+  }
+
   fetch(
     `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scheduled`,
     {
@@ -460,16 +477,11 @@ function saveScheduledEvent() {
     .then((res) => res.json())
     .then((data) => {
       setScheduledEvents(data);
-
       setShowScheduledForm(false);
-
       setScheduledNotes("");
       setRepeatEvery(0);
       setNumberOfEvents(1);
-
-      setToast(
-        "✅ Schedule created"
-      );
+      setToast("✅ Schedule created");
     });
 }
 
@@ -1238,15 +1250,26 @@ function saveScheduledEvent() {
     >
       ➕ Record Event
     </button>
-    <button
+<button
   onClick={() =>
     setShowScheduledForm(
       !showScheduledForm
     )
   }
+  style={{
+    background: "#03a9f4",
+    color: "white",
+    border: "none",
+    padding: "10px 16px",
+    borderRadius: "10px",
+    cursor: "pointer",
+    marginBottom: "15px",
+    marginLeft: "10px",
+  }}
 >
   📅 Schedule Event
 </button>
+
 {showScheduledForm && (
   <div
     style={{
