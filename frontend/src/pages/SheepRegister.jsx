@@ -9,6 +9,8 @@ export default function SheepRegister() {
   const [sex, setSex] = useState("");
   const [dob, setDob] = useState("");
   const [mother, setMother] = useState("");
+  const [showAddSheep, setShowAddSheep] =
+  useState(false);
   const [father, setFather] = useState("");
   const [motherId, setMotherId] = useState("");
   const [selectedSheep, setSelectedSheep] =
@@ -119,6 +121,7 @@ const cardStyle = {
       setCurrentField("");
       setStatus("Active");
       setNotes("");
+      setShowAddSheep(false);
 
       loadSheep();
     });
@@ -135,202 +138,228 @@ if (selectedSheep) {
   );
 }
 return (
-  <div
-    style={{
-      maxWidth: "1000px",
-      margin: "0 auto",
-      padding: "20px",
-    }}
-  >
-          <h1
-        style={{
-          color: "#03a9f4",
-        }}
-      >
-        🐑 Sheep Register
-      </h1>
-      <div style={cardStyle}>
-  <h2
-    style={{
-      color: "#03a9f4",
-      marginTop: 0,
-    }}
-  >
-    ➕ Add Sheep
-  </h2>
-
-      <input
-  style={inputStyle}
-        value={name}
-        onChange={(e) =>
-          setName(e.target.value)
-        }
-        placeholder="Name"
-      />
-
-      <input
-  style={inputStyle}
-        value={eid}
-        onChange={(e) =>
-          setEid(e.target.value)
-        }
-        placeholder="EID"
-      />
-
-      <select
-  style={inputStyle}
-        value={sex}
-        onChange={(e) =>
-          setSex(e.target.value)
-        }
-      >
-        <option value="">
-          Select Sex
-        </option>
-
-        <option value="Ewe">
-          Ewe
-        </option>
-
-        <option value="Ram">
-          Ram
-        </option>
-      </select>
-
-      <input
-  style={inputStyle}
-        type="date"
-        value={dob}
-        onChange={(e) =>
-          setDob(e.target.value)
-        }
-      />
-
-      <input
-  style={inputStyle}
-        list="mother-list"
-        value={mother}
-        onChange={(e) => {
-          setMother(e.target.value);
-
-          const match =
-            allSheep.find(
-              (s) =>
-                s.name ===
-                e.target.value
-            );
-
-          setMotherId(
-            match ? match.id : ""
-          );
-        }}
-        placeholder="Mother"
-      />
-
-      <datalist id="mother-list">
-        {allSheep.map((s) => (
-          <option
-            key={s.id}
-            value={s.name}
-          />
-        ))}
-      </datalist>
-
-      <input
-  style={inputStyle}
-        list="father-list"
-        value={father}
-        onChange={(e) => {
-          setFather(e.target.value);
-
-          const match =
-            allSheep.find(
-              (s) =>
-                s.name ===
-                e.target.value
-            );
-
-          setFatherId(
-            match ? match.id : ""
-          );
-        }}
-        placeholder="Father"
-      />
-
-      <datalist id="father-list">
-        {allSheep.map((s) => (
-          <option
-            key={s.id}
-            value={s.name}
-          />
-        ))}
-      </datalist>
-
-      <select
-  style={inputStyle}
-        value={groupName}
-        onChange={(e) =>
-          setGroupName(
-            e.target.value
-          )
-        }
-      >
-        <option value="">
-          Select Group
-        </option>
-
-        {groups.map((group) => (
-          <option
-            key={group.id}
-            value={group.name}
-          >
-            {group.name}
-          </option>
-        ))}
-      </select>
-
-      <select
-  style={inputStyle}
-        value={currentField}
-        onChange={(e) =>
-          setCurrentField(
-            e.target.value
-          )
-        }
-      >
-        <option value="">
-          Select Field
-        </option>
-
-        {fields.map((field) => (
-          <option
-            key={field.id}
-            value={field.name}
-          >
-            {field.name}
-          </option>
-        ))}
-      </select>
-
-<button
-  onClick={addSheep}
+<div
   style={{
-    background: "#4caf50",
-    color: "white",
-    border: "none",
-    padding: "14px",
-    borderRadius: "10px",
-    width: "100%",
-    cursor: "pointer",
-    fontWeight: "bold",
-    fontSize: "1rem",
+    maxWidth: "1000px",
+    margin: "0 auto",
+    padding: "20px",
   }}
 >
-  ✅ Add Sheep
-</button>
+  <h1
+    style={{
+      color: "#03a9f4",
+    }}
+  >
+    🐑 Sheep Register
+  </h1>
 
-</div>
-      <div
+  <div style={cardStyle}>
+    <button
+      onClick={() =>
+        setShowAddSheep(!showAddSheep)
+      }
+      style={{
+        background: "#4caf50",
+        color: "white",
+        border: "none",
+        padding: "14px",
+        borderRadius: "10px",
+        width: "100%",
+        cursor: "pointer",
+        fontWeight: "bold",
+        fontSize: "1rem",
+        marginBottom: "15px",
+      }}
+    >
+      {showAddSheep
+        ? "➖ Hide Add Sheep Form"
+        : "➕ Add Sheep"}
+    </button>
+
+    {showAddSheep && (
+      <>
+        <input
+          style={inputStyle}
+          value={name}
+          onChange={(e) =>
+            setName(e.target.value)
+          }
+          placeholder="Name"
+        />
+
+        <input
+          style={inputStyle}
+          value={eid}
+          onChange={(e) =>
+            setEid(e.target.value)
+          }
+          placeholder="EID"
+        />
+
+        <select
+          style={inputStyle}
+          value={sex}
+          onChange={(e) =>
+            setSex(e.target.value)
+          }
+        >
+          <option value="">
+            Select Sex
+          </option>
+
+          <option value="Ewe">
+            Ewe
+          </option>
+
+          <option value="Ram">
+            Ram
+          </option>
+        </select>
+
+        <input
+          style={inputStyle}
+          type="date"
+          value={dob}
+          onChange={(e) =>
+            setDob(e.target.value)
+          }
+        />
+
+        <input
+          style={inputStyle}
+          list="mother-list"
+          value={mother}
+          onChange={(e) => {
+            setMother(
+              e.target.value
+            );
+
+            const match =
+              allSheep.find(
+                (s) =>
+                  s.name ===
+                  e.target.value
+              );
+
+            setMotherId(
+              match
+                ? match.id
+                : ""
+            );
+          }}
+          placeholder="Mother"
+        />
+
+        <datalist id="mother-list">
+          {allSheep.map((s) => (
+            <option
+              key={s.id}
+              value={s.name}
+            />
+          ))}
+        </datalist>
+
+        <input
+          style={inputStyle}
+          list="father-list"
+          value={father}
+          onChange={(e) => {
+            setFather(
+              e.target.value
+            );
+
+            const match =
+              allSheep.find(
+                (s) =>
+                  s.name ===
+                  e.target.value
+              );
+
+            setFatherId(
+              match
+                ? match.id
+                : ""
+            );
+          }}
+          placeholder="Father"
+        />
+
+        <datalist id="father-list">
+          {allSheep.map((s) => (
+            <option
+              key={s.id}
+              value={s.name}
+            />
+          ))}
+        </datalist>
+
+        <select
+          style={inputStyle}
+          value={groupName}
+          onChange={(e) =>
+            setGroupName(
+              e.target.value
+            )
+          }
+        >
+          <option value="">
+            Select Group
+          </option>
+
+          {groups.map((group) => (
+            <option
+              key={group.id}
+              value={group.name}
+            >
+              {group.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          style={inputStyle}
+          value={currentField}
+          onChange={(e) =>
+            setCurrentField(
+              e.target.value
+            )
+          }
+        >
+          <option value="">
+            Select Field
+          </option>
+
+          {fields.map((field) => (
+            <option
+              key={field.id}
+              value={field.name}
+            >
+              {field.name}
+            </option>
+          ))}
+        </select>
+
+        <button
+          onClick={addSheep}
+          style={{
+            background:
+              "#4caf50",
+            color: "white",
+            border: "none",
+            padding: "14px",
+            borderRadius: "10px",
+            width: "100%",
+            cursor: "pointer",
+            fontWeight: "bold",
+            fontSize: "1rem",
+          }}
+        >
+          ✅ Add Sheep
+        </button>
+      </>
+    )}
+  </div>
+        <div
         style={{
           marginTop: "20px",
         }}
