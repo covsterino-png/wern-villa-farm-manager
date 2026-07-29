@@ -22,11 +22,6 @@ const [numberOfEvents, setNumberOfEvents] =
 
   const [scheduledEvents, setScheduledEvents] =
   useState([]);
-  const [repeatEvery, setRepeatEvery] =
-  useState(0);
-
-const [numberOfEvents, setNumberOfEvents] =
-  useState(1);
 
 const [showScheduledForm, setShowScheduledForm] =
   useState(false);
