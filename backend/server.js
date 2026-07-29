@@ -17,7 +17,68 @@ app.use(
   cors({
     origin: "*"
   })
+
+  
 );app.use(express.json());
+
+app.post("/sheep/:id/scheduled", async (req, res) => {
+  const {
+    dueDate,
+    eventType,
+    notes,
+    repeatEvery,
+    numberOfEvents,
+  } = req.body;
+
+  for (
+    let i = 0;
+    i < numberOfEvents;
+    i++
+  ) {
+    const date = new Date(dueDate);
+
+    date.setDate(
+      date.getDate() +
+        i * repeatEvery
+    );
+
+    const formattedDate =
+      date
+        .toISOString()
+        .split("T")[0];
+
+    const title =
+      numberOfEvents > 1
+        ? `${eventType} ${
+            i + 1
+          } of ${numberOfEvents}`
+        : eventType;
+
+    await turso.execute({
+      sql: `
+        INSERT INTO sheepEvents
+        (
+          sheepId,
+          eventType,
+          notes,
+          status,
+          dueDate
+        )
+        VALUES (?, ?, ?, 'scheduled', ?)
+      `,
+      args: [
+        req.params.id,
+        title,
+        notes,
+        formattedDate,
+      ],
+    });
+  }
+
+  res.json({
+    success: true,
+  });
+});
 app.get("/sheep/group/:groupName", async (req, res) => {
   try {
     const { groupName } = req.params;

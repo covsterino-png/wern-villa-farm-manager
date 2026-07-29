@@ -16,6 +16,27 @@ export default function SheepDetail({
 
   const [scheduledEvents, setScheduledEvents] =
   useState([]);
+  const [repeatEvery, setRepeatEvery] =
+  useState(0);
+
+const [numberOfEvents, setNumberOfEvents] =
+  useState(1);
+
+const [showScheduledForm, setShowScheduledForm] =
+  useState(false);
+
+const [scheduledDate, setScheduledDate] =
+  useState(
+    new Date()
+      .toISOString()
+      .split("T")[0]
+  );
+
+const [scheduledType, setScheduledType] =
+  useState("Injection");
+
+const [scheduledNotes, setScheduledNotes] =
+  useState("");
 
  
   const [showScanForm, setShowScanForm] = useState(false);
@@ -407,6 +428,48 @@ function saveEvent() {
 
       setEventType("Foot Trim");
       setEventNotes("");
+    });
+}
+
+function saveScheduledEvent() {
+  fetch(
+    `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scheduled`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+      body: JSON.stringify({
+        dueDate: scheduledDate,
+        eventType: scheduledType,
+        notes: scheduledNotes,
+        repeatEvery:
+          Number(repeatEvery),
+        numberOfEvents:
+          Number(numberOfEvents),
+      }),
+    }
+  )
+    .then((res) => res.json())
+    .then(() =>
+      fetch(
+        `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scheduled`
+      )
+    )
+    .then((res) => res.json())
+    .then((data) => {
+      setScheduledEvents(data);
+
+      setShowScheduledForm(false);
+
+      setScheduledNotes("");
+      setRepeatEvery(0);
+      setNumberOfEvents(1);
+
+      setToast(
+        "✅ Schedule created"
+      );
     });
 }
 
