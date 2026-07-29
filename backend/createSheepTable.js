@@ -35,6 +35,15 @@ async function createTable() {
     eventDate DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
+await db.execute(`
+CREATE TABLE sheepEvents (
+  id INTEGER PRIMARY KEY,
+  sheepId INTEGER,
+  eventDate TEXT,
+  eventType TEXT,
+  notes TEXT
+)
+`);
 
     console.log(
       "✅ Sheep table created"

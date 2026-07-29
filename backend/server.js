@@ -187,6 +187,51 @@ app.post("/sheep/:id/lambings", async (req, res) => {
   }
 });
 
+app.get("/sheep/:id/events", async (req, res) => {
+  const result =
+    await turso.execute({
+      sql: `
+        SELECT *
+        FROM sheepEvents
+        WHERE sheepId = ?
+        ORDER BY eventDate DESC
+      `,
+      args: [req.params.id],
+    });
+
+  res.json(result.rows);
+});
+
+app.post("/sheep/:id/events", async (req, res) => {
+  const {
+    eventDate,
+    eventType,
+    notes,
+  } = req.body;
+
+  const result =
+    await turso.execute({
+      sql: `
+        INSERT INTO sheepEvents
+        (
+          sheepId,
+          eventDate,
+          eventType,
+          notes
+        )
+        VALUES (?, ?, ?, ?)
+      `,
+      args: [
+        req.params.id,
+        eventDate,
+        eventType,
+        notes,
+      ],
+    });
+
+  res.json(result);
+});
+
 app.get("/sheep-history", async (req, res) => {
   try {
     const result = await turso.execute(

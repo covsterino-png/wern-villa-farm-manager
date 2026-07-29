@@ -23,6 +23,25 @@ const [scanDate, setScanDate] = useState(
       .split("T")[0]
   );
 
+  const [events, setEvents] =
+  useState([]);
+
+const [showEventForm, setShowEventForm] =
+  useState(false);
+
+const [eventDate, setEventDate] =
+  useState(
+    new Date()
+      .toISOString()
+      .split("T")[0]
+  );
+
+const [eventType, setEventType] =
+  useState("Foot Trim");
+
+const [eventNotes, setEventNotes] =
+  useState("");
+
   const [weights, setWeights] =
   useState([]);
 
@@ -112,6 +131,12 @@ const [scanResult, setScanResult] = useState("Single");
     )
       .then((res) => res.json())
       .then((data) => setGroups(data));
+
+      fetch(
+  `https://wern-villa-api.onrender.com/sheep/${sheep.id}/events`
+)
+  .then((res) => res.json())
+  .then((data) => setEvents(data));
 
       fetch(
   "https://wern-villa-api.onrender.com/sheep"
@@ -601,6 +626,14 @@ function saveLambing() {
       setActiveTab("lambings")
     }
   />
+<TabButton
+  label="Events"
+  active={activeTab === "events"}
+  onClick={() =>
+    setActiveTab("events")
+  }
+/>
+
 </div>
 <button
   onClick={() =>
