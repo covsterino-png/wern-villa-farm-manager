@@ -8,46 +8,6 @@ export default function Dashboard({ setPage }) {
     openTasks: 0,
   });
 
-  <div
-  style={{
-    background: "#2b2b2b",
-    padding: "20px",
-    borderRadius: "12px",
-    marginBottom: "20px",
-  }}
->
-  <h2>📋 Due Today</h2>
-
-  {todayTasks.length === 0 ? (
-    <p>No jobs due today 🎉</p>
-  ) : (
-    todayTasks.map((task) => (
-      <div
-        key={task.id}
-        style={{
-          background: "#1f1f1f",
-          padding: "12px",
-          borderRadius: "10px",
-          marginBottom: "10px",
-        }}
-      >
-        <strong>
-          🐑 {task.sheepName}
-        </strong>
-
-        <br />
-
-        {task.eventType}
-
-        <br />
-
-        <small>
-          Due: {task.dueDate}
-        </small>
-      </div>
-    ))
-  )}
-</div>
 
   const [activity, setActivity] = useState([]);
 
@@ -129,7 +89,9 @@ fetch(
   }, []);
 
   return (
+    
     <div
+    
       style={{
         background: "#121212",
         minHeight: "100vh",
@@ -174,6 +136,47 @@ fetch(
   treatments and tasks from one place.
 </p>
       </div>
+        <div
+  style={{
+    background: "#2b2b2b",
+    padding: "20px",
+    borderRadius: "12px",
+    marginBottom: "20px",
+  }}
+>
+  <h2>📋 Due Today</h2>
+
+  {todayTasks.length === 0 ? (
+    <p>No jobs due today 🎉</p>
+  ) : (
+    todayTasks.map((task) => (
+      <div
+        key={task.id}
+        style={{
+          background: "#1f1f1f",
+          padding: "12px",
+          borderRadius: "10px",
+          marginBottom: "10px",
+        }}
+      >
+        <strong>
+          🐑 {task.sheepName}
+        </strong>
+
+        <br />
+
+        {task.eventType}
+
+        <br />
+
+        <small>
+          Due: {task.dueDate}
+        </small>
+      </div>
+    ))
+  )}
+</div>
+
 
       <div
         style={{
