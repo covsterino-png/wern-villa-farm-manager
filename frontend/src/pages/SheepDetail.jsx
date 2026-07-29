@@ -338,6 +338,45 @@ function saveLambing() {
   setShowScanForm(false);
 });
 }
+function saveEvent() {
+  fetch(
+    `https://wern-villa-api.onrender.com/sheep/${sheep.id}/events`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        eventDate,
+        eventType,
+        notes: eventNotes,
+      }),
+    }
+  )
+    .then((res) => res.json())
+    .then(() => {
+      setToast(
+        "✅ Event saved successfully"
+      );
+
+      setTimeout(() => {
+        setToast("");
+      }, 3000);
+
+      return fetch(
+        `https://wern-villa-api.onrender.com/sheep/${sheep.id}/events`
+      );
+    })
+    .then((res) => res.json())
+    .then((data) => {
+      setEvents(data);
+
+      setShowEventForm(false);
+
+      setEventType("Foot Trim");
+      setEventNotes("");
+    });
+}
 
   if (editing) {
     return (
@@ -1158,6 +1197,149 @@ function saveLambing() {
     </div>
   );
 }
+{activeTab === "events" && (
+  <div
+    style={{
+      background: "#2b2b2b",
+      padding: "20px",
+      borderRadius: "10px",
+    }}
+  >
+    <h2>📝 Events</h2>
+
+    <button
+      onClick={() =>
+        setShowEventForm(
+          !showEventForm
+        )
+      }
+      style={{
+        background: "#03a9f4",
+        color: "white",
+        border: "none",
+        padding: "10px 16px",
+        borderRadius: "10px",
+        cursor: "pointer",
+        marginBottom: "15px",
+      }}
+    >
+      ➕ Record Event
+    </button>
+
+    {showEventForm && (
+      <div
+        style={{
+          background: "#1f1f1f",
+          padding: "15px",
+          borderRadius: "10px",
+          marginBottom: "20px",
+        }}
+      >
+        <label>Date</label>
+
+        <input
+          type="date"
+          value={eventDate}
+          onChange={(e) =>
+            setEventDate(
+              e.target.value
+            )
+          }
+          style={inputStyle}
+        />
+
+        <label>Type</label>
+
+        <select
+          value={eventType}
+          onChange={(e) =>
+            setEventType(
+              e.target.value
+            )
+          }
+          style={inputStyle}
+        >
+          <option>
+            Foot Trim
+          </option>
+          <option>
+            Injection
+          </option>
+          <option>
+            Tagging
+          </option>
+          <option>
+            Health Check
+          </option>
+          <option>
+            Other
+          </option>
+        </select>
+
+        <label>Notes</label>
+
+        <textarea
+          value={eventNotes}
+          onChange={(e) =>
+            setEventNotes(
+              e.target.value
+            )
+          }
+          style={{
+            ...inputStyle,
+            minHeight: "80px",
+          }}
+        />
+
+        <button
+          onClick={saveEvent}
+          style={{
+            background: "#4caf50",
+            color: "white",
+            border: "none",
+            padding: "10px 16px",
+            borderRadius: "10px",
+            cursor: "pointer",
+          }}
+        >
+          ✅ Save Event
+        </button>
+      </div>
+    )}
+
+    {events.length === 0 ? (
+      <p>
+        No events recorded yet.
+      </p>
+    ) : (
+      events.map((event) => (
+        <div
+          key={event.id}
+          style={{
+            background: "#1f1f1f",
+            padding: "12px",
+            borderRadius: "10px",
+            marginBottom: "10px",
+          }}
+        >
+          <strong>
+            {event.eventType}
+          </strong>
+
+          <br />
+
+          {event.notes}
+
+          <br />
+
+          <small>
+            {event.eventDate}
+          </small>
+        </div>
+      ))
+    )}
+  </div>
+)}
 function TabButton({
   label,
   active,
