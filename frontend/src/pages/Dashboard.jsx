@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 
 export default function Dashboard({ setPage }) {
   const [summary, setSummary] = useState({
-    totalSheep: 150,
+    totalSheep: 0
     wernVilla: 0,
-    gellidywyll: 150,
+    gellidywyll: 0
     openTasks: 0,
   });
 
