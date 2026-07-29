@@ -85,6 +85,23 @@ app.put("/scheduled/:id/complete", async (req, res) => {
     success: true,
   });
 });
+app.get("/tasks/today", async (req, res) => {
+  const result = await turso.execute({
+    sql: `
+      SELECT
+        sheepEvents.*,
+        sheep.name AS sheepName
+      FROM sheepEvents
+      JOIN sheep
+        ON sheep.id = sheepEvents.sheepId
+      WHERE status = 'scheduled'
+      AND dueDate <= date('now')
+      ORDER BY dueDate
+    `,
+  });
+
+  res.json(result.rows);
+});
 
 app.get("/sheep/:id/scheduled", async (req, res) => {
   const result = await turso.execute({

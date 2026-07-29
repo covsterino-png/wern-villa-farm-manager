@@ -8,6 +8,47 @@ export default function Dashboard({ setPage }) {
     openTasks: 0,
   });
 
+  <div
+  style={{
+    background: "#2b2b2b",
+    padding: "20px",
+    borderRadius: "12px",
+    marginBottom: "20px",
+  }}
+>
+  <h2>📋 Due Today</h2>
+
+  {todayTasks.length === 0 ? (
+    <p>No jobs due today 🎉</p>
+  ) : (
+    todayTasks.map((task) => (
+      <div
+        key={task.id}
+        style={{
+          background: "#1f1f1f",
+          padding: "12px",
+          borderRadius: "10px",
+          marginBottom: "10px",
+        }}
+      >
+        <strong>
+          🐑 {task.sheepName}
+        </strong>
+
+        <br />
+
+        {task.eventType}
+
+        <br />
+
+        <small>
+          Due: {task.dueDate}
+        </small>
+      </div>
+    ))
+  )}
+</div>
+
   const [activity, setActivity] = useState([]);
 
   const [fieldCount, setFieldCount] =
@@ -15,6 +56,19 @@ export default function Dashboard({ setPage }) {
 
   const [treatmentCount, setTreatmentCount] =
     useState(0);
+
+    const [todayTasks, setTodayTasks] =
+  useState([]);
+  useEffect(() => {
+  fetch(
+    "https://wern-villa-api.onrender.com/tasks/today"
+  )
+    .then((res) => res.json())
+    .then((data) =>
+      setTodayTasks(data)
+    );
+}, []);
+
 
   const [withdrawalCount, setWithdrawalCount] =
     useState(0);
