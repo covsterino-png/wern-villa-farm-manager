@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import SheepDetail from "./SheepDetail";
 
 export default function SheepRegister() {
   const [sheep, setSheep] = useState([]);
@@ -10,6 +11,8 @@ export default function SheepRegister() {
   const [mother, setMother] = useState("");
   const [father, setFather] = useState("");
   const [motherId, setMotherId] = useState("");
+  const [selectedSheep, setSelectedSheep] =
+  useState(null);
   const [fatherId, setFatherId] = useState("");
 
   const [groupName, setGroupName] =
@@ -121,6 +124,16 @@ const cardStyle = {
     });
   }
 
+if (selectedSheep) {
+  return (
+    <SheepDetail
+      sheep={selectedSheep}
+      onBack={() =>
+        setSelectedSheep(null)
+      }
+    />
+  );
+}
 return (
   <div
     style={{
@@ -323,16 +336,19 @@ return (
         }}
       >
         {sheep.map((animal) => (
-          <div
-            key={animal.id}
-            style={{
-              background: "#2b2b2b",
-              padding: "12px",
-              borderRadius: "10px",
-              marginBottom: "10px",
-            }}
-          >
-            <h3>
+<div
+  key={animal.id}
+  onClick={() =>
+    setSelectedSheep(animal)
+  }
+  style={{
+    background: "#2b2b2b",
+    padding: "12px",
+    borderRadius: "10px",
+    marginBottom: "10px",
+    cursor: "pointer",
+  }}
+>            <h3>
               🐑 {animal.name}
             </h3>
 
