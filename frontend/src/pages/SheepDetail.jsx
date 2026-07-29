@@ -1191,6 +1191,149 @@ function saveEvent() {
         </div>
       ))
     )}
+    {activeTab === "events" && (
+  <div
+    style={{
+      background: "#2b2b2b",
+      padding: "20px",
+      borderRadius: "10px",
+    }}
+  >
+    <h2>📝 Events</h2>
+
+    <button
+      onClick={() =>
+        setShowEventForm(!showEventForm)
+      }
+      style={{
+        background: "#03a9f4",
+        color: "white",
+        border: "none",
+        padding: "10px 16px",
+        borderRadius: "10px",
+        cursor: "pointer",
+        marginBottom: "15px",
+      }}
+    >
+      ➕ Record Event
+    </button>
+
+    {showEventForm && (
+      <div
+        style={{
+          background: "#1f1f1f",
+          padding: "15px",
+          borderRadius: "10px",
+          marginBottom: "20px",
+        }}
+      >
+        <label>Date</label>
+
+        <input
+          type="date"
+          value={eventDate}
+          onChange={(e) =>
+            setEventDate(e.target.value)
+          }
+          style={inputStyle}
+        />
+
+        <label>Type</label>
+
+        <select
+          value={eventType}
+          onChange={(e) =>
+            setEventType(e.target.value)
+          }
+          style={inputStyle}
+        >
+          <option value="Foot Trim">
+            Foot Trim
+          </option>
+
+          <option value="Injection">
+            Injection
+          </option>
+
+          <option value="Tagging">
+            Tagging
+          </option>
+
+          <option value="Health Check">
+            Health Check
+          </option>
+
+          <option value="Shearing">
+            Shearing
+          </option>
+
+          <option value="Other">
+            Other
+          </option>
+        </select>
+
+        <label>Notes</label>
+
+        <textarea
+          value={eventNotes}
+          onChange={(e) =>
+            setEventNotes(
+              e.target.value
+            )
+          }
+          style={{
+            ...inputStyle,
+            minHeight: "80px",
+          }}
+        />
+
+        <button
+          onClick={saveEvent}
+          style={{
+            background: "#4caf50",
+            color: "white",
+            border: "none",
+            padding: "10px 16px",
+            borderRadius: "10px",
+            cursor: "pointer",
+          }}
+        >
+          ✅ Save Event
+        </button>
+      </div>
+    )}
+
+    {events.length === 0 ? (
+      <p>No events recorded yet.</p>
+    ) : (
+      events.map((event) => (
+        <div
+          key={event.id}
+          style={{
+            background: "#1f1f1f",
+            padding: "12px",
+            borderRadius: "10px",
+            marginBottom: "10px",
+          }}
+        >
+          <strong>
+            {event.eventType}
+          </strong>
+
+          <br />
+
+          {event.notes}
+
+          <br />
+
+          <small>
+            {event.eventDate}
+          </small>
+        </div>
+      ))
+    )}
+  </div>
+)}
   </div>
 )}  
 
