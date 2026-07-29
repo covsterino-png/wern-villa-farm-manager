@@ -158,25 +158,42 @@ fetch(
   style={{
     background: "#2b2b2b",
     padding: "20px",
+    
     borderRadius: "12px",
     marginBottom: "20px",
   }}
 >
-  <h2>📋 Due Today</h2>
+<h2
+  style={{
+    color: "#03a9f4",
+    marginTop: 0,
+  }}
+>
+  📋 Due Today
+</h2>
 
   {todayTasks.length === 0 ? (
-    <p>No jobs due today 🎉</p>
+<p
+  style={{
+    color: "#4caf50",
+    fontWeight: "bold",
+    fontSize: "1.1rem",
+  }}
+>
+  ✅ No jobs due today
+</p>
   ) : (
     todayTasks.map((task) => (
-      <div
-        key={task.id}
-        style={{
-          background: "#1f1f1f",
-          padding: "12px",
-          borderRadius: "10px",
-          marginBottom: "10px",
-        }}
-      >
+<div
+  style={{
+    background: "#1f1f1f",
+    padding: "20px",
+    borderRadius: "16px",
+    marginBottom: "20px",
+    border: "1px solid #333",
+    textAlign: "center",
+  }}
+>
         <strong>
           🐑 {task.sheepName}
         </strong>
