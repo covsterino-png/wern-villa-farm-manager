@@ -1238,7 +1238,133 @@ function saveScheduledEvent() {
     >
       ➕ Record Event
     </button>
+    <button
+  onClick={() =>
+    setShowScheduledForm(
+      !showScheduledForm
+    )
+  }
+>
+  📅 Schedule Event
+</button>
+{showScheduledForm && (
+  <div
+    style={{
+      background: "#1f1f1f",
+      padding: "15px",
+      borderRadius: "10px",
+      marginBottom: "20px",
+    }}
+  >
+    <label>Type</label>
 
+    <select
+      value={scheduledType}
+      onChange={(e) =>
+        setScheduledType(
+          e.target.value
+        )
+      }
+      style={inputStyle}
+    >
+      <option>
+        Injection
+      </option>
+
+      <option>
+        Health Check
+      </option>
+
+      <option>
+        Weight Check
+      </option>
+
+      <option>
+        Foot Trim
+      </option>
+
+      <option>
+        Other
+      </option>
+    </select>
+
+    <label>
+      First Due Date
+    </label>
+
+    <input
+      type="date"
+      value={scheduledDate}
+      onChange={(e) =>
+        setScheduledDate(
+          e.target.value
+        )
+      }
+      style={inputStyle}
+    />
+
+    <label>
+      Repeat Every (Days)
+    </label>
+
+    <input
+      type="number"
+      value={repeatEvery}
+      onChange={(e) =>
+        setRepeatEvery(
+          e.target.value
+        )
+      }
+      style={inputStyle}
+    />
+
+    <label>
+      Number of Events
+    </label>
+
+    <input
+      type="number"
+      min="1"
+      value={numberOfEvents}
+      onChange={(e) =>
+        setNumberOfEvents(
+          e.target.value
+        )
+      }
+      style={inputStyle}
+    />
+
+    <label>Notes</label>
+
+    <textarea
+      value={scheduledNotes}
+      onChange={(e) =>
+        setScheduledNotes(
+          e.target.value
+        )
+      }
+      style={{
+        ...inputStyle,
+        minHeight: "80px",
+      }}
+    />
+
+    <button
+      onClick={
+        saveScheduledEvent
+      }
+      style={{
+        background: "#4caf50",
+        color: "white",
+        border: "none",
+        padding: "10px 16px",
+        borderRadius: "10px",
+      }}
+    >
+      ✅ Create Schedule
+    </button>
+  </div>
+)}
     {showEventForm && (
       <div
         style={{
@@ -1327,6 +1453,7 @@ function saveScheduledEvent() {
         </button>
       </div>
     )}
+    
 
     {events.length === 0 ? (
       <p>No events recorded yet.</p>
@@ -1355,6 +1482,7 @@ function saveScheduledEvent() {
             {event.eventDate}
           </small>
         </div>
+        
       ))
     )}
   </div>
