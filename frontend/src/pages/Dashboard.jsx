@@ -87,6 +87,24 @@ fetch(
       })
       .catch(() => {});
   }, []);
+  function completeTask(taskId) {
+  fetch(
+    `https://wern-villa-api.onrender.com/scheduled/${taskId}/complete`,
+    {
+      method: "PUT",
+    }
+  )
+    .then((res) => res.json())
+    .then(() => {
+      return fetch(
+        "https://wern-villa-api.onrender.com/tasks/today"
+      );
+    })
+    .then((res) => res.json())
+    .then((data) => {
+      setTodayTasks(data);
+    });
+}
 
   return (
     
@@ -172,6 +190,24 @@ fetch(
         <small>
           Due: {task.dueDate}
         </small>
+        <br />
+
+<button
+  onClick={() =>
+    completeTask(task.id)
+  }
+  style={{
+    background: "#4caf50",
+    color: "white",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    cursor: "pointer",
+    marginTop: "10px",
+  }}
+>
+  ✅ Complete
+</button>
       </div>
     ))
   )}
