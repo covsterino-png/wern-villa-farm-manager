@@ -1193,10 +1193,6 @@ function saveEvent() {
     )}
   </div>
 )}  
-
-    </div>
-  );
-}
 {activeTab === "events" && (
   <div
     style={{
@@ -1340,6 +1336,11 @@ function saveEvent() {
     )}
   </div>
 )}
+
+    </div>
+  );
+}
+
 function TabButton({
   label,
   active,
