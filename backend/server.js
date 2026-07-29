@@ -38,6 +38,21 @@ app.get("/sheep/group/:groupName", async (req, res) => {
   }
 });
 
+app.get("/sheep/:id/scheduled", async (req, res) => {
+  const result = await turso.execute({
+    sql: `
+      SELECT *
+      FROM sheepEvents
+      WHERE sheepId = ?
+      AND status = 'scheduled'
+      ORDER BY dueDate
+    `,
+    args: [req.params.id],
+  });
+
+  res.json(result.rows);
+});
+
 app.get("/sheep/:id/weights", async (req, res) => {
   try {
     const result = await turso.execute({

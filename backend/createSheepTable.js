@@ -36,6 +36,16 @@ async function createTable() {
   )
 `);
 await db.execute(`
+CREATE TABLE sheepTasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sheepId INTEGER NOT NULL,
+  taskDate TEXT NOT NULL,
+  taskType TEXT NOT NULL,
+  notes TEXT,
+  completed INTEGER DEFAULT 0
+)
+`);
+await db.execute(`
 CREATE TABLE sheepEvents (
   id INTEGER PRIMARY KEY,
   sheepId INTEGER,
