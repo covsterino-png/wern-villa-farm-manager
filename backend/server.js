@@ -86,23 +86,30 @@ app.put("/scheduled/:id/complete", async (req, res) => {
   });
 });
 app.get("/tasks/today", async (req, res) => {
-  const result = await turso.execute({
-    sql: `
-      SELECT
-        sheepEvents.*,
-        sheep.name AS sheepName
-      FROM sheepEvents
-      JOIN sheep
-        ON sheep.id = sheepEvents.sheepId
-      WHERE status = 'scheduled'
-      AND dueDate <= date('now')
-      ORDER BY dueDate
-    `,
-  });
+  try {
+    const result = await turso.execute({
+      sql: `
+        SELECT
+          sheepEvents.*,
+          sheep.name AS sheepName
+        FROM sheepEvents
+        JOIN sheep
+          ON sheep.id = sheepEvents.sheepId
+        WHERE sheepEvents.status = 'scheduled'
+        AND sheepEvents.dueDate <= date('now')
+        ORDER BY sheepEvents.dueDate
+      `,
+    });
 
-  res.json(result.rows);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("TASKS TODAY ERROR:", err);
+
+    res.status(500).json({
+      error: err.message,
+    });
+  }
 });
-
 app.get("/sheep/:id/scheduled", async (req, res) => {
   const result = await turso.execute({
     sql: `
