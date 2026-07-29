@@ -209,29 +209,48 @@ app.post("/sheep/:id/events", async (req, res) => {
     notes,
   } = req.body;
 
-  const result =
-    await turso.execute({
-      sql: `
-        INSERT INTO sheepEvents
-        (
-          sheepId,
-          eventDate,
-          eventType,
-          notes
-        )
-        VALUES (?, ?, ?, ?)
-      `,
-      args: [
-        req.params.id,
+  await turso.execute({
+    sql: `
+      INSERT INTO sheepEvents
+      (
+        sheepId,
         eventDate,
         eventType,
-        notes,
-      ],
-    });
+        notes
+      )
+      VALUES (?, ?, ?, ?)
+    `,
+    args: [
+      req.params.id,
+      eventDate,
+      eventType,
+      notes,
+    ],
+  });
 
-  res.json(result);
+  await turso.execute({
+    sql: `
+      INSERT INTO sheepHistory
+      (
+        sheepId,
+        eventType,
+        details,
+        eventDate
+      )
+      VALUES (?, ?, ?, ?)
+    `,
+    args: [
+      req.params.id,
+      eventType,
+      notes,
+      eventDate,
+    ],
+  });
+
+  res.json({
+    success: true,
+  });
 });
-
 app.get("/sheep-history", async (req, res) => {
   try {
     const result = await turso.execute(
