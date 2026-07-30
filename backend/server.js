@@ -952,9 +952,9 @@ app.get("/summary", async (req, res) => {
       "SELECT COUNT(*) AS count FROM flockRegister"
     );
 
-    const fieldsResult = await turso.execute(
-      "SELECT COUNT(*) AS count FROM flockRegister WHERE currentField IS NOT NULL AND currentField != ''"
-    );
+const fieldsResult = await turso.execute(
+  "SELECT COUNT(DISTINCT currentField) AS count FROM flockRegister WHERE currentField IS NOT NULL AND currentField != ''"
+);
 
     const tasksResult = await turso.execute(`
       SELECT COUNT(*) AS openTasks
