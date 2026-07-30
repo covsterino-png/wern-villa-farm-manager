@@ -111,6 +111,49 @@ app.put("/scheduled/:id/complete", async (req, res) => {
 
   const scheduledEvent =
     event.rows[0];
+    if (scheduledEvent.autoRepeat) {
+  const nextDate = new Date(
+    scheduledEvent.dueDate
+  );
+
+  nextDate.setDate(
+    nextDate.getDate() +
+    scheduledEvent.repeatEvery
+  );
+
+  await turso.execute({
+    sql: `
+      INSERT INTO sheepEvents
+      (
+        sheepId,
+        eventType,
+        notes,
+        status,
+        dueDate,
+        autoRepeat,
+        repeatEvery,
+        repeatNumber
+      )
+      VALUES
+      (?, ?, ?, 'scheduled', ?, 1, ?, ?)
+    `,
+    args: [
+      scheduledEvent.sheepId,
+      `${scheduledEvent.eventType.replace(
+        / #\d+$/,
+        ""
+      )} #${
+        scheduledEvent.repeatNumber + 1
+      }`,
+      scheduledEvent.notes,
+      nextDate
+        .toISOString()
+        .split("T")[0],
+      scheduledEvent.repeatEvery,
+      scheduledEvent.repeatNumber + 1,
+    ],
+  });
+}
 
   await turso.execute({
     sql: `
