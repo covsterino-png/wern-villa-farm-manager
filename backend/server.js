@@ -793,7 +793,7 @@ app.post("/flock-register", async (req, res) => {
           currentField,
           notes
         )
-        VALUES (?, ?, ?, ?)
+        VALUES (?, ?, ?)
       `,
       args: [
         name,
