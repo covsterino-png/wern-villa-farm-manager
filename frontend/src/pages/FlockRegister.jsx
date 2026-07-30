@@ -8,8 +8,7 @@ export default function FlockRegister() {
   const [currentField, setCurrentField] =
     useState("");
   const [notes, setNotes] = useState("");
-  const [count, setCount] = useState("");
-
+  
   const [
     selectedGroup,
     setSelectedGroup,
@@ -37,7 +36,6 @@ function loadGroups() {
         },
         body: JSON.stringify({
           name,
-          count,          
           currentField,
           notes,
         }),
@@ -78,15 +76,7 @@ function loadGroups() {
         }
         placeholder="Group Name"
       />
-      <label>Count</label>
-
-<input
-  type="number"
-  value={count}
-  onChange={(e) =>
-    setCount(e.target.value)
-  }
-/>
+      
 
             <input
         value={currentField}

@@ -781,7 +781,6 @@ app.post("/flock-register", async (req, res) => {
     console.log(req.body);
     const {
       name,
-      count,
       currentField,
       notes,
     } = req.body;
@@ -791,7 +790,6 @@ app.post("/flock-register", async (req, res) => {
         INSERT INTO flockRegister
         (
           name,
-          count,
           currentField,
           notes
         )
@@ -799,7 +797,6 @@ app.post("/flock-register", async (req, res) => {
       `,
       args: [
         name,
-        count,
         currentField,
         notes,
       ],
