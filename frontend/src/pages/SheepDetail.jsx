@@ -1328,28 +1328,6 @@ function saveScheduledEvent() {
     <label>
       Repeat Every (Days)
     </label>
-<div
-  style={{
-    marginTop: "15px",
-    marginBottom: "15px",
-    textAlign: "left",
-  }}
->
-  <label>
-    <input
-      type="checkbox"
-      checked={repeatUntilResolved}
-      onChange={(e) =>
-        setRepeatUntilResolved(
-          e.target.checked
-        )
-      }
-      style={{ marginRight: "10px" }}
-    />
-
-    Keep repeating until resolved
-  </label>
-</div>
 
     <input
       type="number"
@@ -1379,6 +1357,28 @@ function saveScheduledEvent() {
       }
       style={inputStyle}
     />
+<div
+  style={{
+    marginTop: "15px",
+    marginBottom: "15px",
+    textAlign: "left",
+  }}
+>
+  <label>
+    <input
+      type="checkbox"
+      checked={repeatUntilResolved}
+      onChange={(e) =>
+        setRepeatUntilResolved(
+          e.target.checked
+        )
+      }
+      style={{ marginRight: "10px" }}
+    />
+
+    Keep repeating until resolved
+  </label>
+</div>
   </>
 )}
     <label>Notes</label>
