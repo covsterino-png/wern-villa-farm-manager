@@ -1378,7 +1378,7 @@ function saveScheduledEvent() {
       style={{ marginRight: "10px" }}
     />
 
-    Keep repeating until resolved
+    Repeat until resolved
   </label>
 </div>
 
