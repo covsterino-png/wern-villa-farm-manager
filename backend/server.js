@@ -778,6 +778,7 @@ app.put("/sheep/:id", async (req, res) => {
 
 app.post("/flock-register", async (req, res) => {
   try {
+    console.log(req.body);
     const {
       name,
       count,
