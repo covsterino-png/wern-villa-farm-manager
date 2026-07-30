@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 export default function Dashboard({ setPage }) {
   const [summary, setSummary] = useState({
@@ -14,7 +13,6 @@ export default function Dashboard({ setPage }) {
 
   const [fieldCount, setFieldCount] =
     useState(0);
-    const navigate = useNavigate();
 
   const [treatmentCount, setTreatmentCount] =
     useState(0);
@@ -255,17 +253,13 @@ border: "1px solid #4caf50",
   value={summary.occupiedFields ?? 0}
   colour="#ff9800"
 />
-<div
-  onClick={() => navigate("/sheepRegister")}
-  style={{ cursor: "pointer" }}
->
-  <DashboardCard
-    icon="🐑"
-    title="Total Sheep"
-    value={summary.totalSheep}
-    colour="#03a9f4"
-  />
-</div>
+<DashboardCard
+  icon="🐑"
+  title="Total Sheep"
+  value={summary.totalSheep}
+  colour="#03a9f4"
+  onClick={() => setPage("sheep-register")}
+/>
         <DashboardCard
           icon="📋"
           title="Open Tasks"
