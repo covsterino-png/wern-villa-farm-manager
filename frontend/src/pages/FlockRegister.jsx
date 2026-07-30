@@ -42,7 +42,6 @@ function loadGroups() {
       }
     ).then(() => {
       setName("");
-      setCount("");
       setCurrentField("");
       setNotes("");
       loadGroups();
