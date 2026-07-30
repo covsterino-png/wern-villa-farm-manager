@@ -28,9 +28,38 @@ app.post("/sheep/:id/scheduled", async (req, res) => {
     notes,
     repeatEvery,
     numberOfEvents,
+    repeatUntilResolved,
   } = req.body;
+if (repeatUntilResolved) {
+  await turso.execute({
+    sql: `
+      INSERT INTO sheepEvents
+      (
+        sheepId,
+        eventType,
+        notes,
+        status,
+        dueDate,
+        autoRepeat,
+        repeatEvery,
+        repeatNumber
+      )
+      VALUES
+      (?, ?, ?, 'scheduled', ?, 1, ?, 1)
+    `,
+    args: [
+      req.params.id,
+      `${eventType} #1`,
+      notes,
+      dueDate,
+      repeatEvery,
+    ],
+  });
 
-  for (
+  return res.json({
+    success: true,
+  });
+}  for (
     let i = 0;
     i < numberOfEvents;
     i++

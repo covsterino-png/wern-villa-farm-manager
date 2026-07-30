@@ -26,6 +26,9 @@ const [numberOfEvents, setNumberOfEvents] =
 const [showScheduledForm, setShowScheduledForm] =
   useState(false);
 
+  const [repeatUntilResolved, setRepeatUntilResolved] =
+  useState(false);
+
 const [scheduledDate, setScheduledDate] =
   useState(
     new Date()
@@ -460,6 +463,7 @@ function saveScheduledEvent() {
           Number(repeatEvery),
         numberOfEvents:
           Number(numberOfEvents),
+          repeatUntilResolved,
       }),
     }
   )
@@ -1324,6 +1328,28 @@ function saveScheduledEvent() {
     <label>
       Repeat Every (Days)
     </label>
+<div
+  style={{
+    marginTop: "15px",
+    marginBottom: "15px",
+    textAlign: "left",
+  }}
+>
+  <label>
+    <input
+      type="checkbox"
+      checked={repeatUntilResolved}
+      onChange={(e) =>
+        setRepeatUntilResolved(
+          e.target.checked
+        )
+      }
+      style={{ marginRight: "10px" }}
+    />
+
+    Keep repeating until resolved
+  </label>
+</div>
 
     <input
       type="number"
@@ -1336,6 +1362,8 @@ function saveScheduledEvent() {
       style={inputStyle}
     />
 
+{!repeatUntilResolved && (
+  <>
     <label>
       Number of Events
     </label>
@@ -1351,7 +1379,8 @@ function saveScheduledEvent() {
       }
       style={inputStyle}
     />
-
+  </>
+)}
     <label>Notes</label>
 
     <textarea
