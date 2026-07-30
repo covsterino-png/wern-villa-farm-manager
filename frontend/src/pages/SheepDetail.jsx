@@ -1357,6 +1357,8 @@ function saveScheduledEvent() {
       }
       style={inputStyle}
     />
+  </>
+)}
 <div
   style={{
     marginTop: "15px",
@@ -1379,8 +1381,7 @@ function saveScheduledEvent() {
     Keep repeating until resolved
   </label>
 </div>
-  </>
-)}
+
     <label>Notes</label>
 
     <textarea
