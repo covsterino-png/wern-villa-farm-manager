@@ -245,14 +245,9 @@ border: "1px solid #4caf50",
   title="Groups"
   value={summary.groups ?? 0}
   colour="#4caf50"
+  onClick={() => setPage("flock-register")}
 />
 
-<DashboardCard
-  icon="🗺️"
-  title="Occupied Fields"
-  value={summary.occupiedFields ?? 0}
-  colour="#ff9800"
-/>
 <DashboardCard
   icon="🐑"
   title="Total Sheep"
@@ -268,14 +263,13 @@ border: "1px solid #4caf50",
           onClick={() => setPage("tasks")}
         />
 
-        <DashboardCard
-          icon="🌱"
-          title="Fields"
-          value={fieldCount}
-          colour="#8bc34a"
-          onClick={() => setPage("farm-map")}
-        />
-
+<DashboardCard
+  icon="🌱"
+  title="Fields"
+  value={`${summary.occupiedFields}/${fieldCount}`}
+  colour="#8bc34a"
+  onClick={() => setPage("farm-map")}
+/>
         <DashboardCard
           icon="💉"
           title="Treatments"
