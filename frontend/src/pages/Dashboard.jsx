@@ -266,7 +266,8 @@ border: "1px solid #4caf50",
 <DashboardCard
   icon="🌱"
   title="Fields"
-  value={`${summary.occupiedFields}/${fieldCount}`}
+  value={fieldCount}
+  subtitle={`${summary.occupiedFields} Occupied`}
   colour="#8bc34a"
   onClick={() => setPage("farm-map")}
 />
@@ -388,6 +389,7 @@ function DashboardCard({
   icon,
   title,
   value,
+  subtitle,
   colour,
   onClick,
 }) {
@@ -434,6 +436,17 @@ function DashboardCard({
       >
         {value}
       </div>
+      {subtitle && (
+  <div
+    style={{
+      fontSize: "0.9rem",
+      color: "#aaa",
+      marginTop: "6px",
+    }}
+  >
+    {subtitle}
+  </div>
+)}
     </div>
   );
 }
