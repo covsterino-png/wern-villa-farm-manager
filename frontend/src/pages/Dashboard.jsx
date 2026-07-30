@@ -256,7 +256,7 @@ border: "1px solid #4caf50",
   colour="#ff9800"
 />
 <div
-  onClick={() => navigate("/sheep")}
+  onClick={() => navigate("/sheepRegister")}
   style={{ cursor: "pointer" }}
 >
   <DashboardCard
