@@ -214,6 +214,8 @@ app.post(
           .join("\n")
           .trim() || "";
 
+          
+
       await turso.execute({
         sql: `
           INSERT INTO receipts
@@ -234,6 +236,22 @@ app.post(
           total,
         ],
       });
+
+      const lines = rawText
+  .split("\n")
+  .map((line) => line.trim())
+  .filter(Boolean);
+
+const supplier =
+  lines[0] || "Unknown";
+
+const totalMatch = rawText.match(
+  /TOTAL[^0-9]*([0-9]+\.[0-9]{2})/i
+);
+
+const total = totalMatch
+  ? Number(totalMatch[1])
+  : null;
 
       res.json({
         success: true,
