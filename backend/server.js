@@ -115,6 +115,35 @@ if (repeatUntilResolved) {
     success: true,
   });
 });
+
+app.get("/receipts/:id", async (req, res) => {
+  try {
+    const receipt = await turso.execute({
+      sql: `
+        SELECT *
+        FROM receipts
+        WHERE id = ?
+      `,
+      args: [req.params.id],
+    });
+
+    const items = await turso.execute({
+      sql: `
+        SELECT *
+        FROM receiptItems
+        WHERE receiptId = ?
+      `,
+      args: [req.params.id],
+    });
+
+    res.json({
+      receipt: receipt.rows[0],
+      items: items.rows,
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
 app.get("/receipts", async (req, res) => {
   try {
     const result = await turso.execute(`
