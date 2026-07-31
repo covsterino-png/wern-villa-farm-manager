@@ -213,7 +213,13 @@ app.post(
           ?.map((r) => r.ParsedText)
           .join("\n")
           .trim() || "";
-                const lines = rawText
+const rawText =
+  response.data?.ParsedResults
+    ?.map((r) => r.ParsedText)
+    .join("\n")
+    .trim() || "";
+
+const lines = rawText
   .split("\n")
   .map((line) => line.trim())
   .filter(Boolean);
@@ -221,43 +227,37 @@ app.post(
 const supplier =
   lines[0] || "Unknown";
 
-const matches = [
-  ...rawText.matchAll(
-    /[£€E]?\s*([0-9]+\.[0-9]{2})/gi
-  ),
-];
+const totalBlockMatch = rawText.match(
+  /TOTAL[\s\S]{0,50}?([0-9]+\.[0-9]{2})/i
+);
 
-const total =
-  matches.length > 0
-    ? Number(
-        matches[matches.length - 1][1]
-      )
-    : null;
+const total = totalBlockMatch
+  ? Number(totalBlockMatch[1])
+  : null;
 
+console.log("Supplier:", supplier);
+console.log("Total:", total);
 
-          
-
-      await turso.execute({
-        sql: `
-          INSERT INTO receipts
-          (
-            imageUrl,
-            rawText,
-            supplier,
-            total,
-            createdDate
-          )
-          VALUES
-          (?, ?, ?, ?, DATE('now'))
-        `,
-        args: [
-          "",
-          rawText,
-          supplier,
-          total,
-        ],
-      });
-
+await turso.execute({
+  sql: `
+    INSERT INTO receipts
+    (
+      imageUrl,
+      rawText,
+      supplier,
+      total,
+      createdDate
+    )
+    VALUES
+    (?, ?, ?, ?, DATE('now'))
+  `,
+  args: [
+    "",
+    rawText,
+    supplier,
+    total,
+  ],
+});
 
       res.json({
         success: true,
