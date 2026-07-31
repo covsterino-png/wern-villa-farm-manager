@@ -10,48 +10,30 @@ export default function Receipts() {
         color: "white",
       }}
     >
-      <h1
-        style={{
-          color: "#03a9f4",
-          marginBottom: "20px",
-        }}
-      >
+      <h1 style={{ color: "#03a9f4" }}>
         🧾 Receipts
       </h1>
 
       <p>
-        Take a photo of a receipt and extract
-        information automatically.
+        Take a photo of a receipt and extract information automatically.
       </p>
 
       <input
         type="file"
         accept="image/*"
         capture="environment"
-        onChange={(e) =>
-          setFile(e.target.files[0])
-        }
-        style={{
-          marginTop: "20px",
-          marginBottom: "20px",
+        onChange={(e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            setFile(e.target.files[0]);
+          }
         }}
       />
 
       {file && (
-        <div>
-          <p>
-            ✅ Selected: {file.name}
-          </p>
-
-          {URL.createObjectURL(file)}            alt="Receipt"
-            style={{
-              width: "100%",
-              maxWidth: "500px",
-              borderRadius: "12px",
-              border: "1px solid #444",
-              marginTop: "10px",
-            }}
-          
+        <div style={{ marginTop: "20px" }}>
+          <p>✅ Selected: {file.name}</p>
+          <p>Size: {file.size} bytes</p>
+          <p>Type: {file.type}</p>
         </div>
       )}
     </div>
