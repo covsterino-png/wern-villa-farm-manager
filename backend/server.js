@@ -214,10 +214,6 @@ app.post(
           .join("\n")
           .trim() || "";
 
-const lines = rawText
-  .split("\n")
-  .map((line) => line.trim())
-  .filter(Boolean);
 
 const supplier =
   lines[0] || "Unknown";
