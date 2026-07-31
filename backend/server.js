@@ -126,6 +126,10 @@ app.post("/receipts/ocr", async (req, res) => {
         },
       }
     );
+    console.log(
+  "OCR RESPONSE:",
+  JSON.stringify(response.data, null, 2)
+);
 
     const rawText =
       response.data.ParsedResults?.[0]
