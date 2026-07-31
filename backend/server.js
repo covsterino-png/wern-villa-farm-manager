@@ -231,7 +231,13 @@ for (let i = 0; i < lines.length; i++) {
       let j = i;
       j < Math.min(i + 5, lines.length);
       j++
-    ) {
+    ) {console.log("CHECKING:", lines[j]);
+
+const cleaned = lines[j]
+  .replace(/[oO]/g, "0")
+  .replace(/[^0-9.]/g, "");
+
+console.log("CLEANED:", cleaned);
       const match = lines[j].match(
         /([0-9]+\.[0-9]{2})/
       );
