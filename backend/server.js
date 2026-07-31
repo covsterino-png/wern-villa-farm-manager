@@ -213,11 +213,6 @@ app.post(
           ?.map((r) => r.ParsedText)
           .join("\n")
           .trim() || "";
-const rawText =
-  response.data?.ParsedResults
-    ?.map((r) => r.ParsedText)
-    .join("\n")
-    .trim() || "";
 
 const lines = rawText
   .split("\n")
