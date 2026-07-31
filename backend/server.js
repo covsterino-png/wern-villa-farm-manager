@@ -11,6 +11,9 @@ const turso = createClient({
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
+const multer = require("multer");
+const FormData = require("form-data");
+
 
 
 const app = express();
@@ -111,80 +114,92 @@ if (repeatUntilResolved) {
   });
 });
 
-app.post("/receipts/ocr", async (req, res) => {
-  try {
-    const { imageUrl } = req.body;
+app.post(
+  "/receipts/ocr",
+  upload.single("receipt"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          error: "No file uploaded",
+        });
+      }
 
-const params = new URLSearchParams();
+      const formData = new FormData();
 
-params.append(
-  "apikey",
-  process.env.OCR_SPACE_API_KEY
-);
+      formData.append(
+        "apikey",
+        process.env.OCR_SPACE_API_KEY
+      );
 
-params.append(
-  "url",
-  imageUrl
-);
+      formData.append(
+        "file",
+        req.file.buffer,
+        req.file.originalname
+      );
 
-params.append(
-  "language",
-  "eng"
-);
+      formData.append(
+        "language",
+        "eng"
+      );
 
-const response = await axios.post(
-  "https://api.ocr.space/parse/image",
-  params,
-  {
-    headers: {
-      "Content-Type":
-        "application/x-www-form-urlencoded",
-    },
+      const response = await axios.post(
+        "https://api.ocr.space/parse/image",
+        formData,
+        {
+          headers: formData.getHeaders(),
+        }
+      );
+
+      console.log(
+        "OCR RESPONSE:",
+        JSON.stringify(
+          response.data,
+          null,
+          2
+        )
+      );
+
+      const rawText =
+        response.data?.ParsedResults
+          ?.map((r) => r.ParsedText)
+          .join("\n")
+          .trim() || "";
+
+      await turso.execute({
+        sql: `
+          INSERT INTO receipts
+          (
+            imageUrl,
+            rawText,
+            createdDate
+          )
+          VALUES
+          (?, ?, DATE('now'))
+        `,
+        args: [
+          "",
+          rawText,
+        ],
+      });
+
+      res.json({
+        success: true,
+        rawText,
+      });
+    } catch (error) {
+      console.error(
+        "OCR ERROR:",
+        error.response?.data ||
+          error.message
+      );
+
+      res.status(500).json({
+        error: error.message,
+      });
+    }
   }
 );
-    console.log(
-  "OCR RESPONSE:",
-  JSON.stringify(response.data, null, 2)
-);
-
-    const rawText =
-      response.data.ParsedResults?.[0]
-        ?.ParsedText || "";
-
-    await turso.execute({
-      sql: `
-        INSERT INTO receipts
-        (
-          imageUrl,
-          rawText,
-          createdDate
-        )
-        VALUES
-        (?, ?, DATE('now'))
-      `,
-      args: [
-        imageUrl,
-        rawText,
-      ],
-    });
-
-    res.json({
-      success: true,
-      rawText,
-    });
-  } 
-catch (error) {
-  console.error(
-    "OCR ERROR:",
-    error.response?.data || error.message
-  );
-
-  res.status(500).json({
-    error: error.message,
-  });
-}
-});
-
 app.get("/sheep/group/:groupName", async (req, res) => {
   try {
     const { groupName } = req.params;
