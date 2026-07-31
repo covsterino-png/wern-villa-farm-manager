@@ -215,48 +215,35 @@ app.post(
           .trim() || "";
 
 
-const supplier =
-  lines[0] || "Unknown";
-
 const lines = rawText
   .split("\n")
   .map((line) => line.trim())
   .filter(Boolean);
 
+const supplier =
+  lines[0] || "Unknown";
+
 let total = null;
 
-for (let i = 0; i < lines.length; i++) {
-  if (lines[i].toUpperCase().includes("TOTAL")) {
-    for (
-      let j = i;
-      j < Math.min(i + 5, lines.length);
-      j++
-    ) {console.log("CHECKING:", lines[j]);
+const amountMatches = [
+  ...rawText
+    .replace(/[oO]/g, "0")
+    .matchAll(/([0-9]+)\.([0-9]{2})/g),
+];
 
-const cleaned = lines[j]
-  .replace(/[oO]/g, "0")
-  .replace(/[^0-9.]/g, "");
+if (amountMatches.length > 0) {
+  const amounts = amountMatches.map(
+    (m) => Number(`${m[1]}.${m[2]}`)
+  );
 
-console.log("CLEANED:", cleaned);
-      const match = lines[j].match(
-        /([0-9]+\.[0-9]{2})/
-      );
-
-      if (match) {
-        total = Number(match[1]);
-        break;
-      }
-    }
-
-    break;
-  }
+  total = Math.max(...amounts);
 }
+
 console.log("RAW TEXT:");
 console.log(rawText);
 
 console.log("SUPPLIER:", supplier);
 console.log("TOTAL:", total);
-
 await turso.execute({
   sql: `
     INSERT INTO receipts
