@@ -115,6 +115,21 @@ formData.append(
 
     setLoading(false);
   }
+  const lines = rawText
+  .split("\n")
+  .map((line) => line.trim())
+  .filter(Boolean);
+
+const supplier =
+  lines[0] || "Unknown";
+  const totalMatch =
+  rawText.match(
+    /TOTAL[^0-9]*([0-9]+\.[0-9]{2})/i
+  );
+
+const total = totalMatch
+  ? Number(totalMatch[1])
+  : null;
 
   return (
     <div
@@ -257,16 +272,22 @@ receipts.map((receipt) => (
           border: "1px solid #333",
         }}
       >
-        <strong>
-          Receipt #{receipt.id}
-        </strong>
+<strong>
+  {receipt.supplier ||
+    `Receipt #${receipt.id}`}
+</strong>
 
-        <br />
+<br />
 
-        <small>
-          {receipt.createdDate}
-        </small>
+<small>
+  {receipt.createdDate}
+</small>
 
+{receipt.total && (
+  <p>
+    £{receipt.total}
+  </p>
+)}
         <p
           style={{
             whiteSpace: "pre-wrap",

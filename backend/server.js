@@ -220,14 +220,18 @@ app.post(
           (
             imageUrl,
             rawText,
+            supplier,
+            total,
             createdDate
           )
           VALUES
-          (?, ?, DATE('now'))
+          (?, ?, ?, ?, DATE('now'))
         `,
         args: [
           "",
           rawText,
+          supplier,
+          total,
         ],
       });
 
