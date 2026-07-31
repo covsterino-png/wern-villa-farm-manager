@@ -257,6 +257,21 @@ receipts.map((receipt) => (
           border: "1px solid #333",
         }}
       >
+       {receipt.imageUrl && (
+  <a
+    href={receipt.imageUrl}
+    target="_blank"
+    rel="noreferrer"
+    style={{
+      color: "#2563eb",
+      textDecoration: "underline",
+      display: "block",
+      marginTop: "8px",
+    }}
+  >
+    View Receipt
+  </a>
+)} 
 <strong>
   {receipt.supplier ||
     `Receipt #${receipt.id}`}
