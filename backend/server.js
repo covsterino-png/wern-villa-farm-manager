@@ -115,6 +115,23 @@ if (repeatUntilResolved) {
     success: true,
   });
 });
+app.get("/receipts", async (req, res) => {
+  try {
+    const result = await turso.execute(`
+      SELECT *
+      FROM receipts
+      ORDER BY id DESC
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
 
 app.post(
   "/receipts/ocr",
