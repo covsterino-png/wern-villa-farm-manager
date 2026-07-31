@@ -220,6 +220,11 @@ const lines = rawText
   .map((line) => line.trim())
   .filter(Boolean);
 
+const lines = rawText
+  .split("\n")
+  .map((line) => line.trim())
+  .filter(Boolean);
+
 const supplier =
   lines[0] || "Unknown";
 
