@@ -172,13 +172,17 @@ const response = await axios.post(
       success: true,
       rawText,
     });
-  } catch (error) {
-    console.error(error);
+  } 
+catch (error) {
+  console.error(
+    "OCR ERROR:",
+    error.response?.data || error.message
+  );
 
-    res.status(500).json({
-      error: error.message,
-    });
-  }
+  res.status(500).json({
+    error: error.message,
+  });
+}
 });
 
 app.get("/sheep/group/:groupName", async (req, res) => {
