@@ -4,20 +4,67 @@ export default function Receipts() {
   const [file, setFile] = useState(null);
   const [ocrText, setOcrText] = useState("");
   const [loading, setLoading] = useState(false);
+function resizeImage(file) {
+  return new Promise((resolve) => {
+    const img = new Image();
 
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+
+      const maxWidth = 1200;
+
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth) {
+        height =
+          (height * maxWidth) / width;
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx =
+        canvas.getContext("2d");
+
+      ctx.drawImage(
+        img,
+        0,
+        0,
+        width,
+        height
+      );
+
+      canvas.toBlob(
+        (blob) => {
+          resolve(blob);
+        },
+        "image/jpeg",
+        0.7
+      );
+    };
+
+    img.src =
+      URL.createObjectURL(file);
+  });
+}
   async function processReceipt() {
     if (!file) return;
 
     setLoading(true);
 
     try {
-      const formData = new FormData();
+const compressedFile =
+  await resizeImage(file);
 
-      formData.append(
-        "receipt",
-        file
-      );
+const formData = new FormData();
 
+formData.append(
+  "receipt",
+  compressedFile,
+  file.name
+);
       const response = await fetch(
         "https://wern-villa-api.onrender.com/receipts/ocr",
         {
