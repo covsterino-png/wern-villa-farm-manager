@@ -237,11 +237,7 @@ const supplier =
 
 let total = null;
 
-const amountMatches = [
-  ...rawText
-    .replace(/[oO]/g, "0")
-.matchAll(/([0-9]+)\.([0-9]{2})/g)
-];
+
 
 if (amountMatches.length > 0) {
   const amounts = amountMatches.map(
