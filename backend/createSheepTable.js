@@ -36,6 +36,15 @@ async function createTable() {
   )
 `);
 await db.execute(`
+CREATE TABLE receipts (
+  id INTEGER PRIMARY KEY,
+  imageUrl TEXT,
+  rawText TEXT,
+  createdDate TEXT
+)
+`);
+
+await db.execute(`
 CREATE TABLE sheepTasks (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   sheepId INTEGER NOT NULL,
