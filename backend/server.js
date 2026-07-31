@@ -233,9 +233,6 @@ const total =
         matches[matches.length - 1][1]
       )
     : null;
-const total = totalMatch
-  ? Number(totalMatch[1])
-  : null;
 
 
           
