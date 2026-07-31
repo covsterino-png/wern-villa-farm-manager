@@ -133,7 +133,7 @@ params.append(
 );
 
 const response = await axios.post(
-  "https://api.ocr.space/parse/imageurl",
+  "https://api.ocr.space/parse/image",
   params,
   {
     headers: {
