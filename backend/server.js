@@ -115,17 +115,33 @@ app.post("/receipts/ocr", async (req, res) => {
   try {
     const { imageUrl } = req.body;
 
-    const response = await axios.post(
-      "https://api.ocr.space/parse/image",
-      null,
-      {
-        params: {
-          apikey: process.env.OCR_SPACE_API_KEY,
-          url: imageUrl,
-          language: "eng",
-        },
-      }
-    );
+const params = new URLSearchParams();
+
+params.append(
+  "apikey",
+  process.env.OCR_SPACE_API_KEY
+);
+
+params.append(
+  "url",
+  imageUrl
+);
+
+params.append(
+  "language",
+  "eng"
+);
+
+const response = await axios.post(
+  "https://api.ocr.space/parse/image",
+  params,
+  {
+    headers: {
+      "Content-Type":
+        "application/x-www-form-urlencoded",
+    },
+  }
+);
     console.log(
   "OCR RESPONSE:",
   JSON.stringify(response.data, null, 2)
