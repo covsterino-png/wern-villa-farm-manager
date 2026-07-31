@@ -17,6 +17,7 @@ const FormData = require("form-data");
 
 
 const app = express();
+const upload = multer();
 
 app.use(
   cors({
@@ -25,6 +26,7 @@ app.use(
 
   
 );app.use(express.json());
+
 
 app.post("/sheep/:id/scheduled", async (req, res) => {
   const {
