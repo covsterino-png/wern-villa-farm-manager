@@ -32,8 +32,19 @@ export default function Receipts() {
       {file && (
         <div style={{ marginTop: "20px" }}>
           <p>✅ Selected: {file.name}</p>
-          <p>Size: {file.size} bytes</p>
-          <p>Type: {file.type}</p>
+
+          <button
+            style={{
+              background: "#03a9f4",
+              color: "white",
+              border: "none",
+              padding: "12px 20px",
+              borderRadius: "8px",
+              cursor: "pointer",
+            }}
+          >
+            🔍 Process Receipt
+          </button>
         </div>
       )}
     </div>
