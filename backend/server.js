@@ -221,10 +221,18 @@ app.post(
 const supplier =
   lines[0] || "Unknown";
 
-const totalMatch = rawText.match(
-  /TOTAL[^0-9]*([0-9]+\.[0-9]{2})/i
-);
+const matches = [
+  ...rawText.matchAll(
+    /[£€E]?\s*([0-9]+\.[0-9]{2})/gi
+  ),
+];
 
+const total =
+  matches.length > 0
+    ? Number(
+        matches[matches.length - 1][1]
+      )
+    : null;
 const total = totalMatch
   ? Number(totalMatch[1])
   : null;
