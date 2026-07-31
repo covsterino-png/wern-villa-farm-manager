@@ -189,6 +189,55 @@ formData.append(
           {ocrText}
         </div>
       )}
+      <div
+  style={{
+    marginTop: "30px",
+  }}
+>
+  <h2
+    style={{
+      color: "#03a9f4",
+    }}
+  >
+    📜 Receipt History
+  </h2>
+
+  {receipts.length === 0 ? (
+    <p>No receipts yet.</p>
+  ) : (
+    receipts.map((receipt) => (
+      <div
+        key={receipt.id}
+        style={{
+          background: "#1f1f1f",
+          padding: "15px",
+          borderRadius: "10px",
+          marginBottom: "10px",
+          border: "1px solid #333",
+        }}
+      >
+        <strong>
+          Receipt #{receipt.id}
+        </strong>
+
+        <br />
+
+        <small>
+          {receipt.createdDate}
+        </small>
+
+        <p
+          style={{
+            whiteSpace: "pre-wrap",
+            marginTop: "10px",
+          }}
+        >
+          {receipt.rawText}
+        </p>
+      </div>
+    ))
+  )}
+</div>
     </div>
   );
 }
