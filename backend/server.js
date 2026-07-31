@@ -219,7 +219,18 @@ const lines = rawText
   .split("\n")
   .map((line) => line.trim())
   .filter(Boolean);
+const amountMatches = [
+  ...rawText
+    .replace(/[oO]/g, "0")
+    .matchAll(/([0-9]+)\.([0-9]{2})/g),
+];
 
+console.log(
+  "AMOUNTS:",
+  amountMatches.map(
+    (m) => `${m[1]}.${m[2]}`
+  )
+);
 
 const supplier =
   lines[0] || "Unknown";
@@ -229,7 +240,7 @@ let total = null;
 const amountMatches = [
   ...rawText
     .replace(/[oO]/g, "0")
-    .matchAll(/([0-9]{2}/g),
+.matchAll(/([0-9]+)\.([0-9]{2})/g)
 ];
 
 if (amountMatches.length > 0) {
