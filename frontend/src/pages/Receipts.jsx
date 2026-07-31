@@ -115,21 +115,6 @@ formData.append(
 
     setLoading(false);
   }
-  const lines = rawText
-  .split("\n")
-  .map((line) => line.trim())
-  .filter(Boolean);
-
-const supplier =
-  lines[0] || "Unknown";
-  const totalMatch =
-  rawText.match(
-    /TOTAL[^0-9]*([0-9]+\.[0-9]{2})/i
-  );
-
-const total = totalMatch
-  ? Number(totalMatch[1])
-  : null;
 
   return (
     <div
