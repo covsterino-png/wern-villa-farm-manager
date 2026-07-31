@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Receipts() {
   const [file, setFile] = useState(null);
   const [ocrText, setOcrText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [receipts, setReceipts] =
+  useState([]);
 function resizeImage(file) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -49,6 +51,19 @@ function resizeImage(file) {
       URL.createObjectURL(file);
   });
 }
+
+  useEffect(() => {
+    fetch(
+      "https://wern-villa-api.onrender.com/receipts"
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        setReceipts(data);
+      })
+      .catch(console.error);
+  }, []);
+
+  
   async function processReceipt() {
     if (!file) return;
 
