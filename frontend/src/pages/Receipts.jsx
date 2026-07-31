@@ -6,6 +6,11 @@ export default function Receipts() {
   const [loading, setLoading] = useState(false);
   const [receipts, setReceipts] =
   useState([]);
+  const [selectedReceipt, setSelectedReceipt] =
+  useState(null);
+
+const [receiptItems, setReceiptItems] =
+  useState([]);
 function resizeImage(file) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -63,7 +68,16 @@ function resizeImage(file) {
       .catch(console.error);
   }, []);
 
-  
+ async function loadReceipt(id) {
+  const response = await fetch(
+    `https://wern-villa-api.onrender.com/receipts/${id}`
+  );
+
+  const data = await response.json();
+
+  setSelectedReceipt(data.receipt);
+  setReceiptItems(data.items);
+} 
   async function processReceipt() {
     if (!file) return;
 
@@ -194,6 +208,32 @@ formData.append(
     marginTop: "30px",
   }}
 >
+    {selectedReceipt && (
+  <div
+    style={{
+      background: "#1f1f1f",
+      padding: "20px",
+      borderRadius: "12px",
+      marginTop: "20px",
+    }}
+  >
+    <h2>🧾 Receipt Details</h2>
+
+    <p>
+      Date:
+      {" "}
+      {selectedReceipt.createdDate}
+    </p>
+
+    <pre
+      style={{
+        whiteSpace: "pre-wrap",
+      }}
+    >
+      {selectedReceipt.rawText}
+    </pre>
+  </div>
+)}
   <h2
     style={{
       color: "#03a9f4",
@@ -205,10 +245,11 @@ formData.append(
   {receipts.length === 0 ? (
     <p>No receipts yet.</p>
   ) : (
-    receipts.map((receipt) => (
-      <div
-        key={receipt.id}
-        style={{
+receipts.map((receipt) => (
+  <div
+    key={receipt.id}
+    onClick={() => loadReceipt(receipt.id)}
+            style={{
           background: "#1f1f1f",
           padding: "15px",
           borderRadius: "10px",
