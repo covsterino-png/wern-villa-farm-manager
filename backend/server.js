@@ -8,12 +8,23 @@ const turso = createClient({
   authToken:
     process.env.TURSO_AUTH_TOKEN,
 });
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 const express = require("express");
+const cloudinary = require("cloudinary").v2;
+
 const cors = require("cors");
 const axios = require("axios");
 const multer = require("multer");
 const FormData = require("form-data");
-
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 
 const app = express();
@@ -214,6 +225,16 @@ app.post(
           .join("\n")
           .trim() || "";
 
+          const uploadResult =
+  await cloudinary.uploader.upload(
+    `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
+    {
+      folder: "receipts",
+    }
+  );
+
+const imageUrl = uploadResult.secure_url;
+
 
 const lines = rawText
   .split("\n")
@@ -265,12 +286,12 @@ await turso.execute({
     VALUES
     (?, ?, ?, ?, DATE('now'))
   `,
-  args: [
-    "",
-    rawText,
-    supplier,
-    total,
-  ],
+args: [
+  imageUrl,
+  rawText,
+  supplier,
+  total,
+],
 });
 
       res.json({
