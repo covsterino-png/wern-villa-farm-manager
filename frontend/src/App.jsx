@@ -11,6 +11,7 @@ import Settings from "./pages/Settings";
 import FarmMap from "./pages/FarmMap";
 import FlockRegister from "./pages/FlockRegister";
 import SheepRegister from "./pages/SheepRegister";
+import Receipts from "./pages/Receipts";
 
 function App() {
   const [page, setPage] = useState("dashboard");
@@ -236,6 +237,12 @@ function App() {
           >
             Treatments
           </button>
+          <button
+  style={buttonStyle("receipts")}
+  onClick={() => setPage("receipts")}
+>
+  🧾 Receipts
+</button>
         </div>
       </div>
 
@@ -308,7 +315,11 @@ function App() {
 
         {page === "tasks" && (
           <Tasks />
+          
         )}
+        {page === "receipts" && (
+  <Receipts />
+)}
       </div>
     </div>
   );
