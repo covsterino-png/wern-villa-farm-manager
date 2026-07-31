@@ -12,55 +12,6 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 
-app.post("/receipts/ocr", async (req, res) => {
-  try {
-    const { imageUrl } = req.body;
-
-    const response = await axios.post(
-      "https://api.ocr.space/parse/image",
-      null,
-      {
-        params: {
-          apikey: process.env.OCR_SPACE_API_KEY,
-          url: imageUrl,
-          language: "eng",
-        },
-      }
-    );
-
-    const rawText =
-      response.data.ParsedResults?.[0]
-        ?.ParsedText || "";
-
-    await turso.execute({
-      sql: `
-        INSERT INTO receipts
-        (
-          imageUrl,
-          rawText,
-          createdDate
-        )
-        VALUES
-        (?, ?, DATE('now'))
-      `,
-      args: [
-        imageUrl,
-        rawText,
-      ],
-    });
-
-    res.json({
-      success: true,
-      rawText,
-    });
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      error: error.message,
-    });
-  }
-});
 
 const app = express();
 
@@ -159,6 +110,57 @@ if (repeatUntilResolved) {
     success: true,
   });
 });
+
+app.post("/receipts/ocr", async (req, res) => {
+  try {
+    const { imageUrl } = req.body;
+
+    const response = await axios.post(
+      "https://api.ocr.space/parse/image",
+      null,
+      {
+        params: {
+          apikey: process.env.OCR_SPACE_API_KEY,
+          url: imageUrl,
+          language: "eng",
+        },
+      }
+    );
+
+    const rawText =
+      response.data.ParsedResults?.[0]
+        ?.ParsedText || "";
+
+    await turso.execute({
+      sql: `
+        INSERT INTO receipts
+        (
+          imageUrl,
+          rawText,
+          createdDate
+        )
+        VALUES
+        (?, ?, DATE('now'))
+      `,
+      args: [
+        imageUrl,
+        rawText,
+      ],
+    });
+
+    res.json({
+      success: true,
+      rawText,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
 app.get("/sheep/group/:groupName", async (req, res) => {
   try {
     const { groupName } = req.params;
