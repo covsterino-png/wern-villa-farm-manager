@@ -11,7 +11,7 @@ function resizeImage(file) {
     img.onload = () => {
       const canvas = document.createElement("canvas");
 
-      const maxWidth = 1200;
+      const maxWidth = 600;
 
       let width = img.width;
       let height = img.height;
@@ -41,7 +41,7 @@ function resizeImage(file) {
           resolve(blob);
         },
         "image/jpeg",
-        0.7
+        0.3
       );
     };
 
