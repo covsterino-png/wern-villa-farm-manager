@@ -2,7 +2,7 @@ require("dotenv").config();
 
 const { createClient } =
   require("@libsql/client");
-
+const cloudinary = require("cloudinary").v2;
 const turso = createClient({
   url: process.env.TURSO_DATABASE_URL,
   authToken:
@@ -14,7 +14,6 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 const express = require("express");
-const cloudinary = require("cloudinary").v2;
 
 const cors = require("cors");
 const axios = require("axios");
