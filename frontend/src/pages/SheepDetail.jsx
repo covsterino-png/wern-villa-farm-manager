@@ -1930,33 +1930,13 @@ function saveScheduledEvent() {
   Actions Found:
   {(caseActions[item.id] || []).length}
 </div>
-    {(caseActions[String(item.id)] || []).map(
-      (action) => (
-        <div
-          key={action.id}
-          style={{
-            background: "#1f1f1f",
-            padding: "10px",
-            borderRadius: "8px",
-            marginBottom: "8px",
-          }}
-        >
-          <strong>
-            {action.actionType}
-          </strong>
-
-          <br />
-
-          {action.notes}
-
-          <br />
-
-          <small>
-            {action.actionDate}
-          </small>
-        </div>
-      )
-    )}
+    {(caseActions[item.id] || []).map(
+  (action) => (
+    <div key={action.id}>
+      {action.actionType}
+    </div>
+  )
+)}
   </div>
 )}
         <br />
