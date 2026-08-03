@@ -255,6 +255,8 @@ const [scanResult, setScanResult] = useState("Single");
       );
   }, []);
 
+
+  
   function saveHealthCase() {
   fetch(
     `https://wern-villa-api.onrender.com/sheep/${sheep.id}/health-cases`,
@@ -289,6 +291,24 @@ const [scanResult, setScanResult] = useState("Single");
 
       setCaseTitle("");
       setCaseDescription("");
+    });
+}
+function resolveCase(caseId) {
+  fetch(
+    `https://wern-villa-api.onrender.com/health-cases/${caseId}/resolve`,
+    {
+      method: "PUT",
+    }
+  )
+    .then((res) => res.json())
+    .then(() =>
+      fetch(
+        `https://wern-villa-api.onrender.com/sheep/${sheep.id}/health-cases`
+      )
+    )
+    .then((res) => res.json())
+    .then((data) => {
+      setHealthCases(data);
     });
 }
 
@@ -1740,6 +1760,24 @@ function saveScheduledEvent() {
           {" "}
           {item.status}
         </small>
+        <br />
+
+<button
+  onClick={() =>
+    resolveCase(item.id)
+  }
+  style={{
+    background: "#4caf50",
+    color: "white",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    cursor: "pointer",
+    marginTop: "10px",
+  }}
+>
+  ✅ Resolve
+</button>
       </div>
     ))}
   </div>
