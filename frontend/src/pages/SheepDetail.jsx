@@ -400,24 +400,26 @@ function createMonitoring(caseId) {
     });
 }
 function resolveCase(caseId) {
+  alert(`Resolving case ${caseId}`);
+
   fetch(
     `https://wern-villa-api.onrender.com/health-cases/${caseId}/resolve`,
     {
       method: "PUT",
     }
   )
-    .then((res) => res.json())
-    .then(() =>
-      fetch(
-        `https://wern-villa-api.onrender.com/sheep/${sheep.id}/health-cases`
-      )
-    )
-    .then((res) => res.json())
+    .then((res) => {
+      alert(`Status: ${res.status}`);
+      return res.json();
+    })
     .then((data) => {
-      setHealthCases(data);
+      console.log(data);
+      alert("Resolve finished");
+    })
+    .catch((err) => {
+      alert(err.message);
     });
 }
-
   function completeScheduledEvent(
   eventId
 ) {
