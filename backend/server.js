@@ -39,6 +39,7 @@ app.use(
 
 
 app.post("/sheep/:id/scheduled", async (req, res) => {
+  console.log(req.body);
   const {
     dueDate,
     eventType,
