@@ -1930,6 +1930,11 @@ function saveScheduledEvent() {
   Actions Found:
   {(caseActions[item.id] || []).length}
 </div>
+<div>
+  First Action:
+  {caseActions[item.id]?.[0]?.actionType}
+</div>
+
     {(caseActions[item.id] || []).map(
   (action) => (
     <div key={action.id}>
