@@ -400,8 +400,6 @@ function createMonitoring(caseId) {
     });
 }
 function resolveCase(caseId) {
-  alert(`Resolving case ${caseId}`);
-
   fetch(
     `https://wern-villa-api.onrender.com/health-cases/${caseId}/resolve`,
     {
@@ -410,11 +408,10 @@ function resolveCase(caseId) {
   )
     .then((res) => {
       alert(`Status: ${res.status}`);
-      return res.json();
+      return res.text();
     })
-    .then((data) => {
-      console.log(data);
-      alert("Resolve finished");
+    .then((text) => {
+      alert(text);
     })
     .catch((err) => {
       alert(err.message);
