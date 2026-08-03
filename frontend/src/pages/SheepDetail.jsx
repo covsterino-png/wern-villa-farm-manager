@@ -388,6 +388,7 @@ function createMonitoring(caseId) {
 
         repeatUntilResolved:
           true,
+          caseId: caseId,
       }),
     }
   )

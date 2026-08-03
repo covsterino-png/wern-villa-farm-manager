@@ -46,6 +46,7 @@ app.post("/sheep/:id/scheduled", async (req, res) => {
     repeatEvery,
     numberOfEvents,
     repeatUntilResolved,
+    caseId,
   } = req.body;
 if (repeatUntilResolved) {
   await turso.execute({
@@ -59,7 +60,8 @@ if (repeatUntilResolved) {
         dueDate,
         autoRepeat,
         repeatEvery,
-        repeatNumber
+        repeatNumber,
+        caseId
       )
       VALUES
       (?, ?, ?, 'scheduled', ?, 1, ?, 1)
@@ -70,6 +72,7 @@ if (repeatUntilResolved) {
       notes,
       dueDate,
       repeatEvery,
+      caseId,
     ],
   });
 
@@ -108,7 +111,8 @@ if (repeatUntilResolved) {
           eventType,
           notes,
           status,
-          dueDate
+          dueDate,
+          caseId
         )
         VALUES (?, ?, ?, 'scheduled', ?)
       `,
@@ -117,6 +121,7 @@ if (repeatUntilResolved) {
         title,
         notes,
         formattedDate,
+        caseId,
       ],
     });
   }
