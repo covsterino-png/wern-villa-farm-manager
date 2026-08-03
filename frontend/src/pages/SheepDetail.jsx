@@ -311,15 +311,19 @@ function loadCaseActions(caseId) {
   )
     .then((res) => res.json())
     .then((data) => {
-      const updated = {
-        ...caseActions,
-      };
+      setCaseActions((prev) => ({
+        ...prev,
+        data,
+      }));
 
-      updated[caseId] = data;
-
-      setCaseActions(updated);
+      console.log(
+        "Loaded actions:",
+        caseId,
+        data
+      );
     });
 }
+
 function saveAction(caseId) {
   fetch(
     `https://wern-villa-api.onrender.com/health-cases/${caseId}/actions`,
