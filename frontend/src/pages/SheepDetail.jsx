@@ -362,8 +362,6 @@ function saveAction(caseId) {
 }
 
 function createMonitoring(caseId) {
-  alert(`Creating monitoring for case ${caseId}`);
-
   fetch(
     `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scheduled`,
     {
@@ -386,41 +384,19 @@ function createMonitoring(caseId) {
 
         repeatUntilResolved: true,
 
-        caseId: caseId,
+        caseId,
       }),
     }
   )
-    .then((res) => {
-      console.log(
-        "Monitoring response:",
-        res.status
-      );
-
-      if (!res.ok) {
-        throw new Error(
-          `Server returned ${res.status}`
-        );
-      }
-
-      return res.json();
-    })
+    .then((res) => res.json())
     .then(() => {
-      setToast(
-        "✅ Monitoring created"
-      );
+      setToast("✅ Monitoring created");
 
       setShowMonitoringFor(null);
 
       setTimeout(() => {
         setToast("");
       }, 3000);
-    })
-    .catch((error) => {
-      console.error(error);
-
-      alert(
-        `Monitoring failed: ${error.message}`
-      );
     });
 }
 function resolveCase(caseId) {
@@ -1916,8 +1892,6 @@ function saveScheduledEvent() {
 </button>
 <button
   onClick={() => {
-    alert(item.id);
-    createMonitoring(item.id);
   }}
   style={{
     background: "#4caf50",
