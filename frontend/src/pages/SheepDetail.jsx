@@ -209,41 +209,12 @@ const [scanResult, setScanResult] = useState("Single");
     setHealthCases(data)
   );
 fetch(
-  `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scheduled`,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      dueDate: new Date()
-        .toISOString()
-        .split("T")[0],
-
-      eventType: monitoringType,
-
-      notes: `Health Case #${caseId}`,
-
-      repeatEvery: Number(
-        monitoringFrequency
-      ),
-
-      repeatUntilResolved: true,
-
-      caseId: caseId,
-    }),
-  }
+  `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scheduled`
 )
-  .then((res) => {
-    alert(`Status: ${res.status}`);
-    return res.text();
-  })
-  .then((text) => {
-    alert(text);
-  })
-  .catch((error) => {
-    alert(error.message);
-  });
+  .then((res) => res.json())
+  .then((data) =>
+    setScheduledEvents(data)
+  );
       fetch(
   `https://wern-villa-api.onrender.com/sheep/${sheep.id}/events`
 )
