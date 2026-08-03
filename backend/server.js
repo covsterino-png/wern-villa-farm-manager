@@ -64,7 +64,7 @@ if (repeatUntilResolved) {
         caseId
       )
       VALUES
-      (?, ?, ?, 'scheduled', ?, 1, ?, 1)
+      (?, ?, ?, 'scheduled', ?, 1, ?, 1, ?)
     `,
     args: [
       req.params.id,
@@ -114,7 +114,7 @@ if (repeatUntilResolved) {
           dueDate,
           caseId
         )
-        VALUES (?, ?, ?, 'scheduled', ?)
+        VALUES (?, ?, ?, 'scheduled', ?, ?)
       `,
       args: [
         req.params.id,
