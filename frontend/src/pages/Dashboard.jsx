@@ -213,17 +213,17 @@ border: "1px solid #4caf50",
 <button
   onClick={() =>
     setExpandedTask(
-      expandedTask === event.id
+      expandedTask === task.id
         ? null
         : event.id
     )
   }
 >
-  {expandedTask === event.id
+  {expandedTask === task.id
     ? "▲ Hide"
     : "▼ Details"}
 </button>
-{expandedTask === event.id && (
+{expandedTask === task.id && (
   <div
     style={{
       background: "#1f1f1f",
@@ -233,12 +233,12 @@ border: "1px solid #4caf50",
     }}
   >
     <p>
-      Case: {event.caseTitle}
+      Case: {task.notes}
     </p>
 
     <p>
       Monitoring:
-      Every {event.repeatEvery} Days
+      Every {task.repeatEvery} Days
     </p>
 
     <button>
