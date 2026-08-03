@@ -317,18 +317,6 @@ function loadCaseActions(caseId) {
       }));
     });
 }
-function loadCaseActions(caseId) {
-  fetch(
-    `https://wern-villa-api.onrender.com/health-cases/${caseId}/actions`
-  )
-    .then((res) => res.json())
-    .then((data) => {
-      setCaseActions((prev) => ({
-        ...prev,
-        data,
-      }));
-    });
-}
 function saveAction(caseId) {
   fetch(
     `https://wern-villa-api.onrender.com/health-cases/${caseId}/actions`,
