@@ -1923,6 +1923,13 @@ function saveScheduledEvent() {
     2
   )}
 </pre>
+<div>
+  Case ID: {item.id}
+</div>
+<div>
+  Actions Found:
+  {(caseActions[item.id] || []).length}
+</div>
     {(caseActions[item.id] || []).map(
       (action) => (
         <div
