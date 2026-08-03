@@ -95,6 +95,24 @@ fetch(
       })
       .catch(() => {});
   }, []);
+  function stopRecurring(taskId) {
+  fetch(
+    `https://wern-villa-api.onrender.com/scheduled/${taskId}/stop`,
+    {
+      method: "PUT",
+    }
+  )
+    .then((res) => res.json())
+    .then(() => {
+      return fetch(
+        "https://wern-villa-api.onrender.com/tasks/today"
+      );
+    })
+    .then((res) => res.json())
+    .then((data) => {
+      setTodayTasks(data);
+    });
+}
   function completeTask(taskId) {
   fetch(
     `https://wern-villa-api.onrender.com/scheduled/${taskId}/complete`,
@@ -422,6 +440,24 @@ border: "1px solid #4caf50",
 >
   ✅ Complete
 </button>
+{task.autoRepeat && (
+  <button
+    onClick={() =>
+      stopRecurring(task.id)
+    }
+    style={{
+      background: "#f44336",
+      color: "white",
+      border: "none",
+      padding: "8px 12px",
+      borderRadius: "8px",
+      marginLeft: "10px",
+    }}
+  >
+    🛑 Stop Repeat
+  </button>
+)}
+
       </div>
     ))
   )}

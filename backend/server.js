@@ -625,6 +625,23 @@ app.put(
     }
   }
 );
+app.put(
+  "/scheduled/:id/stop",
+  async (req, res) => {
+    await turso.execute({
+      sql: `
+        UPDATE sheepEvents
+        SET autoRepeat = 0
+        WHERE id = ?
+      `,
+      args: [req.params.id],
+    });
+
+    res.json({
+      success: true,
+    });
+  }
+);
 app.post("/sheep/:id/weights", async (req, res) => {
   try {
     const { weight, weightDate } =
