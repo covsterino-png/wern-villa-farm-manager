@@ -1,4 +1,4 @@
-require("dotenv").config();
+constrequire("dotenv").config();
 
 const { createClient } =
   require("@libsql/client");
@@ -475,6 +475,140 @@ app.get("/sheep/:id/weights", async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error(error);
+    res.status(500).json(error);
+  }
+});
+
+app.post("/sheep/:id/health-cases", async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      priority,
+    } = req.body;
+
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO healthCases
+        (
+          sheepId,
+          title,
+          description,
+          priority
+        )
+        VALUES (?, ?, ?, ?)
+      `,
+      args: [
+        req.params.id,
+        title,
+        description,
+        priority || "medium",
+      ],
+    });
+
+    res.json({
+      success: true,
+      id: Number(result.lastInsertRowid),
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+app.get("/sheep/:id/health-cases", async (req, res) => {
+  try {
+    const result = await turso.execute({
+      sql: `
+        SELECT *
+        FROM healthCases
+        WHERE sheepId = ?
+        ORDER BY createdDate DESC
+      `,
+      args: [req.params.id],
+    });
+
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+app.post("/health-cases/:id/actions", async (req, res) => {
+  try {
+    const {
+      actionType,
+      notes,
+    } = req.body;
+
+    await turso.execute({
+      sql: `
+        INSERT INTO healthCaseActions
+        (
+          caseId,
+          actionType,
+          notes
+        )
+        VALUES (?, ?, ?)
+      `,
+      args: [
+        req.params.id,
+        actionType,
+        notes,
+      ],
+    });
+
+    res.json({
+      success: true,
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+app.get("/health-cases/:id/actions", async (req, res) => {
+  try {
+    const result = await turso.execute({
+      sql: `
+        SELECT *
+        FROM healthCaseActions
+        WHERE caseId = ?
+        ORDER BY actionDate DESC
+      `,
+      args: [req.params.id],
+    });
+
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+app.put("/health-cases/:id/resolve", async (req, res) => {
+  try {
+    await turso.execute({
+      sql: `
+        UPDATE healthCases
+        SET
+          status = 'resolved',
+          resolvedDate = date('now')
+        WHERE id = ?
+      `,
+      args: [req.params.id],
+    });
+
+    await turso.execute({
+      sql: `
+        UPDATE sheepEvents
+        SET status = 'completed'
+        WHERE caseId = ?
+      `,
+      args: [req.params.id],
+    });
+
+    res.json({
+      success: true,
+    });
+  } catch (error) {
     res.status(500).json(error);
   }
 });

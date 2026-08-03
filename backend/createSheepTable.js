@@ -36,7 +36,7 @@ async function createTable() {
   )
 `);
 await db.execute(`
-CREATE TABLE receipts (
+CREATE TABLE IF NOT EXISTS receipts (
   id INTEGER PRIMARY KEY,
   imageUrl TEXT,
   rawText TEXT,
@@ -61,6 +61,18 @@ CREATE TABLE sheepEvents (
   eventDate TEXT,
   eventType TEXT,
   notes TEXT
+)
+`);
+await db.execute(`
+CREATE TABLE healthCases (
+  id INTEGER PRIMARY KEY,
+  sheepId INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  priority TEXT DEFAULT 'medium',
+  status TEXT DEFAULT 'active',
+  createdDate TEXT DEFAULT CURRENT_DATE,
+  resolvedDate TEXT
 )
 `);
 
