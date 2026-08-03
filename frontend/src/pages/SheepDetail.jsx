@@ -311,16 +311,11 @@ function loadCaseActions(caseId) {
   )
     .then((res) => res.json())
     .then((data) => {
-      setCaseActions((prev) => ({
-        ...prev,
-        data,
-      }));
+      const updated = {};
 
-      console.log(
-        "Loaded actions:",
-        caseId,
-        data
-      );
+      updated[String(caseId)] = data;
+
+      setCaseActions(updated);
     });
 }
 
