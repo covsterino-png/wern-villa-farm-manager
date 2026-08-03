@@ -1917,7 +1917,8 @@ function saveScheduledEvent() {
 </button>
 <button
   onClick={() => {
-    alert("button clicked");
+    alert(item.id);
+    createMonitoring(item.id);
   }}
   style={{
     background: "#4caf50",
@@ -1929,6 +1930,7 @@ function saveScheduledEvent() {
 >
   ✅ Create Monitoring
 </button>
+
 {activeCaseId === item.id && (
   <div
     style={{
