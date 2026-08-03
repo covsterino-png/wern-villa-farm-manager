@@ -11,6 +11,12 @@ export default function Dashboard({ setPage }) {
 const [expandedTask, setExpandedTask] =
   useState(null);
 
+  const [actionType, setActionType] =
+  useState({});
+
+const [actionNotes, setActionNotes] =
+  useState({});
+
   const [activity, setActivity] = useState([]);
 
   const [fieldCount, setFieldCount] =
@@ -105,6 +111,31 @@ fetch(
     .then((res) => res.json())
     .then((data) => {
       setTodayTasks(data);
+    });
+}
+function saveActionFromDashboard(
+  caseId,
+  taskId
+) {
+  fetch(
+    `https://wern-villa-api.onrender.com/health-cases/${caseId}/actions`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        actionType:
+          actionType[taskId] ||
+          "Observation",
+        notes:
+          actionNotes[taskId] || "",
+      }),
+    }
+  )
+    .then((res) => res.json())
+    .then(() => {
+      alert("✅ Action saved");
     });
 }
 
@@ -289,6 +320,90 @@ border: "1px solid #4caf50",
       {" "}
       {task.status}
     </p>
+    {task.caseId && (
+  <>
+    <select
+      value={
+        actionType[task.id] ||
+        "Observation"
+      }
+      onChange={(e) =>
+        setActionType({
+          ...actionType,
+          [task.id]:
+            e.target.value,
+        })
+      }
+      style={{
+        width: "100%",
+        padding: "10px",
+        marginTop: "10px",
+      }}
+    >
+      <option>
+        Observation
+      </option>
+      <option>
+        Health Check
+      </option>
+      <option>
+        Injection
+      </option>
+      <option>
+        Foot Treatment
+      </option>
+      <option>
+        Weight
+      </option>
+      <option>
+        Vet Visit
+      </option>
+      <option>
+        Note
+      </option>
+    </select>
+
+    <textarea
+      placeholder="Notes..."
+      value={
+        actionNotes[task.id] || ""
+      }
+      onChange={(e) =>
+        setActionNotes({
+          ...actionNotes,
+          [task.id]:
+            e.target.value,
+        })
+      }
+      style={{
+        width: "100%",
+        minHeight: "80px",
+        marginTop: "10px",
+        borderRadius: "8px",
+        padding: "10px",
+      }}
+    />
+
+    <button
+      onClick={() =>
+        saveActionFromDashboard(
+          task.caseId,
+          task.id
+        )
+      }
+      style={{
+        background: "#03a9f4",
+        color: "white",
+        border: "none",
+        padding: "8px 12px",
+        borderRadius: "8px",
+        marginTop: "10px",
+      }}
+    >
+      💾 Save Action
+    </button>
+  </>
+)}
   </div>
 )}
 <button
