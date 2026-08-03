@@ -215,7 +215,7 @@ border: "1px solid #4caf50",
     setExpandedTask(
       expandedTask === task.id
         ? null
-        : event.id
+        : task.id
     )
   }
 >
@@ -226,32 +226,16 @@ border: "1px solid #4caf50",
 {expandedTask === task.id && (
   <div
     style={{
-      background: "#1f1f1f",
-      padding: "12px",
-      borderRadius: "8px",
+      background: "#333",
+      padding: "10px",
       marginTop: "10px",
     }}
   >
-    <p>
-      Case: {task.notes}
-    </p>
+    DETAILS WORKING
 
-    <p>
-      Monitoring:
-      Every {task.repeatEvery} Days
-    </p>
-
-    <button>
-      ➕ Add Note
-    </button>
-
-    <button>
-      💉 Treatment
-    </button>
-
-    <button>
-      📂 Open Case
-    </button>
+    <pre>
+      {JSON.stringify(task, null, 2)}
+    </pre>
   </div>
 )}
 <button
