@@ -1916,29 +1916,31 @@ function saveScheduledEvent() {
     >
       ✅ Add Action
     </button>
-<pre>
-  {JSON.stringify(
-    caseActions,
-    null,
-    2
-  )}
-</pre>
-<div>
-  Case ID: {item.id}
-</div>
-<div>
-  Actions Found:
-  {(caseActions[item.id] || []).length}
-</div>
-<div>
-  First Action:
-  {caseActions[item.id]?.[0]?.actionType}
-</div>
 
-    {(caseActions[item.id] || []).map(
+{(caseActions[item.id] || []).map(
   (action) => (
-    <div key={action.id}>
-      {action.actionType}
+    <div
+      key={action.id}
+      style={{
+        background: "#1f1f1f",
+        padding: "10px",
+        borderRadius: "8px",
+        marginBottom: "8px",
+      }}
+    >
+      <strong>
+        {action.actionType}
+      </strong>
+
+      <br />
+
+      {action.notes}
+
+      <br />
+
+      <small>
+        {action.actionDate}
+      </small>
     </div>
   )
 )}
