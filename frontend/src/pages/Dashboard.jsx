@@ -244,12 +244,15 @@ border: "1px solid #4caf50",
       {task.eventType}
     </p>
 
-    <p>
-      <strong>Related:</strong>
-      {" "}
-      {task.notes}
-    </p>
+<p>
+  <strong>Related:</strong>
+  {task.notes}
+</p>
 
+<p>
+  <strong>Case ID:</strong>
+  {String(task.caseId)}
+</p>
     <p>
       <strong>Repeats Every:</strong>
       {" "}
