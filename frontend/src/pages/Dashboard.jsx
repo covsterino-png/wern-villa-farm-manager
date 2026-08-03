@@ -227,15 +227,42 @@ border: "1px solid #4caf50",
   <div
     style={{
       background: "#333",
-      padding: "10px",
+      padding: "12px",
       marginTop: "10px",
+      borderRadius: "8px",
     }}
   >
-    DETAILS WORKING
+    <p>
+      <strong>Sheep:</strong>
+      {" "}
+      {task.sheepName}
+    </p>
 
-    <pre>
-      {JSON.stringify(task, null, 2)}
-    </pre>
+    <p>
+      <strong>Task:</strong>
+      {" "}
+      {task.eventType}
+    </p>
+
+    <p>
+      <strong>Related:</strong>
+      {" "}
+      {task.notes}
+    </p>
+
+    <p>
+      <strong>Repeats Every:</strong>
+      {" "}
+      {task.repeatEvery}
+      {" "}
+      days
+    </p>
+
+    <p>
+      <strong>Status:</strong>
+      {" "}
+      {task.status}
+    </p>
   </div>
 )}
 <button
