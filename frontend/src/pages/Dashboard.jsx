@@ -135,8 +135,7 @@ function saveActionFromDashboard(
   )
     .then((res) => res.json())
     .then(() => {
-      alert("✅ Action saved");
-    });
+console.log("Action saved");
 }
 
   return (
