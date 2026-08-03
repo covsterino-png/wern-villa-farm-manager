@@ -1897,6 +1897,24 @@ function saveScheduledEvent() {
 >
   📋 Actions
 </button>
+<button
+  onClick={() =>
+    setShowMonitoringFor(item.id)
+  }
+  style={{
+    background: "#ff9800",
+    color: "white",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    cursor: "pointer",
+    marginTop: "10px",
+    marginRight: "10px",
+  }}
+>
+  ⏰ Monitoring
+</button>
+
 {activeCaseId === item.id && (
   <div
     style={{
@@ -2002,6 +2020,14 @@ function saveScheduledEvent() {
       marginTop: "10px",
     }}
   >
+    <h4
+  style={{
+    color: "#03a9f4",
+    marginBottom: "15px",
+  }}
+>
+  Monitoring for: {item.title}
+</h4>
     <label>
       Type
     </label>
