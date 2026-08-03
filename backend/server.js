@@ -591,33 +591,38 @@ app.get("/health-cases/:id/actions", async (req, res) => {
 
 app.put(
   "/health-cases/:id/resolve",
-  (req, res) => {
-    const caseId = req.params.id;
+  async (req, res) => {
+    try {
+      const caseId = req.params.id;
 
-    db.run(
-      `
-      UPDATE health_cases
-      SET status='resolved'
-      WHERE id=?
-      `,
-      [caseId],
-      () => {
+      await turso.execute({
+        sql: `
+          UPDATE healthCases
+          SET status = 'resolved'
+          WHERE id = ?
+        `,
+        args: [caseId],
+      });
 
-        db.run(
-          `
-          UPDATE scheduled_events
-          SET status='completed'
-          WHERE caseId=?
-          `,
-          [caseId],
-          () => {
-            res.json({
-              success: true,
-            });
-          }
-        );
-      }
-    );
+      await turso.execute({
+        sql: `
+          UPDATE sheepEvents
+          SET status = 'completed'
+          WHERE caseId = ?
+        `,
+        args: [caseId],
+      });
+
+      res.json({
+        success: true,
+      });
+    } catch (error) {
+      console.error(error);
+
+      res.status(500).json({
+        error: error.message,
+      });
+    }
   }
 );
 app.post("/sheep/:id/weights", async (req, res) => {
