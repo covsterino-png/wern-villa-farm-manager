@@ -13,6 +13,24 @@ export default function SheepDetail({
 
 const [numberOfEvents, setNumberOfEvents] =
   useState(1);
+
+  const [healthCases, setHealthCases] =
+  useState([]);
+
+const [showHealthCaseForm,
+  setShowHealthCaseForm] =
+  useState(false);
+
+const [caseTitle, setCaseTitle] =
+  useState("");
+
+const [caseDescription,
+  setCaseDescription] =
+  useState("");
+
+const [casePriority,
+  setCasePriority] =
+  useState("medium");
     
     const [history, setHistory] = useState([]);
 
@@ -161,6 +179,13 @@ const [scanResult, setScanResult] = useState("Single");
       .then((data) => setGroups(data));
 
       fetch(
+  `https://wern-villa-api.onrender.com/sheep/${sheep.id}/health-cases`
+)
+  .then((res) => res.json())
+  .then((data) =>
+    setHealthCases(data)
+  );
+      fetch(
   `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scheduled`
 )
   .then((res) => res.json())
@@ -229,6 +254,43 @@ const [scanResult, setScanResult] = useState("Single");
         setAllSheep(data)
       );
   }, []);
+
+  function saveHealthCase() {
+  fetch(
+    `https://wern-villa-api.onrender.com/sheep/${sheep.id}/health-cases`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+      body: JSON.stringify({
+        title: caseTitle,
+        description:
+          caseDescription,
+        priority:
+          casePriority,
+      }),
+    }
+  )
+    .then((res) => res.json())
+    .then(() =>
+      fetch(
+        `https://wern-villa-api.onrender.com/sheep/${sheep.id}/health-cases`
+      )
+    )
+    .then((res) => res.json())
+    .then((data) => {
+      setHealthCases(data);
+
+      setShowHealthCaseForm(
+        false
+      );
+
+      setCaseTitle("");
+      setCaseDescription("");
+    });
+}
 
   function completeScheduledEvent(
   eventId
@@ -776,6 +838,13 @@ function saveScheduledEvent() {
   active={activeTab === "events"}
   onClick={() =>
     setActiveTab("events")
+  }
+/>
+<TabButton
+  label="Health"
+  active={activeTab === "health"}
+  onClick={() =>
+    setActiveTab("health")
   }
 />
 <TabButton
@@ -1574,6 +1643,145 @@ function saveScheduledEvent() {
             Due: {event.dueDate}
           </small>
           <br />
+          {activeTab === "health" && (
+  <div
+    style={{
+      background: "#2b2b2b",
+      padding: "20px",
+      borderRadius: "10px",
+    }}
+  >
+    <h2>
+      🐑 Health Cases
+    </h2>
+
+    <button
+      onClick={() =>
+        setShowHealthCaseForm(
+          !showHealthCaseForm
+        )
+      }
+      style={{
+        background: "#03a9f4",
+        color: "white",
+        border: "none",
+        padding: "10px 16px",
+        borderRadius: "10px",
+        marginBottom: "20px",
+      }}
+    >
+      ➕ New Health Case
+    </button>
+
+    {showHealthCaseForm && (
+      <div
+        style={{
+          background: "#1f1f1f",
+          padding: "15px",
+          borderRadius: "10px",
+          marginBottom: "20px",
+        }}
+      >
+        <input
+          style={inputStyle}
+          placeholder="Footrot"
+          value={caseTitle}
+          onChange={(e) =>
+            setCaseTitle(
+              e.target.value
+            )
+          }
+        />
+
+        <textarea
+          style={{
+            ...inputStyle,
+            minHeight: "80px",
+          }}
+          placeholder="Describe issue..."
+          value={caseDescription}
+          onChange={(e) =>
+            setCaseDescription(
+              e.target.value
+            )
+          }
+        />
+
+        <select
+          value={casePriority}
+          onChange={(e) =>
+            setCasePriority(
+              e.target.value
+            )
+          }
+          style={inputStyle}
+        >
+          <option value="low">
+            Low
+          </option>
+          <option value="medium">
+            Medium
+          </option>
+          <option value="high">
+            High
+          </option>
+          <option value="urgent">
+            Urgent
+          </option>
+        </select>
+
+        <button
+          onClick={saveHealthCase}
+          style={{
+            background: "#4caf50",
+            color: "white",
+            border: "none",
+            padding: "10px 16px",
+            borderRadius: "10px",
+          }}
+        >
+          ✅ Save Case
+        </button>
+      </div>
+    )}
+
+    {healthCases.map((item) => (
+      <div
+        key={item.id}
+        style={{
+          background: "#1f1f1f",
+          padding: "12px",
+          borderRadius: "10px",
+          marginBottom: "10px",
+        }}
+      >
+        <strong>
+          {item.title}
+        </strong>
+
+        <br />
+
+        {item.description}
+
+        <br />
+
+        <small>
+          Priority:
+          {" "}
+          {item.priority}
+        </small>
+
+        <br />
+
+        <small>
+          Status:
+          {" "}
+          {item.status}
+        </small>
+      </div>
+    ))}
+  </div>
+)}
 
 <button
   onClick={() =>
