@@ -199,7 +199,19 @@ border: "1px solid #4caf50",
         <strong>
           🐑 {task.sheepName}
         </strong>
-
+{task.caseId && (
+  <>
+    <br />
+    <span
+      style={{
+        color: "#ff9800",
+        fontWeight: "bold",
+      }}
+    >
+      ⚠️ Health Case Active
+    </span>
+  </>
+)}
         <br />
 
         {task.eventType}
@@ -249,10 +261,21 @@ border: "1px solid #4caf50",
   {task.notes}
 </p>
 
-<p>
-  <strong>Case ID:</strong>
-  {String(task.caseId)}
-</p>
+{task.caseId && (
+  <div
+    style={{
+      marginTop: "10px",
+      padding: "8px",
+      background: "#1b5e20",
+      borderRadius: "8px",
+      color: "white",
+      fontWeight: "bold",
+    }}
+  >
+    🩺 Linked Health Case #{task.caseId}
+  </div>
+)}
+
     <p>
       <strong>Repeats Every:</strong>
       {" "}
