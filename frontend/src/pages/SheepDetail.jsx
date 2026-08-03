@@ -1604,45 +1604,7 @@ function saveScheduledEvent() {
     )}
   </div>
   
-)}{activeTab === "scheduled" && (
-  <div
-    style={{
-      background: "#2b2b2b",
-      padding: "20px",
-      borderRadius: "10px",
-    }}
-  >
-    <h2>📋 Scheduled Events</h2>
-
-    {scheduledEvents.length === 0 ? (
-      <p>
-        No scheduled events.
-      </p>
-    ) : (
-      scheduledEvents.map((event) => (
-        <div
-          key={event.id}
-          style={{
-            background: "#1f1f1f",
-            padding: "12px",
-            borderRadius: "10px",
-            marginBottom: "10px",
-          }}
-        >
-          <strong>
-            {event.eventType}
-          </strong>
-
-          <br />
-
-          {event.notes}
-
-          <br />
-
-          <small>
-            Due: {event.dueDate}
-          </small>
-          <br />
+)}
           {activeTab === "health" && (
   <div
     style={{
@@ -1782,6 +1744,46 @@ function saveScheduledEvent() {
     ))}
   </div>
 )}
+
+{activeTab === "scheduled" && (
+  <div
+    style={{
+      background: "#2b2b2b",
+      padding: "20px",
+      borderRadius: "10px",
+    }}
+  >
+    <h2>📋 Scheduled Events</h2>
+
+    {scheduledEvents.length === 0 ? (
+      <p>
+        No scheduled events.
+      </p>
+    ) : (
+      scheduledEvents.map((event) => (
+        <div
+          key={event.id}
+          style={{
+            background: "#1f1f1f",
+            padding: "12px",
+            borderRadius: "10px",
+            marginBottom: "10px",
+          }}
+        >
+          <strong>
+            {event.eventType}
+          </strong>
+
+          <br />
+
+          {event.notes}
+
+          <br />
+
+          <small>
+            Due: {event.dueDate}
+          </small>
+          <br />
 
 <button
   onClick={() =>
