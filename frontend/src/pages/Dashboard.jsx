@@ -8,6 +8,8 @@ export default function Dashboard({ setPage }) {
     openTasks: 0,
   });
 
+const [expandedTask, setExpandedTask] =
+  useState(null);
 
   const [activity, setActivity] = useState([]);
 
@@ -208,7 +210,50 @@ border: "1px solid #4caf50",
           Due: {task.dueDate}
         </small>
         <br />
+<button
+  onClick={() =>
+    setExpandedTask(
+      expandedTask === event.id
+        ? null
+        : event.id
+    )
+  }
+>
+  {expandedTask === event.id
+    ? "▲ Hide"
+    : "▼ Details"}
+</button>
+{expandedTask === event.id && (
+  <div
+    style={{
+      background: "#1f1f1f",
+      padding: "12px",
+      borderRadius: "8px",
+      marginTop: "10px",
+    }}
+  >
+    <p>
+      Case: {event.caseTitle}
+    </p>
 
+    <p>
+      Monitoring:
+      Every {event.repeatEvery} Days
+    </p>
+
+    <button>
+      ➕ Add Note
+    </button>
+
+    <button>
+      💉 Treatment
+    </button>
+
+    <button>
+      📂 Open Case
+    </button>
+  </div>
+)}
 <button
   onClick={() =>
     completeTask(task.id)
