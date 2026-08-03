@@ -1891,8 +1891,7 @@ function saveScheduledEvent() {
   📋 Actions
 </button>
 <button
-  onClick={() => {
-  }}
+  onClick={() => createMonitoring(item.id)}
   style={{
     background: "#4caf50",
     color: "white",
@@ -1903,7 +1902,6 @@ function saveScheduledEvent() {
 >
   ✅ Create Monitoring
 </button>
-
 {activeCaseId === item.id && (
   <div
     style={{
