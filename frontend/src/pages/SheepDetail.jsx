@@ -19,6 +19,18 @@ const [numberOfEvents, setNumberOfEvents] =
 const [newActionType, setNewActionType] =
   useState("Health Check");
 
+  const [showMonitoringFor,
+  setShowMonitoringFor] =
+  useState(null);
+
+const [monitoringType,
+  setMonitoringType] =
+  useState("Health Check");
+
+const [monitoringFrequency,
+  setMonitoringFrequency] =
+  useState(2);
+
 const [newActionNotes, setNewActionNotes] =
   useState("");
 
@@ -342,6 +354,51 @@ function saveAction(caseId) {
 
       setToast(
         "✅ Action added"
+      );
+
+      setTimeout(() => {
+        setToast("");
+      }, 3000);
+    });
+}
+
+function createMonitoring(caseId) {
+  fetch(
+    `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scheduled`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+      body: JSON.stringify({
+        dueDate: new Date()
+          .toISOString()
+          .split("T")[0],
+
+        eventType: monitoringType,
+
+        notes:
+          `Health Case #${caseId}`,
+
+        repeatEvery:
+          Number(
+            monitoringFrequency
+          ),
+
+        repeatUntilResolved:
+          true,
+      }),
+    }
+  )
+    .then((res) => res.json())
+    .then(() => {
+      setToast(
+        "✅ Monitoring created"
+      );
+
+      setShowMonitoringFor(
+        null
       );
 
       setTimeout(() => {
@@ -1916,6 +1973,100 @@ function saveScheduledEvent() {
     >
       ✅ Add Action
     </button>
+
+    <button
+  onClick={() =>
+    setShowMonitoringFor(
+      item.id
+    )
+  }
+  style={{
+    background: "#ff9800",
+    color: "white",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    marginRight: "10px",
+    cursor: "pointer",
+  }}
+>
+  ⏰ Monitoring
+</button>
+
+{showMonitoringFor === item.id && (
+  <div
+    style={{
+      background: "#2b2b2b",
+      padding: "12px",
+      borderRadius: "10px",
+      marginTop: "10px",
+    }}
+  >
+    <label>
+      Type
+    </label>
+
+    <select
+      value={monitoringType}
+      onChange={(e) =>
+        setMonitoringType(
+          e.target.value
+        )
+      }
+      style={inputStyle}
+    >
+      <option>
+        Health Check
+      </option>
+
+      <option>
+        Weight Check
+      </option>
+
+      <option>
+        Observation
+      </option>
+
+      <option>
+        Vet Review
+      </option>
+    </select>
+
+    <label>
+      Every X Days
+    </label>
+
+    <input
+      type="number"
+      value={
+        monitoringFrequency
+      }
+      onChange={(e) =>
+        setMonitoringFrequency(
+          e.target.value
+        )
+      }
+      style={inputStyle}
+    />
+
+    <button
+      onClick={() =>
+        createMonitoring(
+          item.id
+        )
+      }
+      style={{
+        background: "#4caf50",
+        color: "white",
+        border: "none",
+        padding: "10px 14px",
+        borderRadius: "8px",
+      }}
+    >
+      ✅ Create Monitoring
+    </button>
+  </div>
+)}
 
 {(caseActions[item.id] || []).map(
   (action) => (
