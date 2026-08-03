@@ -406,16 +406,6 @@ function resolveCase(caseId) {
       method: "PUT",
     }
   )
-    .then((res) => {
-      alert(`Status: ${res.status}`);
-      return res.text();
-    })
-    .then((text) => {
-      alert(text);
-    })
-    .catch((err) => {
-      alert(err.message);
-    });
 }
   function completeScheduledEvent(
   eventId
@@ -2089,6 +2079,22 @@ function saveScheduledEvent() {
 >
   ✅ Complete
 </button>
+<button
+  onClick={() =>
+    stopRecurring(event.id)
+  }
+  style={{
+    background: "#f44336",
+    color: "white",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    marginLeft: "10px",
+  }}
+>
+  🛑 Stop Recurring
+</button>
+
         </div>
       ))
     )}
@@ -2097,7 +2103,18 @@ function saveScheduledEvent() {
     </div>
   );
 }
-
+function stopRecurring(eventId) {
+  fetch(
+    `https://wern-villa-api.onrender.com/scheduled/${eventId}/stop`,
+    {
+      method: "PUT",
+    }
+  )
+    .then((res) => res.json())
+    .then(() => {
+      window.location.reload();
+    });
+}
 function TabButton({
   label,
   active,
