@@ -1,4 +1,4 @@
-constrequire("dotenv").config();
+require("dotenv").config();
 
 const { createClient } =
   require("@libsql/client");
