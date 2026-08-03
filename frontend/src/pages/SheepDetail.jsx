@@ -13,6 +13,17 @@ export default function SheepDetail({
 
 const [numberOfEvents, setNumberOfEvents] =
   useState(1);
+  const [caseActions, setCaseActions] =
+  useState({});
+
+const [newActionType, setNewActionType] =
+  useState("Health Check");
+
+const [newActionNotes, setNewActionNotes] =
+  useState("");
+
+const [activeCaseId, setActiveCaseId] =
+  useState(null);
 
   const [healthCases, setHealthCases] =
   useState([]);
@@ -291,6 +302,61 @@ const [scanResult, setScanResult] = useState("Single");
 
       setCaseTitle("");
       setCaseDescription("");
+    });
+}
+
+function loadCaseActions(caseId) {
+  fetch(
+    `https://wern-villa-api.onrender.com/health-cases/${caseId}/actions`
+  )
+    .then((res) => res.json())
+    .then((data) => {
+      setCaseActions((prev) => ({
+        ...prev,
+        data,
+      }));
+    });
+}
+function loadCaseActions(caseId) {
+  fetch(
+    `https://wern-villa-api.onrender.com/health-cases/${caseId}/actions`
+  )
+    .then((res) => res.json())
+    .then((data) => {
+      setCaseActions((prev) => ({
+        ...prev,
+        data,
+      }));
+    });
+}
+function saveAction(caseId) {
+  fetch(
+    `https://wern-villa-api.onrender.com/health-cases/${caseId}/actions`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+      body: JSON.stringify({
+        actionType: newActionType,
+        notes: newActionNotes,
+      }),
+    }
+  )
+    .then((res) => res.json())
+    .then(() => {
+      loadCaseActions(caseId);
+
+      setNewActionNotes("");
+
+      setToast(
+        "✅ Action added"
+      );
+
+      setTimeout(() => {
+        setToast("");
+      }, 3000);
     });
 }
 function resolveCase(caseId) {
@@ -1760,6 +1826,136 @@ function saveScheduledEvent() {
           {" "}
           {item.status}
         </small>
+        <br />
+
+<button
+  onClick={() => {
+    if (activeCaseId === item.id) {
+      setActiveCaseId(null);
+    } else {
+      setActiveCaseId(item.id);
+      loadCaseActions(item.id);
+    }
+  }}
+  style={{
+    background: "#03a9f4",
+    color: "white",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    cursor: "pointer",
+    marginTop: "10px",
+    marginRight: "10px",
+  }}
+>
+  📋 Actions
+</button>
+{activeCaseId === item.id && (
+  <div
+    style={{
+      marginTop: "15px",
+      padding: "12px",
+      background: "#2b2b2b",
+      borderRadius: "10px",
+    }}
+  >
+    <select
+      value={newActionType}
+      onChange={(e) =>
+        setNewActionType(
+          e.target.value
+        )
+      }
+      style={inputStyle}
+    >
+      <option>
+        Health Check
+      </option>
+
+      <option>
+        Injection
+      </option>
+
+      <option>
+        Observation
+      </option>
+
+      <option>
+        Foot Treatment
+      </option>
+
+      <option>
+        Weight
+      </option>
+
+      <option>
+        Vet Visit
+      </option>
+
+      <option>
+        Note
+      </option>
+    </select>
+
+    <textarea
+      value={newActionNotes}
+      onChange={(e) =>
+        setNewActionNotes(
+          e.target.value
+        )
+      }
+      placeholder="Notes..."
+      style={{
+        ...inputStyle,
+        minHeight: "70px",
+      }}
+    />
+
+    <button
+      onClick={() =>
+        saveAction(item.id)
+      }
+      style={{
+        background: "#4caf50",
+        color: "white",
+        border: "none",
+        padding: "10px 14px",
+        borderRadius: "8px",
+        marginBottom: "15px",
+      }}
+    >
+      ✅ Add Action
+    </button>
+
+    {(caseActions[item.id] || []).map(
+      (action) => (
+        <div
+          key={action.id}
+          style={{
+            background: "#1f1f1f",
+            padding: "10px",
+            borderRadius: "8px",
+            marginBottom: "8px",
+          }}
+        >
+          <strong>
+            {action.actionType}
+          </strong>
+
+          <br />
+
+          {action.notes}
+
+          <br />
+
+          <small>
+            {action.actionDate}
+          </small>
+        </div>
+      )
+    )}
+  </div>
+)}
         <br />
 
 <button
