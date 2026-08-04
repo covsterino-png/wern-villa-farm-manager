@@ -14,6 +14,12 @@ const [expandedTask, setExpandedTask] =
   const [caseActions, setCaseActions] =
   useState({});
 
+  const [medicines, setMedicines] =
+  useState([]);
+
+const [selectedMedicine, setSelectedMedicine] =
+  useState({});
+
 
   const [actionType, setActionType] =
   useState({});
@@ -31,6 +37,16 @@ const [actionNotes, setActionNotes] =
 
     const [todayTasks, setTodayTasks] =
   useState([]);
+
+  useEffect(() => {
+  fetch(
+    "https://wern-villa-api.onrender.com/medicines"
+  )
+    .then((res) => res.json())
+    .then((data) => {
+      setMedicines(data);
+    });
+}, []);
   useEffect(() => {
   fetch(
     "https://wern-villa-api.onrender.com/tasks/today"
@@ -159,13 +175,25 @@ function saveActionFromDashboard(
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        actionType:
-          actionType[taskId] ||
-          "Observation",
-        notes:
-          actionNotes[taskId] || "",
-      }),
+body: JSON.stringify({
+  actionType:
+    actionType[taskId] ||
+    "Observation",
+
+  notes:
+    actionType[taskId] ===
+    "Injection"
+      ? `Medicine: ${
+          selectedMedicine[
+            taskId
+          ] || "Unknown"
+        }
+
+${actionNotes[taskId] || ""}`
+      : actionNotes[
+          taskId
+        ] || "",
+}),
     }
   )
     .then((res) => res.json())
@@ -420,6 +448,47 @@ expandedTask === task.id
         Note
       </option>
     </select>
+          {actionType[task.id] ===
+  "Injection" && (
+  <select
+    value={
+      selectedMedicine[
+        task.id
+      ] || ""
+    }
+    onChange={(e) =>
+      setSelectedMedicine({
+        ...selectedMedicine,
+        [task.id]:
+          e.target.value,
+      })
+    }
+    style={{
+      width: "100%",
+      padding: "10px",
+      marginTop: "10px",
+      borderRadius: "8px",
+    }}
+  >
+    <option value="">
+      Select Medicine
+    </option>
+
+    {medicines.map(
+      (medicine) => (
+        <option
+          key={medicine.id}
+          value={
+            medicine.name
+          }
+        >
+          {medicine.name}
+        </option>
+      )
+    )}
+  </select>
+)}
+
 
     <textarea
       placeholder="Notes..."
