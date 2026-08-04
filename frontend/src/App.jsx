@@ -130,22 +130,39 @@ function App() {
     {user}
   </span>
 
-  <button
-    onClick={logout}
-    style={{
-      background: "transparent",
-      border: "none",
-      color: "#aaa",
-      cursor: "pointer",
-      fontSize: "1.2rem",
-      padding: "0",
-    }}
-    title="Logout"
-  >
-    🚪
-  </button>
-</div>
+  <div>
+    <button
+      onClick={() =>
+        setPage("settings")
+      }
+      style={{
+        background: "transparent",
+        border: "none",
+        color: "#aaa",
+        cursor: "pointer",
+        fontSize: "1rem",
+        marginRight: "8px",
+      }}
+      title="Settings"
+    >
+      ⚙️
+    </button>
 
+    <button
+      onClick={logout}
+      style={{
+        background: "transparent",
+        border: "none",
+        color: "#aaa",
+        cursor: "pointer",
+        fontSize: "1rem",
+      }}
+      title="Logout"
+    >
+      🚪
+    </button>
+  </div>
+</div>
 <div
   style={{
     color: "#999",
