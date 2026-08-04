@@ -63,11 +63,11 @@ function App() {
         : "#2b2b2b",
     color: "white",
     border: "none",
-    padding: "8px",
+    padding: "6px",
     borderRadius: "10px",
     textAlign: "left",
     cursor: "pointer",
-    minHeight: "40px",
+    minHeight: "36px",
     fontWeight:
       page === buttonPage
         ? "bold"
@@ -163,16 +163,7 @@ function App() {
     </button>
   </div>
 </div>
-<div
-  style={{
-    color: "#999",
-    fontSize: "0.9rem",
-    textAlign: "center",
-    marginTop: "10px",
-  }}
->
-  Farm Manager
-</div>
+
         </div>
 
         <div
@@ -237,15 +228,6 @@ Receipts
           position: "relative",
         }}
       >
-        {user === "David" && (
-<button
-  style={buttonStyle("settings")}
-  onClick={() =>
-    setPage("settings")
-  }
->
-  ⚙️
-</button>        )}
 
 {page === "dashboard" && (
   <Dashboard
