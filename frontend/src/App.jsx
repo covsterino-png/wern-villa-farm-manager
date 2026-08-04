@@ -115,7 +115,8 @@ function App() {
 <span
   style={{
     color: "#aaa",
-    fontSize: "0.85rem",
+    fontSize: "0.8rem",
+    whiteSpace: "nowrap",
   }}
 >
   {user} • Farm Manager
