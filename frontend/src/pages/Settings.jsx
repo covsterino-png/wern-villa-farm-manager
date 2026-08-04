@@ -315,6 +315,64 @@ body: JSON.stringify({
     {" "}
     {medicine.administrationMethod}
   </div>
+  <button
+  onClick={async () => {
+    const newName = prompt(
+      "Medicine name:",
+      medicine.name
+    );
+
+    if (newName === null) return;
+
+    const newDoseRate = prompt(
+      "Dose rate:",
+      medicine.doseRate || ""
+    );
+
+    if (newDoseRate === null) return;
+
+    const newWithdrawal = prompt(
+      "Withdrawal days:",
+      medicine.withdrawalDays || ""
+    );
+
+    if (newWithdrawal === null) return;
+
+    const newMethod = prompt(
+      "Administration method:",
+      medicine.administrationMethod || ""
+    );
+
+    if (newMethod === null) return;
+
+    await fetch(
+      `https://wern-villa-api.onrender.com/medicines/${medicine.id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+        body: JSON.stringify({
+          name: newName,
+          doseRate: newDoseRate,
+          withdrawalDays: Number(
+            newWithdrawal
+          ),
+          administrationMethod:
+            newMethod,
+        }),
+      }
+    );
+
+    loadMedicines();
+  }}
+  style={{
+    marginTop: "10px",
+  }}
+>
+  ⚙️ Edit Medicine
+</button>
 </div>      </div>
     ))}
   </div>
