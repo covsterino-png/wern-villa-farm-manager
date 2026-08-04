@@ -183,7 +183,7 @@ function App() {
               setPage("move")
             }
           >
-Move Group
+Move
           </button>
 
           <button
