@@ -185,7 +185,7 @@ function App() {
               setPage("move")
             }
           >
-🌱 Move Group
+Move Group
           </button>
 
           <button
