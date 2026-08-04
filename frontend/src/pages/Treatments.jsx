@@ -222,14 +222,23 @@ export default function Treatments() {
             marginBottom: "10px",
           }}
         >
-          <strong>
-            {item.treatment}
-          </strong>
+<strong>
+  {item.treatment}
+</strong>
 
-          <br />
+<br />
 
-          Group: {item.groupName}
+{item.sheepName ? (
+  <>
+    🐑 {item.sheepName}
+  </>
+) : (
+  <>
+    👥 Group: {item.groupName}
+  </>
+)}
 
+<br />
           <br />
 
           Date: {item.treatmentDate}
