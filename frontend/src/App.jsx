@@ -103,15 +103,6 @@ function App() {
             paddingBottom: "15px",
           }}
         >
-          <h1
-            style={{
-              margin: 0,
-              color: "#03a9f4",
-              fontSize: "1.8rem",
-            }}
-          >
-🚜 Farm Manager
-          </h1>
 
 <div
   style={{
@@ -121,15 +112,14 @@ function App() {
     marginTop: "8px",
   }}
 >
-  <span
-    style={{
-      color: "#03a9f4",
-      fontSize: "0.9rem",
-    }}
-  >
-    {user}
-  </span>
-
+<span
+  style={{
+    color: "#aaa",
+    fontSize: "0.85rem",
+  }}
+>
+  {user} • Farm Manager
+</span>
   <div>
     <button
       onClick={() =>
