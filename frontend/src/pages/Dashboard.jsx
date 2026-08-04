@@ -512,7 +512,71 @@ boxShadow:
       )
     )}
   </select>
+  
 )}
+{selectedMedicine[task.id] && (
+  <div
+    style={{
+      background: "#1f1f1f",
+      padding: "12px",
+      marginTop: "10px",
+      borderRadius: "8px",
+      border: "1px solid #444",
+      textAlign: "left",
+    }}
+  >
+    {(() => {
+      const medicine =
+        medicines.find(
+          (m) =>
+            m.name ===
+            selectedMedicine[
+              task.id
+            ]
+        );
+
+      if (!medicine) {
+        return null;
+      }
+
+      return (
+        <>
+          <div>
+            💊 Dose:
+            {" "}
+            {medicine.doseRate}
+          </div>
+
+          <div
+            style={{
+              marginTop: "6px",
+            }}
+          >
+            ⚠️ Withdrawal:
+            {" "}
+            {
+              medicine.withdrawalDays
+            }{" "}
+            days
+          </div>
+
+          <div
+            style={{
+              marginTop: "6px",
+            }}
+          >
+            💉 Method:
+            {" "}
+            {
+              medicine.administrationMethod
+            }
+          </div>
+        </>
+      );
+    })()}
+  </div>
+)}
+
 
 
     <textarea
