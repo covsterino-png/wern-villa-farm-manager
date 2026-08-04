@@ -340,12 +340,11 @@ border: "1px solid #4caf50",
     cursor: "pointer",
     marginTop: "10px",
     fontWeight: "bold",
-    boxShadow:
-expandedTask === task.id
-  ? "📖 Close Record"
-  : "🩺 Open Record",    
-  transition: "0.2s",
-  }}
+boxShadow:
+  expandedTask === task.id
+    ? "0 0 12px rgba(255,152,0,0.4)"
+    : "0 0 12px rgba(3,169,244,0.4)",
+      }}
 >
   {expandedTask === task.id
     ? "▲ Hide Details"
@@ -587,24 +586,15 @@ expandedTask === task.id
 >
   ✅ Complete
 </button>
-{task.autoRepeat && (
+{!!task.autoRepeat && (
   <button
     onClick={() =>
       stopRecurring(task.id)
     }
-    style={{
-      background: "#f44336",
-      color: "white",
-      border: "none",
-      padding: "8px 12px",
-      borderRadius: "8px",
-      marginLeft: "10px",
-    }}
   >
     🛑 Stop Repeat
   </button>
 )}
-
       </div>
     ))
   )}
