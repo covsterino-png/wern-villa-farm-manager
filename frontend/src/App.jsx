@@ -63,7 +63,7 @@ function App() {
         : "#2b2b2b",
     color: "white",
     border: "none",
-    padding: "16px",
+    padding: "8px",
     borderRadius: "10px",
     textAlign: "left",
     cursor: "pointer",
