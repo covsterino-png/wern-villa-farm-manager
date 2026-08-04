@@ -221,26 +221,14 @@ Receipts
         }}
       >
         {user === "David" && (
-          <button
-            onClick={() =>
-              setPage("settings")
-            }
-            style={{
-              position: "absolute",
-              top: "20px",
-              right: "20px",
-              background:
-                "transparent",
-              border: "none",
-              fontSize: "2rem",
-              cursor: "pointer",
-              zIndex: 1000,
-            }}
-            title="Administration"
-          >
-            ⚙️
-          </button>
-        )}
+<button
+  style={buttonStyle("settings")}
+  onClick={() =>
+    setPage("settings")
+  }
+>
+  ⚙️
+</button>        )}
 
 {page === "dashboard" && (
   <Dashboard
