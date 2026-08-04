@@ -39,8 +39,6 @@ function App() {
   localStorage.removeItem("user");
   window.location.reload();
 }
-
-
   if (!user) {
     return (
       <Login
@@ -189,30 +187,6 @@ function App() {
           >
 🌱 Move Group
           </button>
-          <button
-  style={buttonStyle(
-    "flock-register"
-  )}
-  onClick={() =>
-    setPage(
-      "flock-register"
-    )
-  }
->
-  Flock Management
-</button>
-<button
-  style={buttonStyle(
-    "sheep-register"
-  )}
-  onClick={() =>
-    setPage(
-      "sheep-register"
-    )
-  }
->
-  🐑 Sheep
-</button>
 
           <button
             style={buttonStyle(
@@ -225,25 +199,7 @@ function App() {
             History
           </button>
 
-          <button
-            style={buttonStyle("tasks")}
-            onClick={() =>
-              setPage("tasks")
-            }
-          >
-            Tasks
-          </button>
 
-          <button
-            style={buttonStyle(
-              "treatments"
-            )}
-            onClick={() =>
-              setPage("treatments")
-            }
-          >
-            Treatments
-          </button>
           <button
   style={buttonStyle("receipts")}
   onClick={() => setPage("receipts")}
