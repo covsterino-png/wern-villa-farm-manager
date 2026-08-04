@@ -511,6 +511,14 @@ app.post("/sheep/:id/health-cases", async (req, res) => {
         priority || "medium",
       ],
     });
+    await addHistory(
+  req.params.id,
+  "🩺 Health Case",
+  title,
+  new Date()
+    .toISOString()
+    .split("T")[0]
+);
 
     res.json({
       success: true,
@@ -562,7 +570,12 @@ app.post("/health-cases/:id/actions", async (req, res) => {
         notes,
       ],
     });
-
+await addHistory(
+  sheepId,
+  `🩺 ${actionType}`,
+  notes,
+  actionDate
+);
     res.json({
       success: true,
     });
@@ -701,6 +714,7 @@ app.get("/sheep/:id/lambings", async (req, res) => {
       `,
       args: [req.params.id],
     });
+    
 
     res.json(result.rows);
   } catch (error) {
@@ -741,6 +755,13 @@ app.post("/sheep/:id/lambings", async (req, res) => {
         notes,
       ],
     });
+    await addHistory(
+  req.params.id,
+  "🍼 Lambing",
+  `${males} male, ${females} female, ${dead} dead`,
+  lambingDate
+);
+
 
     const totalBorn =
       Number(males) +
@@ -831,7 +852,12 @@ app.post("/sheep/:id/events", async (req, res) => {
       eventDate,
     ],
   });
-
+await addHistory(
+  req.params.id,
+  eventType,
+  notes,
+  eventDate
+);
   res.json({
     success: true,
   });
@@ -889,6 +915,32 @@ app.get(
     }
   }
 );
+
+async function addHistory(
+  sheepId,
+  eventType,
+  details,
+  eventDate
+) {
+  await turso.execute({
+    sql: `
+      INSERT INTO sheepHistory (
+        sheepId,
+        eventType,
+        details,
+        eventDate
+      )
+      VALUES (?, ?, ?, ?)
+    `,
+    args: [
+      sheepId,
+      eventType,
+      details,
+      eventDate,
+    ],
+  });
+}
+
 app.get("/flock-register", async (req, res) => {
   try {
     const result = await turso.execute(
@@ -952,6 +1004,12 @@ app.post("/sheep/:id/scans", async (req, res) => {
         result,
       ],
     });
+    await addHistory(
+  req.params.id,
+  "🤰 Scan",
+  result,
+  scanDate
+);
 
     await turso.execute({
       sql: `
@@ -1363,6 +1421,12 @@ app.put("/tasks/:id/complete", async (req, res) => {
       `,
       args: [completedBy, id],
     });
+    await addHistory(
+  sheepId,
+  "✅ Scheduled Event",
+  eventType,
+  completedDate
+);
 
     res.json({
       success: true,
@@ -1514,7 +1578,12 @@ args: [
   administeredBy,
 ],
     });
-
+await addHistory(
+  sheepId,
+  "💉 Treatment",
+  `${treatment} - ${notes || ""}`,
+  treatmentDate
+);
     res.json({
       success: true,
       id: Number(result.lastInsertRowid),
@@ -1523,6 +1592,7 @@ args: [
     res.status(500).json(error);
   }
 });
+
 app.get("/flock-groups", async (req, res) => {
   try {
     const result = await turso.execute(
