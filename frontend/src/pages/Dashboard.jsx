@@ -228,7 +228,12 @@ body: JSON.stringify({
   treatmentDate:
     new Date().toLocaleDateString(),
 
-  withdrawalDays: 0,
+  withdrawalDays:
+  medicines.find(
+    (m) =>
+      m.name ===
+      selectedMedicine[taskId]
+  )?.withdrawalDays || 0,
 
   cost: 0,
 
