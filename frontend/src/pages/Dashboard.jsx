@@ -677,15 +677,16 @@ boxShadow:
   colour="#8bc34a"
   onClick={() => setPage("farm-map")}
 />
-        <DashboardCard
-          icon="💉"
-          title="Treatments"
-          value={treatmentCount}
-          colour="#9c27b0"
-          onClick={() =>
-            setPage("treatments")
-          }
-        />
+<DashboardCard
+  icon="💉"
+  title="Treatments"
+  subtitle="This Month"
+  value={treatmentCount}
+  colour="#9c27b0"
+  onClick={() =>
+    setPage("treatments")
+  }
+/>
 
         <DashboardCard
           icon="⚠️"

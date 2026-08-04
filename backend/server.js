@@ -1622,12 +1622,30 @@ app.get("/fields-count", async (req, res) => {
 app.get("/treatments-count", async (req, res) => {
   try {
     const result = await turso.execute(
-      "SELECT COUNT(*) AS count FROM treatments"
+      "SELECT treatmentDate FROM treatments"
     );
 
-    res.json({
-      count: Number(result.rows[0].count),
-    });
+    const now = new Date();
+
+    const count = result.rows.filter(
+      (t) => {
+        if (!t.treatmentDate) {
+          return false;
+        }
+
+        const [day, month, year] =
+          t.treatmentDate.split("/");
+
+        return (
+          Number(month) ===
+            now.getMonth() + 1 &&
+          Number(year) ===
+            now.getFullYear()
+        );
+      }
+    ).length;
+
+    res.json({ count });
   } catch (error) {
     res.status(500).json(error);
   }
