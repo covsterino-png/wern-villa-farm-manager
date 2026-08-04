@@ -268,40 +268,13 @@ body: JSON.stringify({
       <h1
         style={{
           color: "#03a9f4",
-          marginBottom: "20px",
+          marginBottom: "10px",
         }}
       >
-        🐑 Dashboard
+        🐑 Wern Villa
       </h1>
 
-      <div
-        style={{
-          background:
-            "linear-gradient(135deg, #03a9f4, #1565c0)",
-          padding: "30px",
-          borderRadius: "16px",
-          marginBottom: "20px",
-        }}
-      >
-<h2
-  style={{
-    margin: 0,
-    color: "white",
-  }}
->
-  🚜 Farm Control Centre
-</h2>
 
-<p
-  style={{
-    marginTop: "10px",
-    color: "white",
-  }}
->
-  Manage sheep, groups, fields,
-  treatments and tasks from one place.
-</p>
-      </div>
         <div
   style={{
     background: "#2b2b2b",
