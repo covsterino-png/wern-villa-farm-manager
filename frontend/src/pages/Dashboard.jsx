@@ -34,6 +34,9 @@ const [actionNotes, setActionNotes] =
 
   const [treatmentCount, setTreatmentCount] =
     useState(0);
+    const [showTasks, setShowTasks] =
+  useState(false);
+``
 
     const [todayTasks, setTodayTasks] =
   useState([]);
@@ -309,16 +312,23 @@ body: JSON.stringify({
   }}
 >
 <h2
+  onClick={() =>
+    setShowTasks(!showTasks)
+  }
   style={{
     color: "#03a9f4",
     marginTop: 0,
+    cursor: "pointer",
   }}
 >
-  📋 Today's tasks
+  📋 Today's Tasks ({todayTasks.length})
+  {" "}
+  {showTasks ? "▲" : "▼"}
 </h2>
 
-  {todayTasks.length === 0 ? (
-<p
+{showTasks &&
+(
+todayTasks.length === 0 ? (<p
   style={{
     color: "#4caf50",
     fontWeight: "bold",
@@ -656,9 +666,9 @@ boxShadow:
 )}
       </div>
     ))
-  )}
+  )
+)}
 </div>
-
 
 <div
   style={{
