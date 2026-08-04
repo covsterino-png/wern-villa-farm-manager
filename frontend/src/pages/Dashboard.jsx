@@ -13,18 +13,7 @@ const [expandedTask, setExpandedTask] =
 
   const [caseActions, setCaseActions] =
   useState({});
-function loadCaseActions(caseId) {
-  fetch(
-    `https://wern-villa-api.onrender.com/health-cases/${caseId}/actions`
-  )
-    .then((res) => res.json())
-    .then((data) => {
-      setCaseActions((prev) => ({
-        ...prev,
-        data,
-      }));
-    });
-}
+
 
   const [actionType, setActionType] =
   useState({});
@@ -128,6 +117,19 @@ fetch(
       setTodayTasks(data);
     });
 }
+
+function loadCaseActions(caseId) {
+  fetch(
+    `https://wern-villa-api.onrender.com/health-cases/${caseId}/actions`
+  )
+    .then((res) => res.json())
+    .then((data) => {
+      setCaseActions((prev) => ({
+        ...prev,
+        [caseId]: data,
+      }));
+    });
+}
   function completeTask(taskId) {
   fetch(
     `https://wern-villa-api.onrender.com/scheduled/${taskId}/complete`,
@@ -167,9 +169,9 @@ function saveActionFromDashboard(
     }
   )
     .then((res) => res.json())
-    .then(() => {
-      alert("✅ Action saved");
-    });
+.then(() => {
+  loadCaseActions(caseId);
+});
 }
 
   return (
@@ -287,13 +289,13 @@ border: "1px solid #4caf50",
         </small>
         <br />
 <button
-  onClick={() =>
-    setExpandedTask(
-      expandedTask === task.id
-        ? null
-        : task.id
-    )
+onClick={() => {
+  setExpandedTask(task.id);
+
+  if (task.caseId) {
+    loadCaseActions(task.caseId);
   }
+}}
 >
   {expandedTask === task.id
     ? "▲ Hide"
@@ -435,6 +437,44 @@ border: "1px solid #4caf50",
     >
       💾 Save Action
     </button>
+    <h4
+  style={{
+    marginTop: "15px",
+    color: "#03a9f4",
+  }}
+>
+  Previous Actions
+</h4>
+
+{(caseActions[task.caseId] || []).map(
+  (action) => (
+    <div
+      key={action.id}
+      style={{
+        background: "#1f1f1f",
+        padding: "10px",
+        borderRadius: "8px",
+        marginTop: "8px",
+        textAlign: "left",
+      }}
+    >
+      <strong>
+        {action.actionType}
+      </strong>
+
+      <br />
+
+      {action.notes}
+
+      <br />
+
+      <small>
+        {action.actionDate}
+      </small>
+    </div>
+  )
+)}
+
   </>
 )}
   </div>
