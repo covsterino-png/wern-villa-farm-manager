@@ -289,18 +289,41 @@ border: "1px solid #4caf50",
         </small>
         <br />
 <button
-onClick={() => {
-  setExpandedTask(task.id);
+  onClick={() => {
+    if (expandedTask === task.id) {
+      setExpandedTask(null);
+    } else {
+      setExpandedTask(task.id);
 
-  if (task.caseId) {
-    loadCaseActions(task.caseId);
-  }
-}}
+      if (task.caseId) {
+        loadCaseActions(task.caseId);
+      }
+    }
+  }}
+  style={{
+    background:
+      expandedTask === task.id
+        ? "#ff9800"
+        : "#03a9f4",
+    color: "white",
+    border: "none",
+    padding: "10px 16px",
+    borderRadius: "12px",
+    cursor: "pointer",
+    marginTop: "10px",
+    fontWeight: "bold",
+    boxShadow:
+expandedTask === task.id
+  ? "📖 Close Record"
+  : "🩺 Open Record",    
+  transition: "0.2s",
+  }}
 >
   {expandedTask === task.id
-    ? "▲ Hide"
-    : "▼ Details"}
+    ? "▲ Hide Details"
+    : "🔍 View Details"}
 </button>
+
 {expandedTask === task.id && (
   <div
     style={{
