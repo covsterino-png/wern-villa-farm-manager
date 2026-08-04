@@ -660,15 +660,17 @@ boxShadow:
 </div>
 
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "20px",
-          marginBottom: "20px",
-        }}
-      >
+<div
+  style={{
+    display: "grid",
+    gridTemplateColumns:
+      window.innerWidth < 768
+        ? "repeat(2, 1fr)"
+        : "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: "12px",
+    marginBottom: "20px",
+  }}
+>
 <DashboardCard
   icon="👥"
   title="Groups"
@@ -828,7 +830,7 @@ function DashboardCard({
       style={{
         background: "#1f1f1f",
         borderRadius: "16px",
-        padding: "25px",
+        padding: "16px",
         border: `2px solid ${colour}`,
         boxShadow: `0 0 15px ${colour}20`,
         cursor: onClick
@@ -839,7 +841,7 @@ function DashboardCard({
     >
       <div
         style={{
-          fontSize: "2rem",
+          fontSize: "1.6rem",
           marginBottom: "10px",
         }}
       >
@@ -857,7 +859,7 @@ function DashboardCard({
 
       <div
         style={{
-          fontSize: "2.4rem",
+          fontSize: "1.8rem",
           fontWeight: "bold",
           color: colour,
           marginTop: "10px",
