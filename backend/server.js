@@ -1567,6 +1567,38 @@ app.get("/medicines", async (req, res) => {
   }
 });
 
+app.put("/medicines/:id", async (req, res) => {
+  const {
+    name,
+    doseRate,
+    withdrawalDays,
+    administrationMethod,
+  } = req.body;
+
+  await turso.execute({
+    sql: `
+      UPDATE medicines
+      SET
+        name = ?,
+        doseRate = ?,
+        withdrawalDays = ?,
+        administrationMethod = ?
+      WHERE id = ?
+    `,
+    args: [
+      name,
+      doseRate,
+      withdrawalDays,
+      administrationMethod,
+      req.params.id,
+    ],
+  });
+
+  res.json({
+    success: true,
+  });
+});
+
 app.post("/medicines", async (req, res) => {
   try {
     const {
