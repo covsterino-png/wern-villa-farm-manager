@@ -1476,6 +1476,8 @@ app.post("/treatments", async (req, res) => {
   try {
     const {
       groupName,
+      sheepId,
+      sheepName,
       treatment,
       treatmentDate,
       withdrawalDays,
@@ -1486,27 +1488,31 @@ app.post("/treatments", async (req, res) => {
 
     const result = await turso.execute({
       sql: `
-        INSERT INTO treatments
-        (
-          groupName,
-          treatment,
-          treatmentDate,
-          withdrawalDays,
-          cost,
-          notes,
-          administeredBy
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+INSERT INTO treatments
+(
+  groupName,
+  sheepId,
+  sheepName,
+  treatment,
+  treatmentDate,
+  withdrawalDays,
+  cost,
+  notes,
+  administeredBy
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
-      args: [
-        groupName,
-        treatment,
-        treatmentDate,
-        withdrawalDays,
-        cost,
-        notes,
-        administeredBy,
-      ],
+args: [
+  groupName,
+  sheepId,
+  sheepName,
+  treatment,
+  treatmentDate,
+  withdrawalDays,
+  cost,
+  notes,
+  administeredBy,
+],
     });
 
     res.json({

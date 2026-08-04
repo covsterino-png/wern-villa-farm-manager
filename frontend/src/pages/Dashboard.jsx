@@ -166,7 +166,8 @@ function loadCaseActions(caseId) {
 }
 function saveActionFromDashboard(
   caseId,
-  taskId
+  taskId,
+  task
 ) {
   fetch(
     `https://wern-villa-api.onrender.com/health-cases/${caseId}/actions`,
@@ -196,8 +197,51 @@ ${actionNotes[taskId] || ""}`
 }),
     }
   )
-    .then((res) => res.json())
+.then((res) => res.json())
 .then(() => {
+
+  if (
+    actionType[taskId] ===
+    "Injection"
+  ) {
+    fetch(
+      "https://wern-villa-api.onrender.com/treatments",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+body: JSON.stringify({
+  groupName:
+    "Individual Sheep",
+
+  sheepId:
+    task.sheepId,
+
+  sheepName:
+    task.sheepName,
+
+  treatment:
+    selectedMedicine[taskId],
+
+  treatmentDate:
+    new Date().toLocaleDateString(),
+
+  withdrawalDays: 0,
+
+  cost: 0,
+
+  notes:
+    actionNotes[taskId] || "",
+
+  administeredBy:
+    localStorage.getItem("user"),
+}),
+      }
+    );
+  }
+
   loadCaseActions(caseId);
 });
 }
@@ -514,7 +558,8 @@ boxShadow:
       onClick={() =>
         saveActionFromDashboard(
           task.caseId,
-          task.id
+          task.id,
+          task
         )
       }
       style={{
