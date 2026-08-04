@@ -11,6 +11,21 @@ export default function Dashboard({ setPage }) {
 const [expandedTask, setExpandedTask] =
   useState(null);
 
+  const [caseActions, setCaseActions] =
+  useState({});
+function loadCaseActions(caseId) {
+  fetch(
+    `https://wern-villa-api.onrender.com/health-cases/${caseId}/actions`
+  )
+    .then((res) => res.json())
+    .then((data) => {
+      setCaseActions((prev) => ({
+        ...prev,
+        data,
+      }));
+    });
+}
+
   const [actionType, setActionType] =
   useState({});
 
