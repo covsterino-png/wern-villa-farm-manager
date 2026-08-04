@@ -346,9 +346,9 @@ boxShadow:
     : "0 0 12px rgba(3,169,244,0.4)",
       }}
 >
-  {expandedTask === task.id
-    ? "▲ Hide Details"
-    : "🔍 View Details"}
+{expandedTask === task.id
+  ? "📖 Close Record"
+  : "🩺 Open Record"}
 </button>
 
 {expandedTask === task.id && (
@@ -591,6 +591,15 @@ boxShadow:
     onClick={() =>
       stopRecurring(task.id)
     }
+    style={{
+      background: "#f44336",
+      color: "white",
+      border: "none",
+      padding: "8px 12px",
+      borderRadius: "8px",
+      marginLeft: "10px",
+      cursor: "pointer",
+    }}
   >
     🛑 Stop Repeat
   </button>
