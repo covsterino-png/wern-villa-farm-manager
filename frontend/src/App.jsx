@@ -175,7 +175,7 @@ function App() {
               setPage("dashboard")
             }
           >
-            Dashboard
+            Home
           </button>
 
           <button
