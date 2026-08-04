@@ -110,7 +110,7 @@ function App() {
               fontSize: "1.8rem",
             }}
           >
-            🐑 Wern Villa
+🚜 Farm Manager
           </h1>
 
 <div
