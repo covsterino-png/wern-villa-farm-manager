@@ -278,10 +278,10 @@ body: JSON.stringify({
         <div
   style={{
     background: "#2b2b2b",
-    padding: "20px",
+    padding: "12px",
     
     borderRadius: "12px",
-    marginBottom: "20px",
+    marginBottom: "12px",
   }}
 >
 <h2
