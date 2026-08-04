@@ -230,11 +230,13 @@ export default function Treatments() {
 
 {item.sheepName ? (
   <>
-    🐑 {item.sheepName}
+    🐑 Animal: {item.sheepName}
+    <br />
   </>
 ) : (
   <>
     👥 Group: {item.groupName}
+    <br />
   </>
 )}
 
