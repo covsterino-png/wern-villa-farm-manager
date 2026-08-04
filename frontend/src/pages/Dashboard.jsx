@@ -265,14 +265,6 @@ body: JSON.stringify({
         padding: "20px",
       }}
     >
-      <h1
-        style={{
-          color: "#03a9f4",
-          marginBottom: "10px",
-        }}
-      >
-        🐑 Wern Villa
-      </h1>
 
 
         <div
