@@ -406,6 +406,22 @@ function resolveCase(caseId) {
       method: "PUT",
     }
   )
+    .then((res) => res.json())
+    .then(() =>
+      fetch(
+        `https://wern-villa-api.onrender.com/sheep/${sheep.id}/health-cases`
+      )
+    )
+    .then((res) => res.json())
+    .then((data) => {
+      setHealthCases(data);
+
+      setToast("✅ Case resolved");
+
+      setTimeout(() => {
+        setToast("");
+      }, 3000);
+    });
 }
   function completeScheduledEvent(
   eventId
@@ -1879,6 +1895,26 @@ function saveScheduledEvent() {
 >
   📋 Actions
 </button>
+<select
+  value={monitoringFrequency}
+  onChange={(e) =>
+    setMonitoringFrequency(
+      Number(e.target.value)
+    )
+  }
+  style={{
+    marginRight: "10px",
+    padding: "8px",
+    borderRadius: "8px",
+  }}
+>
+  <option value={1}>1 Day</option>
+  <option value={2}>2 Days</option>
+  <option value={3}>3 Days</option>
+  <option value={7}>7 Days</option>
+  <option value={14}>14 Days</option>
+</select>
+
 <button
   onClick={() => createMonitoring(item.id)}
   style={{
