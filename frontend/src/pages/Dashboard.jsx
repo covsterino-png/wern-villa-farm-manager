@@ -699,49 +699,6 @@ boxShadow:
         />
       </div>
 
-<div
-  style={{
-    background: "#1f1f1f",
-    padding: "20px",
-    borderRadius: "16px",
-    marginBottom: "20px",
-    border: "1px solid #333",
-  }}
->
-  <h2
-    style={{
-      marginTop: 0,
-      color: "#03a9f4",
-    }}
-  >
-    📊 Farm Snapshot
-  </h2>
-
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns:
-        "repeat(auto-fit, minmax(180px, 1fr))",
-      gap: "15px",
-    }}
-  >
-    <div>
-      🐑 Sheep: {summary.totalSheep}
-    </div>
-
-    <div>
-      👥 Groups: {summary.groups ?? 0}
-    </div>
-
-    <div>
-      🌱 Fields: {fieldCount}
-    </div>
-
-    <div>
-      ⚠️ Withdrawals: {withdrawalCount}
-    </div>
-  </div>
-</div>
 
       <div
         style={{
