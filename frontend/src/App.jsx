@@ -204,7 +204,7 @@ Move Group
   style={buttonStyle("receipts")}
   onClick={() => setPage("receipts")}
 >
-  🧾 Receipts
+Receipts
 </button>
         </div>
       </div>
