@@ -110,47 +110,49 @@ function App() {
             🐑 Wern Villa
           </h1>
 
-          <div
-            style={{
-              color: "#03a9f4",
-              marginTop: "8px",
-            }}
-          >
-            Logged in as: [{user}]
-          </div>
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: "8px",
+  }}
+>
+  <span
+    style={{
+      color: "#03a9f4",
+      fontSize: "0.9rem",
+    }}
+  >
+    {user}
+  </span>
 
-          <button
-            style={{
-              marginTop: "10px",
-              width: "100%",
-              padding: "10px",
-              background: "#444",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-            }}
-            onClick={() => {
-              localStorage.removeItem(
-                "user"
-              );
-              window.location.reload();
-            }}
-          >
-            Logout
-          </button>
+  <button
+    onClick={logout}
+    style={{
+      background: "transparent",
+      border: "none",
+      color: "#aaa",
+      cursor: "pointer",
+      fontSize: "1.2rem",
+      padding: "0",
+    }}
+    title="Logout"
+  >
+    🚪
+  </button>
+</div>
 
-          <div
-            style={{
-              color: "#888",
-              fontSize: "0.85rem",
-              marginTop: "10px",
-              letterSpacing: "1px",
-            }}
-          >
-            GEMMA & DAVID'S FARM
-            MANAGER
-          </div>
+<div
+  style={{
+    color: "#999",
+    fontSize: "0.9rem",
+    textAlign: "center",
+    marginTop: "10px",
+  }}
+>
+  Farm Manager
+</div>
         </div>
 
         <div
