@@ -35,6 +35,11 @@ function App() {
 
   const [movements, setMovements] =
     useState([]);
+    function logout() {
+  localStorage.removeItem("user");
+  window.location.reload();
+}
+
 
   if (!user) {
     return (
