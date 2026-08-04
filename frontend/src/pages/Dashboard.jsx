@@ -547,18 +547,16 @@ boxShadow:
             {medicine.doseRate}
           </div>
 
-          <div
-            style={{
-              marginTop: "6px",
-            }}
-          >
-            ⚠️ Withdrawal:
-            {" "}
-            {
-              medicine.withdrawalDays
-            }{" "}
-            days
-          </div>
+<div
+  style={{
+    marginTop: "6px",
+    color: "#ff9800",
+    fontWeight: "bold",
+  }}
+>
+  ⚠️ Withdrawal:
+  {medicine.withdrawalDays} days
+</div>
 
           <div
             style={{
