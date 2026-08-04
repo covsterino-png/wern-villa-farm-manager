@@ -67,7 +67,7 @@ function App() {
     borderRadius: "10px",
     textAlign: "left",
     cursor: "pointer",
-    minHeight: "50px",
+    minHeight: "40px",
     fontWeight:
       page === buttonPage
         ? "bold"
