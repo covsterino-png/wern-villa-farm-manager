@@ -36,6 +36,8 @@ const [actionNotes, setActionNotes] =
     useState(0);
     const [showTasks, setShowTasks] =
   useState(false);
+  const [showActivity, setShowActivity] =
+  useState(false);
 ``
 
     const [todayTasks, setTodayTasks] =
@@ -708,19 +710,26 @@ boxShadow:
           border: "1px solid #333",
         }}
       >
-        <h2
-          style={{
-            color: "#03a9f4",
-            marginTop: 0,
-          }}
-        >
-          🚜 Recent Activity
-        </h2>
-
-        {activity.length === 0 ? (
-          <p>No activity yet.</p>
-        ) : (
-          activity.map((item) => (
+<h2
+  onClick={() =>
+    setShowActivity(!showActivity)
+  }
+  style={{
+    color: "#03a9f4",
+    marginTop: 0,
+    cursor: "pointer",
+  }}
+>
+  🚜 Recent Activity ({activity.length})
+  {" "}
+  {showActivity ? "▲" : "▼"}
+</h2>
+{showActivity && (
+  <>
+    {activity.length === 0 ? (
+      <p>No activity yet.</p>
+    ) : (
+      activity.map((item) => (
             <div
               key={item.id}
               style={{
@@ -742,9 +751,10 @@ boxShadow:
 
 <small>{item.eventDate}</small>
             </div>
-          ))
-        )}
-      </div>
+))
+)}
+  </>
+)}      </div>
     </div>
   );
 }
