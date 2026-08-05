@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./App.css";
-
+import Calendar from "./pages/Calendar";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import MoveGroup from "./pages/MoveGroup";
@@ -260,6 +260,9 @@ Receipts
         )}
         {page === "receipts" && (
   <Receipts />
+)}
+{page === "calendar" && (
+  <Calendar />
 )}
       </div>
     </div>

@@ -761,6 +761,14 @@ boxShadow:
             setPage("treatments")
           }
         />
+        <DashboardCard
+  icon="📅"
+  title="Calendar"
+  value=""
+  onClick={() =>
+    setPage("calendar")
+  }
+/>
       </div>
 
 
