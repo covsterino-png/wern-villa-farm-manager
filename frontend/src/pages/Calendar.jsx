@@ -23,38 +23,36 @@ const [newEvent, setNewEvent] =
 
   const [eventDays, setEventDays] =
     useState([]);
+const loadEvents = () => {
+  fetch(
+    "https://wern-villa-api.onrender.com/calendar-events"
+  )
+    .then((res) => res.json())
+    .then((data) => {
+      setEvents(data);
 
-  useEffect(() => {
-    fetch(
-      "https://wern-villa-api.onrender.com/calendar-events"
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        setEvents(data);
+      const days = data
+        .filter((event) => {
+          const d = new Date(event.date);
 
-        const days = data
-          .filter((event) => {
-            const d = new Date(
-              event.date
-            );
-
-            return (
-              d.getMonth() ===
-                currentDate.getMonth() &&
-              d.getFullYear() ===
-                currentDate.getFullYear()
-            );
-          })
-          .map((event) =>
-            new Date(
-              event.date
-            ).getDate()
+          return (
+            d.getMonth() ===
+              currentDate.getMonth() &&
+            d.getFullYear() ===
+              currentDate.getFullYear()
           );
+        })
+        .map((event) =>
+          new Date(event.date).getDate()
+        );
 
-        setEventDays(days);
-      });
-  }, [currentDate]);
+      setEventDays(days);
+    });
+};
 
+useEffect(() => {
+  loadEvents();
+}, [currentDate]);
   const actualToday = new Date();
 
   const month =
@@ -110,8 +108,18 @@ const saveEvent = async () => {
     }
   );
 
-  window.location.reload();
+  setShowAddEvent(false);
+
+  setNewEvent({
+    title: "",
+    eventDate: "",
+    category: "Farm",
+    notes: "",
+  });
+
+  loadEvents();
 };
+
 
 return (
     <div>
