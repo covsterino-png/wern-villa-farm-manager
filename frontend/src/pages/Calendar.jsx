@@ -16,7 +16,14 @@ const [newEvent, setNewEvent] =
     eventDate: "",
     category: "Farm",
     notes: "",
+
+    notifyDavid: true,
+    notifyGemma: false,
+
+    reminderDate: "",
+    reminderTime: "",
   });
+
 
   const [events, setEvents] =
     useState([]);
@@ -115,6 +122,7 @@ const saveEvent = async () => {
     eventDate: "",
     category: "Farm",
     notes: "",
+    
   });
 
   loadEvents();
@@ -235,6 +243,66 @@ return (
         padding: "10px",
       }}
     />
+    <label>
+  <input
+    type="checkbox"
+    checked={newEvent.notifyDavid}
+    onChange={(e) =>
+      setNewEvent({
+        ...newEvent,
+        notifyDavid: e.target.checked,
+      })
+    }
+  />
+  Notify David
+</label>
+
+<br />
+
+<label>
+  <input
+    type="checkbox"
+    checked={newEvent.notifyGemma}
+    onChange={(e) =>
+      setNewEvent({
+        ...newEvent,
+        notifyGemma: e.target.checked,
+      })
+    }
+  />
+  Notify Gemma
+</label>
+<input
+  type="date"
+  value={newEvent.reminderDate}
+  onChange={(e) =>
+    setNewEvent({
+      ...newEvent,
+      reminderDate: e.target.value,
+    })
+  }
+  style={{
+    width: "100%",
+    marginTop: "10px",
+    marginBottom: "10px",
+    padding: "10px",
+  }}
+/>
+<input
+  type="time"
+  value={newEvent.reminderTime}
+  onChange={(e) =>
+    setNewEvent({
+      ...newEvent,
+      reminderTime: e.target.value,
+    })
+  }
+  style={{
+    width: "100%",
+    marginBottom: "10px",
+    padding: "10px",
+  }}
+/>
 
     <button
       onClick={saveEvent}
