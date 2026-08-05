@@ -1,10 +1,43 @@
 import { useState } from "react";
+import {
+  useState,
+  useEffect,
+} from "react";
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] =
     useState(new Date());
 const [eventDays, setEventDays] =
   useState([]);
+  useEffect(() => {
+  fetch(
+    "https://wern-villa-api.onrender.com/calendar-events"
+  )
+    .then((res) => res.json())
+    .then((data) => {
+      const days = data
+        .filter((event) => {
+          const d = new Date(
+            event.date
+          );
+
+          return (
+            d.getMonth() ===
+              currentDate.getMonth() &&
+            d.getFullYear() ===
+              currentDate.getFullYear()
+          );
+        })
+        .map((event) =>
+          new Date(
+            event.date
+          ).getDate()
+        );
+
+      setEventDays(days);
+    });
+}, [currentDate]);
+
   const actualToday = new Date();
 
   const month =

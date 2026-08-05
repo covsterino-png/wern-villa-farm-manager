@@ -1698,6 +1698,53 @@ app.post("/medicines", async (req, res) => {
   }
 });
 
+app.get("/calendar-events", async (req, res) => {
+  try {
+    const treatments =
+      await turso.execute(
+        "SELECT * FROM treatments"
+      );
+
+    const events = [];
+
+    for (const treatment of treatments.rows) {
+      if (
+        Number(
+          treatment.withdrawalDays
+        ) > 0
+      ) {
+        const date =
+          new Date(
+            treatment.treatmentDate
+              .split("/")
+              .reverse()
+              .join("-")
+          );
+
+        date.setDate(
+          date.getDate() +
+            Number(
+              treatment.withdrawalDays
+            )
+        );
+
+        events.push({
+          type: "withdrawal",
+          date: date
+            .toISOString()
+            .split("T")[0],
+          sheepName:
+            treatment.sheepName,
+        });
+      }
+    }
+
+    res.json(events);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
 app.get("/fields-count", async (req, res) => {
   try {
     const result = await turso.execute(
