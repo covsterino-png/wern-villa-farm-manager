@@ -1,25 +1,27 @@
 export default function Calendar() {
-  const today = new Date();
-
-  const month = today.toLocaleString(
+const [currentDate, setCurrentDate] =
+  useState(new Date());
+const month =
+  currentDate.toLocaleString(
     "default",
     {
       month: "long",
     }
   );
 
-  const year = today.getFullYear();
-  const currentDay = new Date().getDate();
+const year =
+  currentDate.getFullYear();
+    const currentDay = new Date().getDate();
 
   const firstDay = new Date(
     year,
-    today.getMonth(),
+    currentDate.getMonth(),
     1
   ).getDay();
 
   const daysInMonth = new Date(
     year,
-    today.getMonth() + 1,
+    currentDate.getMonth() + 1,
     0
   ).getDate();
 
@@ -59,19 +61,19 @@ export default function Calendar() {
     marginBottom: "20px",
   }}
 >
-  <button
-    style={{
-      background: "#2b2b2b",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      padding: "8px 12px",
-      cursor: "pointer",
-    }}
-  >
-    ◀
-  </button>
-
+<button
+  onClick={() =>
+    setCurrentDate(
+      new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() - 1,
+        1
+      )
+    )
+  }
+>
+  ◀
+</button>
   <h2
     style={{
       color: "#fff",
@@ -82,18 +84,19 @@ export default function Calendar() {
     {month} {year}
   </h2>
 
-  <button
-    style={{
-      background: "#2b2b2b",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      padding: "8px 12px",
-      cursor: "pointer",
-    }}
-  >
-    ▶
-  </button>
+<button
+  onClick={() =>
+    setCurrentDate(
+      new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() + 1,
+        1
+      )
+    )
+  }
+>
+  ▶
+</button>
 </div>
         <div
           style={{
