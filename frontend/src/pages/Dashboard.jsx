@@ -761,12 +761,25 @@ boxShadow:
             setPage("treatments")
           }
         />
-        <DashboardCard
+<DashboardCard
   icon="📅"
   title="Calendar"
-  value=""
+  value={4}
+  subtitle="Upcoming"
+  colour="#00bcd4"
   onClick={() =>
     setPage("calendar")
+  }
+/>
+
+<DashboardCard
+  icon="📝"
+  title="Notes"
+  value={0}
+  subtitle="Lists"
+  colour="#ff9800"
+  onClick={() =>
+    setPage("notes")
   }
 />
       </div>

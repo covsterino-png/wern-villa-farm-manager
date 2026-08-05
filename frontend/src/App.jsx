@@ -12,6 +12,7 @@ import FarmMap from "./pages/FarmMap";
 import FlockRegister from "./pages/FlockRegister";
 import SheepRegister from "./pages/SheepRegister";
 import Receipts from "./pages/Receipts";
+import Notes from "./pages/Notes";
 
 function App() {
   const [page, setPage] = useState("dashboard");
@@ -263,6 +264,9 @@ Receipts
 )}
 {page === "calendar" && (
   <Calendar />
+)}
+{page === "notes" && (
+  <Notes />
 )}
       </div>
     </div>
