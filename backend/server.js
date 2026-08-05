@@ -1596,6 +1596,27 @@ app.get("/flock-groups", async (req, res) => {
   }
 });
 
+app.delete(
+  "/manual-calendar-events/:id",
+  async (req, res) => {
+    try {
+      await turso.execute({
+        sql: `
+          DELETE FROM calendarEvents
+          WHERE id = ?
+        `,
+        args: [req.params.id],
+      });
+
+      res.json({
+        success: true,
+      });
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  }
+);
+
 app.post("/flock-groups", async (req, res) => {
   try {
     const { name } = req.body;
@@ -1747,14 +1768,26 @@ app.get("/calendar-events", async (req, res) => {
     }
 
     for (const event of manualEvents.rows) {
-events.push({
-  type: "manual",
-  date: event.eventDate,
-  title: event.title,
-  category: event.category,
-  notes: event.notes,
-  createdBy: event.createdBy,
-});
+app.delete(
+  "/manual-calendar-events/:id",
+  async (req, res) => {
+    try {
+      await turso.execute({
+        sql: `
+          DELETE FROM calendarEvents
+          WHERE id = ?
+        `,
+        args: [req.params.id],
+      });
+
+      res.json({
+        success: true,
+      });
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  }
+);
     }
 
     res.json(events);

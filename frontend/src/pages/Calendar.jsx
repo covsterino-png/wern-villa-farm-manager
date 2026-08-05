@@ -119,7 +119,16 @@ const saveEvent = async () => {
 
   loadEvents();
 };
+const deleteEvent = async (id) => {
+  await fetch(
+    `https://wern-villa-api.onrender.com/manual-calendar-events/${id}`,
+    {
+      method: "DELETE",
+    }
+  );
 
+  loadEvents();
+};
 
 return (
     <div>
@@ -464,21 +473,38 @@ return (
               </div>
             </>
           ) : (
-            <>
-              <div>
-                📅 {event.title}
-              </div>
+<>
+  <div>
+    📅 {event.title}
+  </div>
 
-              <div>
-                📂 {event.category}
-              </div>
+  <div>
+    📂 {event.category}
+  </div>
 
-              {event.notes && (
-                <div>
-                  📝 {event.notes}
-                </div>
-              )}
-            </>
+  {event.notes && (
+    <div>
+      📝 {event.notes}
+    </div>
+  )}
+
+  <button
+    onClick={() =>
+      deleteEvent(event.id)
+    }
+    style={{
+      marginTop: "10px",
+      background: "#d32f2f",
+      color: "white",
+      border: "none",
+      borderRadius: "6px",
+      padding: "6px 10px",
+      cursor: "pointer",
+    }}
+  >
+    🗑 Delete
+  </button>
+</>
           )}
         </div>
       ))}
