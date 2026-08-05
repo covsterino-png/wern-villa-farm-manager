@@ -1733,19 +1733,20 @@ app.get("/calendar-events", async (req, res) => {
 
     const events = [];
 
+    // Withdrawals
+
     for (const treatment of treatments.rows) {
       if (
         Number(
           treatment.withdrawalDays
         ) > 0
       ) {
-        const date =
-          new Date(
-            treatment.treatmentDate
-              .split("/")
-              .reverse()
-              .join("-")
-          );
+        const date = new Date(
+          treatment.treatmentDate
+            .split("/")
+            .reverse()
+            .join("-")
+        );
 
         date.setDate(
           date.getDate() +
@@ -1767,32 +1768,28 @@ app.get("/calendar-events", async (req, res) => {
       }
     }
 
-    for (const event of manualEvents.rows) {
-app.delete(
-  "/manual-calendar-events/:id",
-  async (req, res) => {
-    try {
-      await turso.execute({
-        sql: `
-          DELETE FROM calendarEvents
-          WHERE id = ?
-        `,
-        args: [req.params.id],
-      });
+    // Manual Events
 
-      res.json({
-        success: true,
+    for (const event of manualEvents.rows) {
+      events.push({
+        id: event.id,
+        type: "manual",
+        date: event.eventDate,
+        title: event.title,
+        category: event.category,
+        notes: event.notes,
+        createdBy:
+          event.createdBy,
       });
-    } catch (error) {
-      res.status(500).json(error);
-    }
-  }
-);
     }
 
     res.json(events);
   } catch (error) {
-    res.status(500).json(error);
+    console.error(error);
+
+    res.status(500).json({
+      error: error.message,
+    });
   }
 });
 
