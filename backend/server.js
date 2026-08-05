@@ -1747,12 +1747,14 @@ app.get("/calendar-events", async (req, res) => {
     }
 
     for (const event of manualEvents.rows) {
-      events.push({
-        type: "manual",
-        date: event.eventDate,
-        title: event.title,
-        category: event.category,
-      });
+events.push({
+  type: "manual",
+  date: event.eventDate,
+  title: event.title,
+  category: event.category,
+  notes: event.notes,
+  createdBy: event.createdBy,
+});
     }
 
     res.json(events);

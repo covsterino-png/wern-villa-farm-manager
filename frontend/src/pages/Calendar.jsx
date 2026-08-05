@@ -295,23 +295,47 @@ export default function Calendar() {
         <div
           key={index}
           style={{
-            marginBottom: "10px",
+            marginBottom: "12px",
+            padding: "10px",
+            background: "#1f1f1f",
+            borderRadius: "8px",
           }}
         >
-          ⚠️ Withdrawal Ends
+          {event.type === "withdrawal" ? (
+            <>
+              <div>
+                ⚠️ Withdrawal Ends
+              </div>
 
-          <br />
+              <div>
+                🐑 {event.sheepName}
+              </div>
 
-          🐑 {event.sheepName}
+              <div>
+                💉 {event.treatment}
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                📅 {event.title}
+              </div>
 
-          <br />
+              <div>
+                📂 {event.category}
+              </div>
 
-          💉 {event.treatment}
+              {event.notes && (
+                <div>
+                  📝 {event.notes}
+                </div>
+              )}
+            </>
+          )}
         </div>
       ))}
   </div>
-)}
-      </div>
+)}      </div>
     </div>
   );
 }
