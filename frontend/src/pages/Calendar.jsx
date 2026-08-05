@@ -6,14 +6,21 @@ import {
 export default function Calendar() {
   const [currentDate, setCurrentDate] =
     useState(new Date());
+    const [selectedDay, setSelectedDay] =
+  useState(null);
+  const [events, setEvents] =
+  useState([]);
 const [eventDays, setEventDays] =
   useState([]);
+  
   useEffect(() => {
   fetch(
     "https://wern-villa-api.onrender.com/calendar-events"
   )
     .then((res) => res.json())
+    
     .then((data) => {
+        setEvents(data);
       const days = data
         .filter((event) => {
           const d = new Date(
@@ -204,6 +211,9 @@ const [eventDays, setEventDays] =
             return (
 <div
   key={index}
+  onClick={() =>
+    day && setSelectedDay(day)
+  }
   style={{
     background: isToday
       ? "#03a9f4"
@@ -221,6 +231,9 @@ const [eventDays, setEventDays] =
 
     position: "relative",
   }}
+  onClick={() =>
+  day && setSelectedDay(day)
+}
 >
   {day}
 
