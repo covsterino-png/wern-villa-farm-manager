@@ -7,6 +7,17 @@ export default function Calendar() {
   const [selectedDay, setSelectedDay] =
     useState(null);
 
+    const [showAddEvent, setShowAddEvent] =
+  useState(false);
+
+const [newEvent, setNewEvent] =
+  useState({
+    title: "",
+    eventDate: "",
+    category: "Farm",
+    notes: "",
+  });
+
   const [events, setEvents] =
     useState([]);
 
@@ -75,15 +86,34 @@ export default function Calendar() {
     days.push(null);
   }
 
-  for (
-    let day = 1;
-    day <= daysInMonth;
-    day++
-  ) {
-    days.push(day);
-  }
+for (
+  let day = 1;
+  day <= daysInMonth;
+  day++
+) {
+  days.push(day);
+}
 
-  return (
+const saveEvent = async () => {
+  await fetch(
+    "https://wern-villa-api.onrender.com/manual-calendar-events",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+      body: JSON.stringify({
+        ...newEvent,
+        createdBy: "David",
+      }),
+    }
+  );
+
+  window.location.reload();
+};
+
+return (
     <div>
       <h1
         style={{
@@ -93,7 +123,117 @@ export default function Calendar() {
       >
         📅 Calendar
       </h1>
+      <button
+  onClick={() => setShowAddEvent(true)}
+  style={{
+    background: "#03a9f4",
+    color: "white",
+    border: "none",
+    padding: "10px 16px",
+    borderRadius: "8px",
+    cursor: "pointer",
+    marginBottom: "20px",
+  }}
+>
+  ➕ Add Event
+</button>
 
+{showAddEvent && (
+  <div
+    style={{
+      background: "#1f1f1f",
+      padding: "20px",
+      borderRadius: "12px",
+      marginBottom: "20px",
+    }}
+  >
+    <h3>Add Event</h3>
+
+    <input
+      placeholder="Title"
+      value={newEvent.title}
+      onChange={(e) =>
+        setNewEvent({
+          ...newEvent,
+          title: e.target.value,
+        })
+      }
+      style={{
+        width: "100%",
+        marginBottom: "10px",
+        padding: "10px",
+      }}
+    />
+
+    <input
+      type="date"
+      value={newEvent.eventDate}
+      onChange={(e) =>
+        setNewEvent({
+          ...newEvent,
+          eventDate: e.target.value,
+        })
+      }
+      style={{
+        width: "100%",
+        marginBottom: "10px",
+        padding: "10px",
+      }}
+    />
+
+    <select
+      value={newEvent.category}
+      onChange={(e) =>
+        setNewEvent({
+          ...newEvent,
+          category: e.target.value,
+        })
+      }
+      style={{
+        width: "100%",
+        marginBottom: "10px",
+        padding: "10px",
+      }}
+    >
+      <option>Farm</option>
+      <option>Vehicle</option>
+      <option>Property</option>
+      <option>Finance</option>
+      <option>Personal</option>
+    </select>
+
+    <textarea
+      placeholder="Notes"
+      value={newEvent.notes}
+      onChange={(e) =>
+        setNewEvent({
+          ...newEvent,
+          notes: e.target.value,
+        })
+      }
+      style={{
+        width: "100%",
+        minHeight: "80px",
+        marginBottom: "10px",
+        padding: "10px",
+      }}
+    />
+
+    <button
+      onClick={saveEvent}
+      style={{
+        background: "#4caf50",
+        color: "white",
+        border: "none",
+        padding: "10px 16px",
+        borderRadius: "8px",
+        cursor: "pointer",
+      }}
+    >
+      Save Event
+    </button>
+  </div>
+)}
       <div
         style={{
           background: "#1f1f1f",
