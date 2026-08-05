@@ -1728,14 +1728,14 @@ app.get("/calendar-events", async (req, res) => {
             )
         );
 
-        events.push({
-          type: "withdrawal",
-          date: date
-            .toISOString()
-            .split("T")[0],
-          sheepName:
-            treatment.sheepName,
-        });
+events.push({
+  type: "withdrawal",
+  date: date
+    .toISOString()
+    .split("T")[0],
+  sheepName: treatment.sheepName,
+  treatment: treatment.treatment,
+});
       }
     }
 

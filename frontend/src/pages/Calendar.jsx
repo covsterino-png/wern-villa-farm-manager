@@ -265,14 +265,52 @@ export default function Calendar() {
           })}
         </div>
 
+{selectedDay && (
+  <div
+    style={{
+      marginTop: "20px",
+      background: "#2b2b2b",
+      padding: "15px",
+      borderRadius: "10px",
+      color: "white",
+    }}
+  >
+    <h3>
+      Events on {selectedDay} {month}
+    </h3>
+
+    {events
+      .filter((event) => {
+        const d = new Date(event.date);
+
+        return (
+          d.getDate() === selectedDay &&
+          d.getMonth() ===
+            currentDate.getMonth() &&
+          d.getFullYear() ===
+            currentDate.getFullYear()
+        );
+      })
+      .map((event, index) => (
         <div
+          key={index}
           style={{
-            marginTop: "20px",
-            color: "white",
+            marginBottom: "10px",
           }}
         >
-          Selected Day: {selectedDay}
+          ⚠️ Withdrawal Ends
+
+          <br />
+
+          🐑 {event.sheepName}
+
+          <br />
+
+          💉 {event.treatment}
         </div>
+      ))}
+  </div>
+)}
       </div>
     </div>
   );
