@@ -3,6 +3,7 @@ import { useState } from "react";
 export default function Calendar() {
   const [currentDate, setCurrentDate] =
     useState(new Date());
+    const eventDays = [5, 8, 14, 22];
 
   const actualToday = new Date();
 
@@ -155,6 +156,7 @@ export default function Calendar() {
           }}
         >
           {days.map((day, index) => {
+            
             const isToday =
               day &&
               day ===
@@ -164,27 +166,46 @@ export default function Calendar() {
               currentDate.getFullYear() ===
                 actualToday.getFullYear();
 
+                const hasEvent =
+  day && eventDays.includes(day);
+
             return (
-              <div
-                key={index}
-                style={{
-                  background: isToday
-                    ? "#03a9f4"
-                    : "#2b2b2b",
+<div
+  key={index}
+  style={{
+    background: isToday
+      ? "#03a9f4"
+      : "#2b2b2b",
 
-                  minHeight: "70px",
+    minHeight: "70px",
 
-                  borderRadius: "10px",
+    borderRadius: "10px",
 
-                  padding: "8px",
+    padding: "8px",
 
-                  textAlign: "right",
+    textAlign: "right",
 
-                  color: "white",
-                }}
-              >
-                {day}
-              </div>
+    color: "white",
+
+    position: "relative",
+  }}
+>
+  {day}
+
+  {hasEvent && (
+    <div
+      style={{
+        width: "8px",
+        height: "8px",
+        borderRadius: "50%",
+        background: "#ff9800",
+        position: "absolute",
+        bottom: "8px",
+        left: "8px",
+      }}
+    />
+  )}
+</div>
             );
           })}
         </div>
