@@ -9,6 +9,7 @@ export default function Calendar() {
   );
 
   const year = today.getFullYear();
+  const currentDay = new Date().getDate();
 
   const firstDay = new Date(
     year,
@@ -127,11 +128,19 @@ export default function Calendar() {
             <div
               key={index}
               style={{
-                background: "#2b2b2b",
-                minHeight: "70px",
+background:
+  day === currentDay
+    ? "#03a9f4"
+    : "#2b2b2b",
+
+    minHeight: "70px",
                 borderRadius: "10px",
                 padding: "8px",
                 textAlign: "right",
+                color:
+  day === currentDay
+    ? "white"
+    : "white",
               }}
             >
               {day}
