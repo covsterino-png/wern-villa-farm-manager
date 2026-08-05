@@ -50,15 +50,50 @@ export default function Calendar() {
           borderRadius: "12px",
         }}
       >
-        <h2
-          style={{
-            textAlign: "center",
-            marginBottom: "20px",
-          }}
-        >
-          {month} {year}
-        </h2>
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "20px",
+  }}
+>
+  <button
+    style={{
+      background: "#2b2b2b",
+      color: "white",
+      border: "none",
+      borderRadius: "8px",
+      padding: "8px 12px",
+      cursor: "pointer",
+    }}
+  >
+    ◀
+  </button>
 
+  <h2
+    style={{
+      color: "#fff",
+      margin: 0,
+      fontSize: "1.8rem",
+    }}
+  >
+    {month} {year}
+  </h2>
+
+  <button
+    style={{
+      background: "#2b2b2b",
+      color: "white",
+      border: "none",
+      borderRadius: "8px",
+      padding: "8px 12px",
+      cursor: "pointer",
+    }}
+  >
+    ▶
+  </button>
+</div>
         <div
           style={{
             display: "grid",
