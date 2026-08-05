@@ -1705,6 +1705,11 @@ app.get("/calendar-events", async (req, res) => {
         "SELECT * FROM treatments"
       );
 
+    const manualEvents =
+      await turso.execute(
+        "SELECT * FROM calendarEvents"
+      );
+
     const events = [];
 
     for (const treatment of treatments.rows) {
@@ -1728,18 +1733,81 @@ app.get("/calendar-events", async (req, res) => {
             )
         );
 
-events.push({
-  type: "withdrawal",
-  date: date
-    .toISOString()
-    .split("T")[0],
-  sheepName: treatment.sheepName,
-  treatment: treatment.treatment,
-});
+        events.push({
+          type: "withdrawal",
+          date: date
+            .toISOString()
+            .split("T")[0],
+          sheepName:
+            treatment.sheepName,
+          treatment:
+            treatment.treatment,
+        });
       }
     }
 
+    for (const event of manualEvents.rows) {
+      events.push({
+        type: "manual",
+        date: event.eventDate,
+        title: event.title,
+        category: event.category,
+      });
+    }
+
     res.json(events);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+app.get("/manual-calendar-events", async (req, res) => {
+  try {
+    const result = await turso.execute(
+      "SELECT * FROM calendarEvents"
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+app.post("/manual-calendar-events", async (req, res) => {
+  try {
+    const {
+      title,
+      eventDate,
+      category,
+      notes,
+      createdBy,
+    } = req.body;
+
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO calendarEvents
+        (
+          title,
+          eventDate,
+          category,
+          notes,
+          createdBy
+        )
+        VALUES (?, ?, ?, ?, ?)
+      `,
+      args: [
+        title,
+        eventDate,
+        category,
+        notes,
+        createdBy,
+      ],
+    });
+
+    res.json({
+      success: true,
+      id: Number(result.lastInsertRowid),
+    });
   } catch (error) {
     res.status(500).json(error);
   }
