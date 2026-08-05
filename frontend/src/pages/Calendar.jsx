@@ -3,8 +3,8 @@ import { useState } from "react";
 export default function Calendar() {
   const [currentDate, setCurrentDate] =
     useState(new Date());
-    const eventDays = [5, 8, 14, 22];
-
+const [eventDays, setEventDays] =
+  useState([]);
   const actualToday = new Date();
 
   const month =
