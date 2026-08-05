@@ -1,48 +1,48 @@
-import {
-  useState,
-  useEffect,
-} from "react";
+import { useState, useEffect } from "react";
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] =
     useState(new Date());
-    const [selectedDay, setSelectedDay] =
-  useState(null);
+
+  const [selectedDay, setSelectedDay] =
+    useState(null);
+
   const [events, setEvents] =
-  useState([]);
-const [eventDays, setEventDays] =
-  useState([]);
-  
+    useState([]);
+
+  const [eventDays, setEventDays] =
+    useState([]);
+
   useEffect(() => {
-  fetch(
-    "https://wern-villa-api.onrender.com/calendar-events"
-  )
-    .then((res) => res.json())
-    
-    .then((data) => {
+    fetch(
+      "https://wern-villa-api.onrender.com/calendar-events"
+    )
+      .then((res) => res.json())
+      .then((data) => {
         setEvents(data);
-      const days = data
-        .filter((event) => {
-          const d = new Date(
-            event.date
+
+        const days = data
+          .filter((event) => {
+            const d = new Date(
+              event.date
+            );
+
+            return (
+              d.getMonth() ===
+                currentDate.getMonth() &&
+              d.getFullYear() ===
+                currentDate.getFullYear()
+            );
+          })
+          .map((event) =>
+            new Date(
+              event.date
+            ).getDate()
           );
 
-          return (
-            d.getMonth() ===
-              currentDate.getMonth() &&
-            d.getFullYear() ===
-              currentDate.getFullYear()
-          );
-        })
-        .map((event) =>
-          new Date(
-            event.date
-          ).getDate()
-        );
-
-      setEventDays(days);
-    });
-}, [currentDate]);
+        setEventDays(days);
+      });
+  }, [currentDate]);
 
   const actualToday = new Date();
 
@@ -195,7 +195,6 @@ const [eventDays, setEventDays] =
           }}
         >
           {days.map((day, index) => {
-            
             const isToday =
               day &&
               day ===
@@ -205,54 +204,74 @@ const [eventDays, setEventDays] =
               currentDate.getFullYear() ===
                 actualToday.getFullYear();
 
-                const hasEvent =
-  day && eventDays.includes(day);
+            const hasEvent =
+              day &&
+              eventDays.includes(day);
 
             return (
-<div
-  key={index}
-  onClick={() =>
-    day && setSelectedDay(day)
-  }
-  style={{
-    background: isToday
-      ? "#03a9f4"
-      : "#2b2b2b",
+              <div
+                key={index}
+                onClick={() =>
+                  day &&
+                  setSelectedDay(day)
+                }
+                style={{
+                  background:
+                    isToday
+                      ? "#03a9f4"
+                      : "#2b2b2b",
 
-    minHeight: "70px",
+                  minHeight: "70px",
 
-    borderRadius: "10px",
+                  borderRadius:
+                    "10px",
 
-    padding: "8px",
+                  padding: "8px",
 
-    textAlign: "right",
+                  textAlign:
+                    "right",
 
-    color: "white",
+                  color: "white",
 
-    position: "relative",
-  }}
-  onClick={() =>
-  day && setSelectedDay(day)
-}
->
-  {day}
+                  position:
+                    "relative",
 
-  {hasEvent && (
-    <div
-      style={{
-        width: "8px",
-        height: "8px",
-        borderRadius: "50%",
-        background: "#ff9800",
-        position: "absolute",
-        bottom: "8px",
-        left: "8px",
-      }}
-    />
-  )}
-</div>
+                  cursor:
+                    day
+                      ? "pointer"
+                      : "default",
+                }}
+              >
+                {day}
+
+                {hasEvent && (
+                  <div
+                    style={{
+                      width: "8px",
+                      height: "8px",
+                      borderRadius:
+                        "50%",
+                      background:
+                        "#ff9800",
+                      position:
+                        "absolute",
+                      bottom: "8px",
+                      left: "8px",
+                    }}
+                  />
+                )}
+              </div>
             );
           })}
+        </div>
+
+        <div
+          style={{
+            marginTop: "20px",
+            color: "white",
+          }}
+        >
+          Selected Day: {selectedDay}
         </div>
       </div>
     </div>
