@@ -1110,7 +1110,7 @@ app.post("/move-group", async (req, res) => {
       `,
       args: [newField, groupName],
     });
-    const sheepResult =
+const sheepResult =
   await turso.execute({
     sql: `
       SELECT id
@@ -1121,28 +1121,19 @@ app.post("/move-group", async (req, res) => {
   });
 
 for (const sheep of sheepResult.rows) {
-  await turso.execute({
-    sql: `
-      INSERT INTO sheepHistory
-      (
-        sheepId,
-        eventType,
-        details
-      )
-      VALUES (?, ?, ?)
-    `,
-    args: [
-      sheep.id,
-      "Movement",
-      `Moved to ${newField}`,
-    ],
-  });
+  await addHistory(
+    sheep.id,
+    "🚚 Movement",
+    `Moved to ${newField}`,
+    new Date()
+      .toISOString()
+      .split("T")[0]
+  );
 }
 
-    res.json({
-      success: true,
-    });
-  } catch (error) {
+res.json({
+  success: true,
+});  } catch (error) {
     res.status(500).json(error);
   }
 });
