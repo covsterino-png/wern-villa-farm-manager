@@ -13,6 +13,7 @@ import FlockRegister from "./pages/FlockRegister";
 import SheepRegister from "./pages/SheepRegister";
 import Receipts from "./pages/Receipts";
 import Notes from "./pages/Notes";
+import Notifications from "./pages/Notifications";
 
 function App() {
   const [page, setPage] = useState("dashboard");
@@ -33,6 +34,35 @@ function App() {
   const [user] = useState(
     localStorage.getItem("user")
   );
+
+  const [unreadCount, setUnreadCount] =
+    useState(0);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const load = async () => {
+      try {
+        const res = await fetch(
+          `https://wern-villa-api.onrender.com/notifications?user=${user}`
+        );
+        const data = await res.json();
+        if (!mounted) return;
+        setUnreadCount(
+          data.filter((d) => d.read === 0).length
+        );
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    load();
+    const t = setInterval(load, 30000);
+    return () => {
+      mounted = false;
+      clearInterval(t);
+    };
+  }, [user]);
 
   const [movements, setMovements] =
     useState([]);
@@ -206,6 +236,13 @@ Move
 >
 Receipts
 </button>
+          
+          <button
+            style={buttonStyle("notifications")}
+            onClick={() => setPage("notifications")}
+          >
+            🔔 Notifications {unreadCount > 0 && `(${unreadCount})`}
+          </button>
         </div>
       </div>
 
@@ -267,6 +304,9 @@ Receipts
 )}
 {page === "notes" && (
   <Notes />
+)}
+{page === "notifications" && (
+  <Notifications user={user} />
 )}
       </div>
     </div>
