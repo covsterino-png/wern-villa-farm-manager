@@ -106,6 +106,18 @@ CREATE TABLE IF NOT EXISTS fields (
   )
 `);
 
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userName TEXT,
+      title TEXT,
+      message TEXT,
+      data TEXT,
+      createdDate TEXT DEFAULT CURRENT_TIMESTAMP,
+      read INTEGER DEFAULT 0
+    )
+  `);
+
   console.log("✅ Tables created");
 }
 

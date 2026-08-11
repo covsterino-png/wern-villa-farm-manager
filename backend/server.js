@@ -8,6 +8,12 @@ const turso = createClient({
   authToken:
     process.env.TURSO_AUTH_TOKEN,
 });
+const sendgrid = require("@sendgrid/mail");
+const cron = require("node-cron");
+
+if (process.env.SENDGRID_API_KEY) {
+  sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
+}
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -1637,6 +1643,40 @@ app.put("/manual-calendar-events/:id", async (req, res) => {
       ],
     });
 
+    // create notification for updates
+    const message = `${title} updated to ${eventDate}`;
+    if (notifyDavid) {
+      await turso.execute({
+        sql: `INSERT INTO notifications (userName, title, message, data) VALUES (?, ?, ?, ?)`,
+        args: ["David", "Calendar Event Updated", message, JSON.stringify({ id })],
+      });
+
+      if (process.env.DAVID_EMAIL && process.env.SENDGRID_API_KEY) {
+        await sendgrid.send({
+          to: process.env.DAVID_EMAIL,
+          from: process.env.SENDGRID_FROM_EMAIL,
+          subject: "Calendar Update: " + title,
+          html: `<p>${message}</p>`,
+        });
+      }
+    }
+
+    if (notifyGemma) {
+      await turso.execute({
+        sql: `INSERT INTO notifications (userName, title, message, data) VALUES (?, ?, ?, ?)`,
+        args: ["Gemma", "Calendar Event Updated", message, JSON.stringify({ id })],
+      });
+
+      if (process.env.GEMMA_EMAIL && process.env.SENDGRID_API_KEY) {
+        await sendgrid.send({
+          to: process.env.GEMMA_EMAIL,
+          from: process.env.SENDGRID_FROM_EMAIL,
+          subject: "Calendar Update: " + title,
+          html: `<p>${message}</p>`,
+        });
+      }
+    }
+
     res.json({
       success: true
     });
@@ -1858,6 +1898,35 @@ app.get("/manual-calendar-events", async (req, res) => {
   }
 });
 
+// Notifications APIs
+app.get("/notifications", async (req, res) => {
+  try {
+    const { user } = req.query;
+
+    const result = await turso.execute({
+      sql: `SELECT * FROM notifications WHERE userName = ? ORDER BY id DESC`,
+      args: [user || "David"],
+    });
+
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+app.put("/notifications/:id/read", async (req, res) => {
+  try {
+    await turso.execute({
+      sql: `UPDATE notifications SET read = 1 WHERE id = ?`,
+      args: [req.params.id],
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
 app.post("/manual-calendar-events", async (req, res) => {
   try {
     const {
@@ -1866,6 +1935,10 @@ app.post("/manual-calendar-events", async (req, res) => {
       category,
       notes,
       createdBy,
+      notifyDavid,
+      notifyGemma,
+      reminderDate,
+      reminderTime,
     } = req.body;
 
     const result = await turso.execute({
@@ -1886,8 +1959,58 @@ app.post("/manual-calendar-events", async (req, res) => {
         category,
         notes,
         createdBy,
+        notifyDavid ? 1 : 0,
+        notifyGemma ? 1 : 0,
+        reminderDate || null,
+        reminderTime || null,
       ],
     });
+
+    // create in-app notifications and send emails if requested
+    const eventId = Number(result.lastInsertRowid);
+    const message = `${title} on ${eventDate}`;
+
+    if (notifyDavid) {
+      await turso.execute({
+        sql: `INSERT INTO notifications (userName, title, message, data) VALUES (?, ?, ?, ?)`,
+        args: [
+          "David",
+          "Calendar Event Created",
+          message,
+          JSON.stringify({ eventId }),
+        ],
+      });
+
+      if (process.env.DAVID_EMAIL && process.env.SENDGRID_API_KEY) {
+        await sendgrid.send({
+          to: process.env.DAVID_EMAIL,
+          from: process.env.SENDGRID_FROM_EMAIL,
+          subject: "Calendar Reminder: " + title,
+          html: `<p>${message}</p>`,
+        });
+      }
+    }
+
+    if (notifyGemma) {
+      await turso.execute({
+        sql: `INSERT INTO notifications (userName, title, message, data) VALUES (?, ?, ?, ?)`,
+        args: [
+          "Gemma",
+          "Calendar Event Created",
+          message,
+          JSON.stringify({ eventId }),
+        ],
+      });
+
+      if (process.env.GEMMA_EMAIL && process.env.SENDGRID_API_KEY) {
+        await sendgrid.send({
+          to: process.env.GEMMA_EMAIL,
+          from: process.env.SENDGRID_FROM_EMAIL,
+          subject: "Calendar Reminder: " + title,
+          html: `<p>${message}</p>`,
+        });
+      }
+    }
 
     res.json({
       success: true,
@@ -2039,4 +2162,56 @@ app.listen(3001, () => {
   console.log(
     "Farm API running on https://wern-villa-api.onrender.com"
   );
+});
+
+// Scheduler: send reminder emails at the scheduled reminderDate/reminderTime
+cron.schedule("*/1 * * * *", async () => {
+  try {
+    const now = new Date();
+    const dateStr = now.toISOString().split("T")[0];
+    const timeStr = now.toTimeString().split(" ")[0].slice(0, 5); // HH:MM
+
+    const result = await turso.execute({
+      sql: `SELECT * FROM calendarEvents WHERE reminderDate = ? AND reminderTime = ?`,
+      args: [dateStr, timeStr],
+    });
+
+    for (const ev of result.rows) {
+      const message = `${ev.title} is due on ${ev.eventDate}`;
+
+      if (ev.notifyDavid) {
+        await turso.execute({
+          sql: `INSERT INTO notifications (userName, title, message, data) VALUES (?, ?, ?, ?)`,
+          args: ["David", "Reminder", message, JSON.stringify({ id: ev.id })],
+        });
+
+        if (process.env.DAVID_EMAIL && process.env.SENDGRID_API_KEY) {
+          await sendgrid.send({
+            to: process.env.DAVID_EMAIL,
+            from: process.env.SENDGRID_FROM_EMAIL,
+            subject: "Reminder: " + ev.title,
+            html: `<p>${message}</p>`,
+          });
+        }
+      }
+
+      if (ev.notifyGemma) {
+        await turso.execute({
+          sql: `INSERT INTO notifications (userName, title, message, data) VALUES (?, ?, ?, ?)`,
+          args: ["Gemma", "Reminder", message, JSON.stringify({ id: ev.id })],
+        });
+
+        if (process.env.GEMMA_EMAIL && process.env.SENDGRID_API_KEY) {
+          await sendgrid.send({
+            to: process.env.GEMMA_EMAIL,
+            from: process.env.SENDGRID_FROM_EMAIL,
+            subject: "Reminder: " + ev.title,
+            html: `<p>${message}</p>`,
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Reminder scheduler error:", err.message || err);
+  }
 });
