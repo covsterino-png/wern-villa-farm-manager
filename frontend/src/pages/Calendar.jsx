@@ -30,6 +30,8 @@ const [newEvent, setNewEvent] =
 
   const [eventDays, setEventDays] =
     useState([]);
+const [editingEventId, setEditingEventId] =
+  useState(null);
 const loadEvents = () => {
   fetch(
     "https://wern-villa-api.onrender.com/calendar-events"
@@ -100,20 +102,32 @@ for (
 }
 
 const saveEvent = async () => {
-  await fetch(
-    "https://wern-villa-api.onrender.com/manual-calendar-events",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
-      body: JSON.stringify({
-        ...newEvent,
-        createdBy: "David",
-      }),
-    }
-  );
+  if (editingEventId) {
+    await fetch(
+      `https://wern-villa-api.onrender.com/manual-calendar-events/${editingEventId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...newEvent }),
+      }
+    );
+  } else {
+    await fetch(
+      "https://wern-villa-api.onrender.com/manual-calendar-events",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...newEvent,
+          createdBy: "David",
+        }),
+      }
+    );
+  }
 
   setShowAddEvent(false);
 
@@ -122,10 +136,39 @@ const saveEvent = async () => {
     eventDate: "",
     category: "Farm",
     notes: "",
+    notifyDavid: true,
+    notifyGemma: false,
+    reminderDate: "",
+    reminderTime: "",
     
   });
 
   loadEvents();
+const editEvent = async (id) => {
+  // fetch manual events to get full record (notify/reminder fields)
+  const res = await fetch(
+    "https://wern-villa-api.onrender.com/manual-calendar-events"
+  );
+  const data = await res.json();
+
+  const ev = data.find((r) => r.id === id);
+
+  if (!ev) return;
+
+  setEditingEventId(id);
+  setNewEvent({
+    title: ev.title || "",
+    eventDate: ev.eventDate || "",
+    category: ev.category || "Farm",
+    notes: ev.notes || "",
+    notifyDavid: !!ev.notifyDavid,
+    notifyGemma: !!ev.notifyGemma,
+    reminderDate: ev.reminderDate || "",
+    reminderTime: ev.reminderTime || "",
+  });
+
+  setShowAddEvent(true);
+};
 };
 const deleteEvent = async (id) => {
   await fetch(
@@ -571,6 +614,21 @@ return (
     }}
   >
     🗑 Delete
+  </button>
+  <button
+    onClick={() => editEvent(event.id)}
+    style={{
+      marginTop: "10px",
+      marginLeft: "8px",
+      background: "#1976d2",
+      color: "white",
+      border: "none",
+      borderRadius: "6px",
+      padding: "6px 10px",
+      cursor: "pointer",
+    }}
+  >
+    ✏️ Edit
   </button>
 </>
           )}

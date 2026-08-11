@@ -1595,7 +1595,60 @@ app.get("/flock-groups", async (req, res) => {
     res.status(500).json(error);
   }
 });
+app.put("/manual-calendar-events/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
 
+    const {
+      title,
+      eventDate,
+      category,
+      notes,
+      notifyDavid,
+      notifyGemma,
+      reminderDate,
+      reminderTime
+    } = req.body;
+
+    await turso.execute({
+      sql: `
+        UPDATE calendarEvents
+        SET
+          title = ?,
+          eventDate = ?,
+          category = ?,
+          notes = ?,
+          notifyDavid = ?,
+          notifyGemma = ?,
+          reminderDate = ?,
+          reminderTime = ?
+        WHERE id = ?
+      `,
+      args: [
+        title,
+        eventDate,
+        category,
+        notes,
+        notifyDavid ? 1 : 0,
+        notifyGemma ? 1 : 0,
+        reminderDate || null,
+        reminderTime || null,
+        id,
+      ],
+    });
+
+    res.json({
+      success: true
+    });
+
+  } catch (error) {
+    console.error("Update event error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
 app.delete(
   "/manual-calendar-events/:id",
   async (req, res) => {
