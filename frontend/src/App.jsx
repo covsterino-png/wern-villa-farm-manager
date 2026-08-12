@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 import Calendar from "./pages/Calendar";
 import Login from "./pages/Login";
@@ -14,6 +14,7 @@ import SheepRegister from "./pages/SheepRegister";
 import Receipts from "./pages/Receipts";
 import Notes from "./pages/Notes";
 import Notifications from "./pages/Notifications";
+import { API } from "./api";
 
 function App() {
   const [page, setPage] = useState("dashboard");
@@ -43,14 +44,10 @@ function App() {
 
     const load = async () => {
       try {
-        const res = await fetch(
-          `https://wern-villa-api.onrender.com/notifications?user=${user}`
-        );
+        const res = await fetch(`${API}/notifications?user=${user}`);
         const data = await res.json();
         if (!mounted) return;
-        setUnreadCount(
-          data.filter((d) => d.read === 0).length
-        );
+        setUnreadCount(data.filter((d) => d.read === 0).length);
       } catch (e) {
         // ignore
       }
@@ -74,11 +71,8 @@ function App() {
     return (
       <Login
         onLogin={(username) => {
-          localStorage.setItem(
-            "user",
-            username
-          );
-          window.location.reload();
+          localStorage.setItem("user", username);
+          setTimeout(() => window.location.reload(), 0);
         }}
       />
     );
