@@ -8,12 +8,8 @@ const turso = createClient({
   authToken:
     process.env.TURSO_AUTH_TOKEN,
 });
-const sendgrid = require("@sendgrid/mail");
 const cron = require("node-cron");
-
-if (process.env.SENDGRID_API_KEY) {
-  sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
-}
+// email sending removed (SendGrid) — using in-app notifications only
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -1651,14 +1647,7 @@ app.put("/manual-calendar-events/:id", async (req, res) => {
         args: ["David", "Calendar Event Updated", message, JSON.stringify({ id })],
       });
 
-      if (process.env.DAVID_EMAIL && process.env.SENDGRID_API_KEY) {
-        await sendgrid.send({
-          to: process.env.DAVID_EMAIL,
-          from: process.env.SENDGRID_FROM_EMAIL,
-          subject: "Calendar Update: " + title,
-          html: `<p>${message}</p>`,
-        });
-      }
+      // email sending removed — in-app notification created instead
     }
 
     if (notifyGemma) {
@@ -1667,14 +1656,7 @@ app.put("/manual-calendar-events/:id", async (req, res) => {
         args: ["Gemma", "Calendar Event Updated", message, JSON.stringify({ id })],
       });
 
-      if (process.env.GEMMA_EMAIL && process.env.SENDGRID_API_KEY) {
-        await sendgrid.send({
-          to: process.env.GEMMA_EMAIL,
-          from: process.env.SENDGRID_FROM_EMAIL,
-          subject: "Calendar Update: " + title,
-          html: `<p>${message}</p>`,
-        });
-      }
+      // email sending removed — in-app notification created instead
     }
 
     res.json({
@@ -1981,14 +1963,7 @@ app.post("/manual-calendar-events", async (req, res) => {
         ],
       });
 
-      if (process.env.DAVID_EMAIL && process.env.SENDGRID_API_KEY) {
-        await sendgrid.send({
-          to: process.env.DAVID_EMAIL,
-          from: process.env.SENDGRID_FROM_EMAIL,
-          subject: "Calendar Reminder: " + title,
-          html: `<p>${message}</p>`,
-        });
-      }
+      // email sending removed — in-app notification created instead
     }
 
     if (notifyGemma) {
@@ -2002,14 +1977,7 @@ app.post("/manual-calendar-events", async (req, res) => {
         ],
       });
 
-      if (process.env.GEMMA_EMAIL && process.env.SENDGRID_API_KEY) {
-        await sendgrid.send({
-          to: process.env.GEMMA_EMAIL,
-          from: process.env.SENDGRID_FROM_EMAIL,
-          subject: "Calendar Reminder: " + title,
-          html: `<p>${message}</p>`,
-        });
-      }
+      // email sending removed — in-app notification created instead
     }
 
     res.json({
@@ -2185,14 +2153,7 @@ cron.schedule("*/1 * * * *", async () => {
           args: ["David", "Reminder", message, JSON.stringify({ id: ev.id })],
         });
 
-        if (process.env.DAVID_EMAIL && process.env.SENDGRID_API_KEY) {
-          await sendgrid.send({
-            to: process.env.DAVID_EMAIL,
-            from: process.env.SENDGRID_FROM_EMAIL,
-            subject: "Reminder: " + ev.title,
-            html: `<p>${message}</p>`,
-          });
-        }
+        // email sending removed — in-app notification created instead
       }
 
       if (ev.notifyGemma) {
@@ -2201,14 +2162,7 @@ cron.schedule("*/1 * * * *", async () => {
           args: ["Gemma", "Reminder", message, JSON.stringify({ id: ev.id })],
         });
 
-        if (process.env.GEMMA_EMAIL && process.env.SENDGRID_API_KEY) {
-          await sendgrid.send({
-            to: process.env.GEMMA_EMAIL,
-            from: process.env.SENDGRID_FROM_EMAIL,
-            subject: "Reminder: " + ev.title,
-            html: `<p>${message}</p>`,
-          });
-        }
+        // email sending removed — in-app notification created instead
       }
     }
   } catch (err) {

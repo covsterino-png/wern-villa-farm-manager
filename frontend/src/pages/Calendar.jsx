@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { API, fetchJson } from "../api";
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] =
@@ -33,10 +34,7 @@ const [newEvent, setNewEvent] =
 const [editingEventId, setEditingEventId] =
   useState(null);
 const loadEvents = () => {
-  fetch(
-    "https://wern-villa-api.onrender.com/calendar-events"
-  )
-    .then((res) => res.json())
+  fetchJson("/calendar-events")
     .then((data) => {
       setEvents(data);
 
@@ -103,30 +101,17 @@ for (
 
 const saveEvent = async () => {
   if (editingEventId) {
-    await fetch(
-      `https://wern-villa-api.onrender.com/manual-calendar-events/${editingEventId}`,
-      {
+      await fetch(`${API}/manual-calendar-events/${editingEventId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...newEvent }),
-      }
-    );
+      });
   } else {
-    await fetch(
-      "https://wern-villa-api.onrender.com/manual-calendar-events",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...newEvent,
-          createdBy: "David",
-        }),
-      }
-    );
+    await fetch(`${API}/manual-calendar-events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...newEvent, createdBy: "David" }),
+    });
   }
 
   setShowAddEvent(false);
@@ -146,10 +131,7 @@ const saveEvent = async () => {
   loadEvents();
 const editEvent = async (id) => {
   // fetch manual events to get full record (notify/reminder fields)
-  const res = await fetch(
-    "https://wern-villa-api.onrender.com/manual-calendar-events"
-  );
-  const data = await res.json();
+  const data = await fetchJson("/manual-calendar-events");
 
   const ev = data.find((r) => r.id === id);
 
@@ -171,12 +153,7 @@ const editEvent = async (id) => {
 };
 };
 const deleteEvent = async (id) => {
-  await fetch(
-    `https://wern-villa-api.onrender.com/manual-calendar-events/${id}`,
-    {
-      method: "DELETE",
-    }
-  );
+  await fetch(`${API}/manual-calendar-events/${id}`, { method: "DELETE" });
 
   loadEvents();
 };

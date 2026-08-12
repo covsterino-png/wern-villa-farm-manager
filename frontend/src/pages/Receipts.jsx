@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { API } from "../api";
 
 export default function Receipts() {
   const [file, setFile] = useState(null);
@@ -58,9 +59,7 @@ function resizeImage(file) {
 }
 
   useEffect(() => {
-    fetch(
-      "https://wern-villa-api.onrender.com/receipts"
-    )
+    fetch(`${API}/receipts`)
       .then((res) => res.json())
       .then((data) => {
         setReceipts(data);
@@ -70,7 +69,7 @@ function resizeImage(file) {
 
  async function loadReceipt(id) {
   const response = await fetch(
-    `https://wern-villa-api.onrender.com/receipts/${id}`
+    `${API}/receipts/${id}`
   );
 
   const data = await response.json();
@@ -95,7 +94,7 @@ formData.append(
   file.name
 );
       const response = await fetch(
-        "https://wern-villa-api.onrender.com/receipts/ocr",
+        `${API}/receipts/ocr`,
         {
           method: "POST",
           body: formData,

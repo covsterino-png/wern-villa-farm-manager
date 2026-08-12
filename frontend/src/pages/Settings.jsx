@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API } from "../api";
 
 export default function Settings() {
 const [fields, setFields] = useState([]);
@@ -11,9 +12,7 @@ const [withdrawalDays,  setWithdrawalDays,] = useState("");
 const [administrationMethod, setAdministrationMethod,] = useState("");
 
   function loadMedicines() {
-  fetch(
-    "https://wern-villa-api.onrender.com/medicines"
-  )
+  fetch(`${API}/medicines`)
     .then((response) => response.json())
     .then((data) => {
       setMedicines(data);
@@ -21,9 +20,7 @@ const [administrationMethod, setAdministrationMethod,] = useState("");
 }
 
   function loadFields() {
-    fetch(
-      "https://wern-villa-api.onrender.com/fields"
-    )
+    fetch(`${API}/fields`)
       .then((response) => response.json())
       .then((data) => {
         setFields(data);
@@ -37,8 +34,7 @@ useEffect(() => {
 function addMedicine() {
   if (!newMedicine.trim()) return;
 
-  fetch(
-    "https://wern-villa-api.onrender.com/medicines",
+  fetch(`${API}/medicines`,
     {
       method: "POST",
       headers: {
@@ -62,8 +58,7 @@ body: JSON.stringify({
   function addField() {
     if (!newField.trim()) return;
 
-    fetch(
-      "https://wern-villa-api.onrender.com/fields",
+    fetch(`${API}/fields`,
       {
         method: "POST",
         headers: {
@@ -194,8 +189,7 @@ body: JSON.stringify({
 
     if (newPosition === null) return;
 
-    await fetch(
-      `https://wern-villa-api.onrender.com/fields/${field.id}`,
+    await fetch(`${API}/fields/${field.id}`,
       {
         method: "PUT",
         headers: {
@@ -345,8 +339,7 @@ body: JSON.stringify({
 
     if (newMethod === null) return;
 
-    await fetch(
-      `https://wern-villa-api.onrender.com/medicines/${medicine.id}`,
+    await fetch(`${API}/medicines/${medicine.id}`,
       {
         method: "PUT",
         headers: {

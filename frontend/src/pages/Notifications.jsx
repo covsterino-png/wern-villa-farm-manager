@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
+import { API, fetchJson } from "../api";
 
 export default function Notifications({ user }) {
   const [notifications, setNotifications] =
     useState([]);
 
   const load = async () => {
-    const res = await fetch(
-      `https://wern-villa-api.onrender.com/notifications?user=${user}`
-    );
-    const data = await res.json();
+    const data = await fetchJson(`/notifications?user=${user}`);
     setNotifications(data);
   };
 
@@ -17,10 +15,7 @@ export default function Notifications({ user }) {
   }, []);
 
   const markRead = async (id) => {
-    await fetch(
-      `https://wern-villa-api.onrender.com/notifications/${id}/read`,
-      { method: "PUT" }
-    );
+    await fetch(`${API}/notifications/${id}/read`, { method: "PUT" });
 
     load();
   };

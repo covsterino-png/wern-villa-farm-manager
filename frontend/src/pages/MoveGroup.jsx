@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API } from "../api";
 
 export default function MoveGroup() {
   const [groups, setGroups] =
@@ -14,22 +15,17 @@ export default function MoveGroup() {
     useState("");
 
   useEffect(() => {
-    fetch(
-      "https://wern-villa-api.onrender.com/flock-register"
-    )
+    fetch(`${API}/flock-register`)
       .then((res) => res.json())
       .then((data) => setGroups(data));
 
-    fetch(
-      "https://wern-villa-api.onrender.com/fields"
-    )
+    fetch(`${API}/fields`)
       .then((res) => res.json())
       .then((data) => setFields(data));
   }, []);
 
   function moveGroup() {
-    fetch(
-      "https://wern-villa-api.onrender.com/move-group",
+    fetch(`${API}/move-group`,
       {
         method: "POST",
         headers: {

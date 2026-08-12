@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
+import { API } from "../api";
 
 export default function FarmMap() {
   const [fieldStatus, setFieldStatus] =
     useState([]);
 
   useEffect(() => {
-    fetch(
-      "https://wern-villa-api.onrender.com/field-status"
-    )
+    fetch(`${API}/field-status`)
       .then((res) => res.json())
       .then((data) => setFieldStatus(data))
       .catch(console.error);

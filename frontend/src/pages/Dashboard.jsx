@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API } from "../api";
 
 export default function Dashboard({ setPage }) {
   const [summary, setSummary] = useState({
@@ -45,7 +46,7 @@ const [actionNotes, setActionNotes] =
 
   useEffect(() => {
   fetch(
-    "https://wern-villa-api.onrender.com/medicines"
+    `${API}/medicines`
   )
     .then((res) => res.json())
     .then((data) => {
@@ -54,7 +55,7 @@ const [actionNotes, setActionNotes] =
 }, []);
   useEffect(() => {
   fetch(
-    "https://wern-villa-api.onrender.com/tasks/today"
+    `${API}/tasks/today`
   )
     .then((res) => res.json())
     .then((data) =>
@@ -68,7 +69,7 @@ const [actionNotes, setActionNotes] =
 
   useEffect(() => {
     fetch(
-      "https://wern-villa-api.onrender.com/summary"
+      `${API}/summary`
     )
       .then((response) => response.json())
       .then((data) => {
@@ -81,7 +82,7 @@ const [actionNotes, setActionNotes] =
 
   useEffect(() => {
 fetch(
-  "https://wern-villa-api.onrender.com/recent-history"
+  `${API}/recent-history`
 )
       .then((response) => response.json())
       .then((data) => {
@@ -94,7 +95,7 @@ fetch(
 
   useEffect(() => {
     fetch(
-      "https://wern-villa-api.onrender.com/fields-count"
+      `${API}/fields-count`
     )
       .then((response) => response.json())
       .then((data) => {
@@ -103,7 +104,7 @@ fetch(
       .catch(() => {});
 
     fetch(
-      "https://wern-villa-api.onrender.com/treatments-count"
+      `${API}/treatments-count`
     )
       .then((response) => response.json())
       .then((data) => {
@@ -112,7 +113,7 @@ fetch(
       .catch(() => {});
 
     fetch(
-      "https://wern-villa-api.onrender.com/withdrawals-count"
+      `${API}/withdrawals-count`
     )
       .then((response) => response.json())
       .then((data) => {
@@ -121,67 +122,36 @@ fetch(
       .catch(() => {});
   }, []);
   function stopRecurring(taskId) {
-  fetch(
-    `https://wern-villa-api.onrender.com/scheduled/${taskId}/stop`,
-    {
-      method: "PUT",
-    }
-  )
+  fetch(`${API}/scheduled/${taskId}/stop`, { method: "PUT" })
     .then((res) => res.json())
-    .then(() => {
-      return fetch(
-        "https://wern-villa-api.onrender.com/tasks/today"
-      );
-    })
+    .then(() => fetch(`${API}/tasks/today`))
     .then((res) => res.json())
-    .then((data) => {
-      setTodayTasks(data);
-    });
+    .then((data) => setTodayTasks(data));
 }
 
 function loadCaseActions(caseId) {
-  fetch(
-    `https://wern-villa-api.onrender.com/health-cases/${caseId}/actions`
-  )
+  fetch(`${API}/health-cases/${caseId}/actions`)
     .then((res) => res.json())
     .then((data) => {
-      setCaseActions((prev) => ({
-        ...prev,
-        [caseId]: data,
-      }));
+      setCaseActions((prev) => ({ ...prev, [caseId]: data }));
     });
 }
   function completeTask(taskId) {
-  fetch(
-    `https://wern-villa-api.onrender.com/scheduled/${taskId}/complete`,
-    {
-      method: "PUT",
-    }
-  )
+  fetch(`${API}/scheduled/${taskId}/complete`, { method: "PUT" })
     .then((res) => res.json())
-    .then(() => {
-      return fetch(
-        "https://wern-villa-api.onrender.com/tasks/today"
-      );
-    })
+    .then(() => fetch(`${API}/tasks/today`))
     .then((res) => res.json())
-    .then((data) => {
-      setTodayTasks(data);
-    });
+    .then((data) => setTodayTasks(data));
 }
 function saveActionFromDashboard(
   caseId,
   taskId,
   task
 ) {
-  fetch(
-    `https://wern-villa-api.onrender.com/health-cases/${caseId}/actions`,
-    {
+  fetch(`${API}/health-cases/${caseId}/actions`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-body: JSON.stringify({
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
   actionType:
     actionType[taskId] ||
     "Observation",
@@ -205,19 +175,11 @@ ${actionNotes[taskId] || ""}`
 .then((res) => res.json())
 .then(() => {
 
-  if (
-    actionType[taskId] ===
-    "Injection"
-  ) {
-    fetch(
-      "https://wern-villa-api.onrender.com/treatments",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-body: JSON.stringify({
+  if (actionType[taskId] === "Injection") {
+    fetch(`${API}/treatments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
   groupName:
     "Individual Sheep",
 

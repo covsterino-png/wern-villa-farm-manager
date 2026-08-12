@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API } from "../api";
 
 export default function MoveSheep({
   farmData,
@@ -16,7 +17,7 @@ export default function MoveSheep({
     useState("");
 
   useEffect(() => {
-    fetch("https://wern-villa-api.onrender.com/fields")
+    fetch(`${API}/fields`)
       .then((response) => response.json())
       .then((data) => {
         setFields(data);
@@ -58,8 +59,7 @@ export default function MoveSheep({
       },
     ]);
 
-    fetch(
-      "https://wern-villa-api.onrender.com/movements",
+    fetch(`${API}/movements`,
       {
         method: "POST",
         headers: {

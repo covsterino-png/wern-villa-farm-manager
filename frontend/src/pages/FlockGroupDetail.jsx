@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API } from "../api";
 import SheepDetail from "./SheepDetail";
 
 export default function FlockGroupDetail({
@@ -13,9 +14,7 @@ export default function FlockGroupDetail({
 ] = useState(null);
 
   function loadSheep() {
-    fetch(
-      `https://wern-villa-api.onrender.com/sheep/group/${groupName}`
-    )
+    fetch(`${API}/sheep/group/${groupName}`)
       .then((res) => res.json())
       .then((data) => setSheep(data));
   }

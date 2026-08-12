@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
+import { API } from "../api";
 
 export default function Fields() {
   const [fields, setFields] = useState([]);
   const [newField, setNewField] = useState("");
 
   function loadFields() {
-    fetch("https://wern-villa-api.onrender.com/fields")
+    fetch(`${API}/fields`)
       .then((response) => response.json())
       .then((data) => {
         setFields(data);
@@ -21,7 +22,7 @@ export default function Fields() {
       return;
     }
 
-    fetch("https://wern-villa-api.onrender.com/fields", {
+    fetch(`${API}/fields`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

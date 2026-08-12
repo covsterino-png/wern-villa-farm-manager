@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import { API } from "../api";
 
 export default function MovementHistory() {
   const [movements, setMovements] = useState([]);
 
   useEffect(() => {
-    fetch("https://wern-villa-api.onrender.com/movements")
+    fetch(`${API}/movements`)
       .then((response) => response.json())
       .then((data) => {
         setMovements(data);

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API } from "../api";
 import FlockGroupDetail from "./FlockGroupDetail";
 
 export default function FlockRegister() {
@@ -15,9 +16,7 @@ export default function FlockRegister() {
   ] = useState(null);
 
 function loadGroups() {
-  fetch(
-    "https://wern-villa-api.onrender.com/flock-register-summary"
-  )
+  fetch(`${API}/flock-register-summary`)
     .then((res) => res.json())
     .then((data) => setGroups(data));
 }
@@ -26,8 +25,7 @@ function loadGroups() {
   }, []);
 
   function addGroup() {
-    fetch(
-      "https://wern-villa-api.onrender.com/flock-register",
+    fetch(`${API}/flock-register`,
       {
         method: "POST",
         headers: {
