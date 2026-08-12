@@ -1931,9 +1931,13 @@ app.post("/manual-calendar-events", async (req, res) => {
           eventDate,
           category,
           notes,
-          createdBy
+          createdBy,
+          notifyDavid,
+          notifyGemma,
+          reminderDate,
+          reminderTime
         )
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       args: [
         title,
