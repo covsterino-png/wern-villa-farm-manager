@@ -71,7 +71,14 @@ export default function SheepDetail({ sheep, onBack }) {
         Field: {sheep.currentField || "Unknown"}
       </div>
 
-      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "24px" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          flexWrap: "wrap",
+          marginBottom: "24px",
+        }}
+      >
         <TabButton
           label="Overview"
           active={activeTab === "overview"}
@@ -96,7 +103,9 @@ export default function SheepDetail({ sheep, onBack }) {
       {activeTab === "notes" && (
         <div style={{ background: "#1f1f1f", padding: "20px", borderRadius: "14px" }}>
           <h2 style={{ marginTop: 0, color: "#fff" }}>Notes</h2>
-          <p style={{ whiteSpace: "pre-wrap", color: "#ddd" }}>{sheep.notes || "No notes available."}</p>
+          <p style={{ whiteSpace: "pre-wrap", color: "#ddd" }}>
+            {sheep.notes || "No notes available."}
+          </p>
         </div>
       )}
     </div>
