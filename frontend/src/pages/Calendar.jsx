@@ -115,6 +115,7 @@ const saveEvent = async () => {
   }
 
   setShowAddEvent(false);
+  setEditingEventId(null);
 
   setNewEvent({
     title: "",
@@ -125,10 +126,11 @@ const saveEvent = async () => {
     notifyGemma: false,
     reminderDate: "",
     reminderTime: "",
-    
   });
 
   loadEvents();
+};
+
 const editEvent = async (id) => {
   // fetch manual events to get full record (notify/reminder fields)
   const data = await fetchJson("/manual-calendar-events");
@@ -151,7 +153,7 @@ const editEvent = async (id) => {
 
   setShowAddEvent(true);
 };
-};
+
 const deleteEvent = async (id) => {
   await fetch(`${API}/manual-calendar-events/${id}`, { method: "DELETE" });
 
