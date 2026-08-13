@@ -81,8 +81,8 @@ export default function FinancialRegister({ user }) {
       )
     : transactions;
 
-  
-      <div style={{ padding: "20px", color: "white" }}>
+  return (
+    <div style={{ padding: "20px", color: "white" }}>
         <h1 style={{ color: "#03a9f4" }}>💷 Finances</h1>
 
         <div style={{ marginTop: 8, marginBottom: 16 }}>
@@ -214,3 +214,5 @@ export default function FinancialRegister({ user }) {
           ))}
         </div>
       </div>
+      );
+    }
