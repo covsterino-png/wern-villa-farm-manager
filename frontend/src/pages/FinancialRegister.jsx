@@ -111,7 +111,7 @@ export default function FinancialRegister({ user }) {
     return acc;
   }, { David: 0, Gemma: 0 });
 
-  const users = FINANCE_USERS.slice().sort((a, b) => Math.abs(balances[b]) - Math.abs(balances[a]));
+  const users = FINANCE_USERS.slice();
 
   const filteredTransactions = (selectedUser
     ? transactions.filter(
