@@ -118,6 +118,20 @@ CREATE TABLE IF NOT EXISTS fields (
     )
   `);
 
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      transDate TEXT,
+      description TEXT,
+      amount REAL,
+      payer TEXT,
+      payee TEXT,
+      shared INTEGER DEFAULT 0,
+      settled INTEGER DEFAULT 0,
+      createdDate TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   console.log("✅ Tables created");
 }
 

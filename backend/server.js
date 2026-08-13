@@ -180,6 +180,76 @@ app.get("/receipts", async (req, res) => {
   }
 });
 
+// Financial transactions: create / list / settle
+app.get("/transactions", async (req, res) => {
+  try {
+    const result = await turso.execute({
+      sql: `
+        SELECT *
+        FROM transactions
+        ORDER BY id DESC
+      `,
+    });
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(error);
+  }
+});
+
+app.post("/transactions", async (req, res) => {
+  try {
+    const {
+      transDate,
+      description,
+      amount,
+      payer,
+      payee,
+      shared,
+    } = req.body;
+
+    await turso.execute({
+      sql: `
+        INSERT INTO transactions
+        (transDate, description, amount, payer, payee, shared)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `,
+      args: [
+        transDate,
+        description,
+        amount,
+        payer,
+        payee,
+        shared ? 1 : 0,
+      ],
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(error);
+  }
+});
+
+app.put("/transactions/:id/settle", async (req, res) => {
+  try {
+    await turso.execute({
+      sql: `
+        UPDATE transactions
+        SET settled = 1
+        WHERE id = ?
+      `,
+      args: [req.params.id],
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(error);
+  }
+});
+
 app.post(
   "/receipts/ocr",
   upload.single("receipt"),

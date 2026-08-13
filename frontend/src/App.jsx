@@ -14,6 +14,7 @@ import SheepRegister from "./pages/SheepRegister";
 import Receipts from "./pages/Receipts";
 import Notes from "./pages/Notes";
 import Notifications from "./pages/Notifications";
+import FinancialRegister from "./pages/FinancialRegister";
 import { API } from "./api";
 
 function App() {
@@ -230,6 +231,12 @@ Move
 >
 Receipts
 </button>
+          <button
+            style={buttonStyle("financial")}
+            onClick={() => setPage("financial")}
+          >
+            Finances
+          </button>
           
           <button
             style={buttonStyle("notifications")}
@@ -293,6 +300,9 @@ Receipts
         {page === "receipts" && (
   <Receipts />
 )}
+        {page === "financial" && (
+          <FinancialRegister user={user} />
+        )}
 {page === "calendar" && (
   <Calendar />
 )}
