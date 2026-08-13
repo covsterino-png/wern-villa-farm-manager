@@ -8,7 +8,6 @@ export default function Dashboard({ setPage }) {
     gellidywyll: 0,
     openTasks: 0,
   });
-  const [financeBalance, setFinanceBalance] = useState({ David: 0, Gemma: 0 });
 
 const [expandedTask, setExpandedTask] =
   useState(null);
@@ -35,6 +34,8 @@ const [actionNotes, setActionNotes] =
     useState(0);
 
   const [treatmentCount, setTreatmentCount] =
+    useState(0);
+  const [transactionCount, setTransactionCount] =
     useState(0);
     const [showTasks, setShowTasks] =
   useState(false);
@@ -95,34 +96,6 @@ fetch(
   }, []);
 
   useEffect(() => {
-    fetch(`${API}/transactions`)
-      .then((res) => res.json())
-      .then((data) => {
-        const rows = Array.isArray(data) ? data : data?.rows || [];
-        const nextBalance = rows.reduce((acc, t) => {
-          if (t.settled) return acc;
-          const payer = t.payer;
-          const payee = t.payee;
-          const amount = Number(t.amount) || 0;
-
-          if (!payer || !payee || !["David", "Gemma"].includes(payer) || !["David", "Gemma"].includes(payee)) {
-            return acc;
-          }
-
-          const owed = t.shared ? amount / 2 : amount;
-          acc[payer] = (acc[payer] || 0) + owed;
-          acc[payee] = (acc[payee] || 0) - owed;
-          return acc;
-        }, { David: 0, Gemma: 0 });
-
-        setFinanceBalance(nextBalance);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  }, []);
-
-  useEffect(() => {
     fetch(
       `${API}/fields-count`
     )
@@ -147,6 +120,17 @@ fetch(
       .then((response) => response.json())
       .then((data) => {
         setWithdrawalCount(data.count);
+      })
+      .catch(() => {});
+
+    fetch(
+      `${API}/transactions`
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        const rows = Array.isArray(data) ? data : data?.rows || [];
+        const unsettled = rows.filter((t) => !t.settled).length;
+        setTransactionCount(unsettled);
       })
       .catch(() => {});
   }, []);
@@ -752,27 +736,20 @@ boxShadow:
             setPage("treatments")
           }
         />
+
 <DashboardCard
-  icon="�"
-  title="David / Gemma"
-  value={`£${Math.abs(financeBalance.David || financeBalance.Gemma || 0).toFixed(2)}`}
-  subtitle={
-    financeBalance.David > 0
-      ? "David is owed"
-      : financeBalance.Gemma > 0
-        ? "Gemma is owed"
-        : financeBalance.David < 0
-          ? "Gemma owes David"
-          : financeBalance.Gemma < 0
-            ? "David owes Gemma"
-            : "Balanced"
+  icon="💷"
+  title="Finances"
+  value={transactionCount}
+  subtitle="Pending"
+  colour="#ffd54f"
+  onClick={() =>
+    setPage("financial")
   }
-  colour={financeBalance.David > 0 || financeBalance.Gemma > 0 ? "#4caf50" : "#03a9f4"}
-  onClick={() => setPage("finances")}
 />
 
 <DashboardCard
-  icon="�📅"
+  icon="📅"
   title="Calendar"
   value={4}
   subtitle="Upcoming"
