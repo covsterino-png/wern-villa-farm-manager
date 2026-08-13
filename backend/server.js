@@ -219,7 +219,7 @@ app.get("/transactions", async (req, res) => {
   }
 });
 
-app.post("/transactions", async (req, res) => {
+app.post("/transactions", upload.single("receipt"), async (req, res) => {
   try {
     const {
       transDate,
@@ -230,11 +230,28 @@ app.post("/transactions", async (req, res) => {
       shared,
     } = req.body;
 
+    let receiptImageUrl = null;
+
+    if (req.file) {
+      try {
+        const uploadResult =
+          await cloudinary.uploader.upload(
+            `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
+            {
+              folder: "transaction-receipts",
+            }
+          );
+        receiptImageUrl = uploadResult.secure_url;
+      } catch (uploadError) {
+        console.error("Image upload error:", uploadError);
+      }
+    }
+
     await turso.execute({
       sql: `
         INSERT INTO transactions
-        (transDate, description, amount, payer, payee, shared)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (transDate, description, amount, payer, payee, shared, receiptImageUrl)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `,
       args: [
         transDate,
@@ -243,6 +260,7 @@ app.post("/transactions", async (req, res) => {
         payer,
         payee,
         shared ? 1 : 0,
+        receiptImageUrl,
       ],
     });
 

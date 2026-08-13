@@ -6,6 +6,27 @@ const FINANCE_USERS = ["David", "Gemma"];
 const getDefaultPayee = (activeUser) =>
   activeUser === "David" ? "Gemma" : "David";
 
+const compressImage = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxWidth = 600;
+        const scale = maxWidth / img.width;
+        canvas.width = maxWidth;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(resolve, "image/jpeg", 0.3);
+      };
+    };
+  });
+};
+
 export default function FinancialRegister({ user }) {
   const [transactions, setTransactions] = useState([]);
   const [form, setForm] = useState({
@@ -18,6 +39,7 @@ export default function FinancialRegister({ user }) {
   });
   const [selectedUser, setSelectedUser] = useState(null);
   const [detailUser, setDetailUser] = useState(null);
+  const [receiptFile, setReceiptFile] = useState(null);
 
   const load = async () => {
     try {
@@ -46,17 +68,37 @@ export default function FinancialRegister({ user }) {
     e.preventDefault();
     try {
       const payload = {
-        ...form,
+        transDate: form.transDate,
+        description: form.description,
+        amount: Number(form.amount),
         payer: FINANCE_USERS.includes(form.payer) ? form.payer : (user === "Gemma" ? "Gemma" : "David"),
         payee: FINANCE_USERS.includes(form.payee) ? form.payee : getDefaultPayee(user),
-        amount: Number(form.amount),
+        shared: form.shared ? 1 : 0,
       };
 
-      await fetch(`${API}/transactions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      if (receiptFile) {
+        const compressedBlob = await compressImage(receiptFile);
+        const formData = new FormData();
+        formData.append("transDate", payload.transDate);
+        formData.append("description", payload.description);
+        formData.append("amount", payload.amount);
+        formData.append("payer", payload.payer);
+        formData.append("payee", payload.payee);
+        formData.append("shared", payload.shared);
+        formData.append("receipt", compressedBlob, receiptFile.name);
+
+        await fetch(`${API}/transactions`, {
+          method: "POST",
+          body: formData,
+        });
+      } else {
+        await fetch(`${API}/transactions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+
       setForm({
         ...form,
         description: "",
@@ -64,6 +106,7 @@ export default function FinancialRegister({ user }) {
         payer: user === "Gemma" ? "Gemma" : "David",
         payee: getDefaultPayee(user),
       });
+      setReceiptFile(null);
       load();
     } catch (err) {
       console.error(err);
@@ -249,6 +292,13 @@ export default function FinancialRegister({ user }) {
                       ).toFixed(2)}
                       {t.shared && " (shared)"}
                     </div>
+                    {t.receiptImageUrl && (
+                      <div style={{ marginTop: "8px" }}>
+                        <a href={t.receiptImageUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#03a9f4", textDecoration: "underline", fontSize: "0.85rem" }}>
+                          📷 View Receipt
+                        </a>
+                      </div>
+                    )}
                   </div>
                 ));
               })()}
@@ -332,6 +382,14 @@ export default function FinancialRegister({ user }) {
               Shared
             </label>
 
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+              style={{ padding: "8px", borderRadius: 8, border: "none", background: "#121212", color: "white", cursor: "pointer" }}
+            />
+            {receiptFile && <span style={{ color: "#4caf50", fontSize: "0.9rem" }}>✓ {receiptFile.name}</span>}
+
             <button type="submit" style={{ background: "#03a9f4", color: "white", border: "none", padding: "10px 14px", borderRadius: 8, cursor: "pointer" }}>Add</button>
           </form>
         </div>
@@ -342,28 +400,37 @@ export default function FinancialRegister({ user }) {
           {filteredTransactions.length === 0 && <p>No transactions yet.</p>}
 
           {filteredTransactions.map((t) => (
-            <div key={t.id} style={{ background: "#1f1f1f", padding: "14px", borderRadius: "12px", marginBottom: "10px", border: "1px solid #333", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <div style={{ fontWeight: "bold" }}>{t.description || `Transaction #${t.id}`}</div>
-                <div style={{ color: "#999", marginTop: 6 }}>{t.transDate}</div>
-                <div style={{ marginTop: 8, fontSize: 13 }}>
-                  <div>Paid by: <strong style={{ color: "white" }}>{t.payer}</strong></div>
-                  {t.payee && (
-                    <div>
-                      Owes: <strong style={{ color: "white" }}>{t.payee}</strong> — {t.shared ? `£${(Number(t.amount || 0) / 2).toFixed(2)} each` : `£${(Number(t.amount) || 0).toFixed(2)}`}
+            <div key={t.id} style={{ background: "#1f1f1f", padding: "14px", borderRadius: "12px", marginBottom: "10px", border: "1px solid #333" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+                <div>
+                  <div style={{ fontWeight: "bold" }}>{t.description || `Transaction #${t.id}`}</div>
+                  <div style={{ color: "#999", marginTop: 6 }}>{t.transDate}</div>
+                  <div style={{ marginTop: 8, fontSize: 13 }}>
+                    <div>Paid by: <strong style={{ color: "white" }}>{t.payer}</strong></div>
+                    {t.payee && (
+                      <div>
+                        Owes: <strong style={{ color: "white" }}>{t.payee}</strong> — {t.shared ? `£${(Number(t.amount || 0) / 2).toFixed(2)} each` : `£${(Number(t.amount) || 0).toFixed(2)}`}
+                      </div>
+                    )}
+                  </div>
+                  {t.receiptImageUrl && (
+                    <div style={{ marginTop: 12 }}>
+                      <a href={t.receiptImageUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#03a9f4", textDecoration: "underline", fontSize: "0.9rem" }}>
+                        📷 View Receipt
+                      </a>
                     </div>
                   )}
                 </div>
-              </div>
 
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontWeight: "bold", fontSize: "1.05rem" }}>£{(Number(t.amount) || 0).toFixed(2)}</div>
-                <div style={{ marginTop: 8 }}>
-                  {!t.settled ? (
-                    <button onClick={() => settle(t.id)} style={{ background: "#03a9f4", color: "white", border: "none", padding: "8px 12px", borderRadius: 8, cursor: "pointer" }}>Settle</button>
-                  ) : (
-                    <span style={{ color: "#4caf50", fontWeight: "bold" }}>Settled</span>
-                  )}
+                <div style={{ textAlign: "right", minWidth: "120px" }}>
+                  <div style={{ fontWeight: "bold", fontSize: "1.05rem" }}>£{(Number(t.amount) || 0).toFixed(2)}</div>
+                  <div style={{ marginTop: 8 }}>
+                    {!t.settled ? (
+                      <button onClick={() => settle(t.id)} style={{ background: "#03a9f4", color: "white", border: "none", padding: "8px 12px", borderRadius: 8, cursor: "pointer" }}>Settle</button>
+                    ) : (
+                      <span style={{ color: "#4caf50", fontWeight: "bold" }}>Settled</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
