@@ -17,6 +17,7 @@ export default function FinancialRegister({ user }) {
     shared: false,
   });
   const [selectedUser, setSelectedUser] = useState(null);
+  const [detailUser, setDetailUser] = useState(null);
 
   const load = async () => {
     try {
@@ -141,7 +142,6 @@ export default function FinancialRegister({ user }) {
               return (
                 <div
                   key={person}
-                  onClick={() => setSelectedUser(person)}
                   style={{
                     background: "#1f1f1f",
                     padding: "12px",
@@ -151,8 +151,13 @@ export default function FinancialRegister({ user }) {
                     minWidth: 180,
                   }}
                 >
-                  <div style={{ fontWeight: "bold", color: selectedUser === person ? "#03a9f4" : "white" }}>{person}</div>
-                  <div style={{ marginTop: 6 }}>
+                  <div 
+                    onClick={() => setDetailUser(person)}
+                    style={{ fontWeight: "bold", color: selectedUser === person ? "#03a9f4" : "white", textDecoration: "underline" }}
+                  >
+                    {person}
+                  </div>
+                  <div style={{ marginTop: 6 }} onClick={() => setSelectedUser(person)}>
                     {amt === 0 ? (
                       <span style={{ color: "#999" }}>Settled</span>
                     ) : amt > 0 ? (
@@ -181,6 +186,92 @@ export default function FinancialRegister({ user }) {
             )}
           </div>
         </div>
+
+        {detailUser && (
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+          onClick={() => setDetailUser(null)}
+          >
+            <div style={{
+              background: "#1f1f1f",
+              padding: "20px",
+              borderRadius: "16px",
+              border: "1px solid #333",
+              maxWidth: "600px",
+              width: "90%",
+              maxHeight: "80vh",
+              overflowY: "auto",
+              color: "white",
+            }}
+            onClick={(e) => e.stopPropagation()}
+            >
+              <h2 style={{ marginTop: 0, color: "#03a9f4" }}>{detailUser}'s Unsettled Transactions</h2>
+              
+              {(() => {
+                const userTransactions = transactions.filter(
+                  (t) => !t.settled && (t.payer === detailUser || t.payee === detailUser)
+                );
+
+                if (userTransactions.length === 0) {
+                  return <p style={{ color: "#999" }}>No unsettled transactions</p>;
+                }
+
+                return userTransactions.map((t) => (
+                  <div key={t.id} style={{
+                    background: "#121212",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    marginBottom: "10px",
+                    border: "1px solid #333",
+                  }}>
+                    <div style={{ fontWeight: "bold", marginBottom: "6px" }}>{t.description || `Transaction #${t.id}`}</div>
+                    <div style={{ color: "#aaa", fontSize: "0.9rem", marginBottom: "8px" }}>{t.transDate}</div>
+                    <div style={{ fontSize: "0.9rem", marginBottom: "6px" }}>
+                      <span>{t.payer}</span> → <span>{t.payee}</span>
+                    </div>
+                    <div style={{
+                      fontWeight: "bold",
+                      color: t.payer === detailUser ? "#4caf50" : "#ff9800",
+                      fontSize: "1rem",
+                    }}>
+                      {t.payer === detailUser ? "Owed" : "Owes"}: £{(
+                        t.shared ? Number(t.amount || 0) / 2 : Number(t.amount || 0)
+                      ).toFixed(2)}
+                      {t.shared && " (shared)"}
+                    </div>
+                  </div>
+                ));
+              })()}
+
+              <button
+                onClick={() => setDetailUser(null)}
+                style={{
+                  width: "100%",
+                  background: "#03a9f4",
+                  color: "white",
+                  border: "none",
+                  padding: "10px",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  marginTop: "16px",
+                  fontWeight: "bold",
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
 
         <div style={{ background: "#2b2b2b", padding: "14px", borderRadius: "12px", marginBottom: 16 }}>
           <form onSubmit={submit} style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
