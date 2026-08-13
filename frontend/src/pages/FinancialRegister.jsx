@@ -190,13 +190,14 @@ export default function FinancialRegister({ user }) {
             <div key={t.id} style={{ background: "#1f1f1f", padding: "14px", borderRadius: "12px", marginBottom: "10px", border: "1px solid #333", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <div style={{ fontWeight: "bold" }}>{t.description || `Transaction #${t.id}`}</div>
-                <div style={{ color: "#999", marginTop: 6 }}>{t.transDate} • {t.payee ? `${t.payer} → ${t.payee}` : t.payer}</div>
+                <div style={{ color: "#999", marginTop: 6 }}>{t.transDate}</div>
                 <div style={{ marginTop: 8, fontSize: 13 }}>
-                  {t.payee ? (t.shared ? (
-                    <span style={{ color: "#ccc" }}>{t.payer} and {t.payee} split £{(Number(t.amount) || 0).toFixed(2)}</span>
-                  ) : (
-                    <span style={{ color: "#ccc" }}>{t.payer} paid £{(Number(t.amount) || 0).toFixed(2)} for {t.payee}</span>
-                  )) : null}
+                  <div>Paid by: <strong style={{ color: "white" }}>{t.payer}</strong></div>
+                  {t.payee && (
+                    <div>
+                      Owes: <strong style={{ color: "white" }}>{t.payee}</strong> — {t.shared ? `£${(Number(t.amount || 0) / 2).toFixed(2)} each` : `£${(Number(t.amount) || 0).toFixed(2)}`}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -213,6 +214,6 @@ export default function FinancialRegister({ user }) {
             </div>
           ))}
         </div>
-      </div>
-      );
-    }
+  </div>
+  );
+}
