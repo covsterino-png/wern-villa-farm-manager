@@ -1,14 +1,19 @@
 import { useEffect, useState } from "react";
 import { API } from "../api";
 
+const FINANCE_USERS = ["David", "Gemma"];
+
+const getDefaultPayee = (activeUser) =>
+  activeUser === "David" ? "Gemma" : "David";
+
 export default function FinancialRegister({ user }) {
   const [transactions, setTransactions] = useState([]);
   const [form, setForm] = useState({
     transDate: new Date().toISOString().split("T")[0],
     description: "",
     amount: "",
-    payer: user || "",
-    payee: "",
+    payer: user === "Gemma" ? "Gemma" : "David",
+    payee: getDefaultPayee(user),
     shared: false,
   });
   const [selectedUser, setSelectedUser] = useState(null);
@@ -28,18 +33,36 @@ export default function FinancialRegister({ user }) {
     load();
   }, []);
 
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      payer: user === "Gemma" ? "Gemma" : "David",
+      payee: getDefaultPayee(user),
+    }));
+  }, [user]);
+
   const submit = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        ...form,
+        payer: FINANCE_USERS.includes(form.payer) ? form.payer : (user === "Gemma" ? "Gemma" : "David"),
+        payee: FINANCE_USERS.includes(form.payee) ? form.payee : getDefaultPayee(user),
+        amount: Number(form.amount),
+      };
+
       await fetch(`${API}/transactions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          amount: Number(form.amount),
-        }),
+        body: JSON.stringify(payload),
       });
-      setForm({ ...form, description: "", amount: "", payee: "" });
+      setForm({
+        ...form,
+        description: "",
+        amount: "",
+        payer: user === "Gemma" ? "Gemma" : "David",
+        payee: getDefaultPayee(user),
+      });
       load();
     } catch (err) {
       console.error(err);
@@ -48,8 +71,19 @@ export default function FinancialRegister({ user }) {
 
   const settle = async (id) => {
     try {
+      const target = transactions.find((t) => t.id === id);
+      if (!target) return;
+
+      const payload = {
+        ...target,
+        settled: true,
+        amount: 0,
+      };
+
       await fetch(`${API}/transactions/${id}/settle`, {
         method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
       load();
     } catch (e) {
@@ -57,13 +91,16 @@ export default function FinancialRegister({ user }) {
     }
   };
 
-  // compute balances between people based on shared transactions
   const balances = (transactions || []).reduce((acc, t) => {
-    const payer = t.payer || "Unknown";
+    if (t.settled) return acc;
+
+    const payer = t.payer;
     const payee = t.payee;
     const amount = Number(t.amount) || 0;
 
-    if (!payee) return acc;
+    if (!payer || !payee || !FINANCE_USERS.includes(payer) || !FINANCE_USERS.includes(payee)) {
+      return acc;
+    }
 
     const owed = t.shared ? amount / 2 : amount;
 
@@ -71,18 +108,29 @@ export default function FinancialRegister({ user }) {
     acc[payee] = (acc[payee] || 0) - owed;
 
     return acc;
-  }, {});
+  }, { David: 0, Gemma: 0 });
 
-  const users = Object.keys(balances).sort((a, b) => Math.abs(balances[a]) - Math.abs(balances[b]));
+  const users = FINANCE_USERS.slice().sort((a, b) => Math.abs(balances[b]) - Math.abs(balances[a]));
 
-  const filteredTransactions = selectedUser
+  const filteredTransactions = (selectedUser
     ? transactions.filter(
-        (t) => t.payer === selectedUser || t.payee === selectedUser
+        (t) => !t.settled && (t.payer === selectedUser || t.payee === selectedUser)
       )
-    : transactions;
+    : transactions.filter((t) => !t.settled));
 
   return (
     <div style={{ padding: "20px", color: "white" }}>
+      <style>{`
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+
+        input[type="number"] {
+          -moz-appearance: textfield;
+        }
+      `}</style>
         <h1 style={{ color: "#03a9f4" }}>💷 Finances</h1>
 
         <div style={{ marginTop: 8, marginBottom: 16 }}>
@@ -154,20 +202,36 @@ export default function FinancialRegister({ user }) {
               step="0.01"
               value={form.amount}
               onChange={(e) => setForm({ ...form, amount: e.target.value })}
-              style={{ padding: "8px", borderRadius: 8, border: "none", background: "#121212", color: "white", width: 110 }}
+              style={{
+                padding: "8px",
+                borderRadius: 8,
+                border: "none",
+                background: "#121212",
+                color: "white",
+                width: 110,
+                appearance: "textfield",
+                WebkitAppearance: "none",
+                MozAppearance: "textfield",
+              }}
             />
-            <input
-              placeholder="Payer"
+            <select
               value={form.payer}
               onChange={(e) => setForm({ ...form, payer: e.target.value })}
               style={{ padding: "8px", borderRadius: 8, border: "none", background: "#121212", color: "white", width: 140 }}
-            />
-            <input
-              placeholder="Payee"
+            >
+              {FINANCE_USERS.map((person) => (
+                <option key={person} value={person}>{person}</option>
+              ))}
+            </select>
+            <select
               value={form.payee}
               onChange={(e) => setForm({ ...form, payee: e.target.value })}
               style={{ padding: "8px", borderRadius: 8, border: "none", background: "#121212", color: "white", width: 140 }}
-            />
+            >
+              {FINANCE_USERS.map((person) => (
+                <option key={person} value={person}>{person}</option>
+              ))}
+            </select>
             <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#ccc" }}>
               <input
                 type="checkbox"

@@ -31,6 +31,24 @@ cloudinary.config({
 const app = express();
 const upload = multer();
 
+async function ensureTransactionsTable() {
+  await turso.execute({
+    sql: `
+      CREATE TABLE IF NOT EXISTS transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        transDate TEXT,
+        description TEXT,
+        amount REAL,
+        payer TEXT,
+        payee TEXT,
+        shared INTEGER DEFAULT 0,
+        settled INTEGER DEFAULT 0,
+        createdDate TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `,
+  });
+}
+
 app.use(
   cors({
     origin: "*"
@@ -39,6 +57,9 @@ app.use(
   
 );app.use(express.json());
 
+ensureTransactionsTable().catch((error) => {
+  console.error("Failed to ensure transactions table:", error);
+});
 
 app.post("/sheep/:id/scheduled", async (req, res) => {
   console.log(req.body);
@@ -237,7 +258,8 @@ app.put("/transactions/:id/settle", async (req, res) => {
     await turso.execute({
       sql: `
         UPDATE transactions
-        SET settled = 1
+        SET settled = 1,
+            amount = 0
         WHERE id = ?
       `,
       args: [req.params.id],
