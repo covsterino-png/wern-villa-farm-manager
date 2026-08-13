@@ -106,6 +106,20 @@ CREATE TABLE IF NOT EXISTS treatments (
   administeredBy TEXT
 )
 `);
+// transactions table for local sqlite
+db.run(`
+CREATE TABLE IF NOT EXISTS transactions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  transDate TEXT,
+  description TEXT,
+  amount REAL,
+  payer TEXT,
+  payee TEXT,
+  shared INTEGER DEFAULT 0,
+  settled INTEGER DEFAULT 0,
+  createdDate TEXT DEFAULT CURRENT_TIMESTAMP
+)
+`);
 app.get("/", (req, res) => {
   res.send("Wern Villa Farm Manager API");
 });
@@ -565,4 +579,32 @@ app.get("/backup", (req, res) => {
 2
 res.download("./farm.db");
 3
+});
+
+// Transactions endpoints (sqlite)
+app.get("/transactions", (req, res) => {
+  db.all("SELECT * FROM transactions ORDER BY id DESC", [], (err, rows) => {
+    if (err) return res.status(500).json(err);
+    res.json(rows);
+  });
+});
+
+app.post("/transactions", (req, res) => {
+  const { transDate, description, amount, payer, payee, shared } = req.body;
+  db.run(
+    `INSERT INTO transactions (transDate, description, amount, payer, payee, shared) VALUES (?, ?, ?, ?, ?, ?)`,
+    [transDate, description, amount, payer, payee, shared ? 1 : 0],
+    function (err) {
+      if (err) return res.status(500).json(err);
+      res.json({ success: true, id: this.lastID });
+    }
+  );
+});
+
+app.put("/transactions/:id/settle", (req, res) => {
+  const id = req.params.id;
+  db.run(`UPDATE transactions SET settled = 1 WHERE id = ?`, [id], function (err) {
+    if (err) return res.status(500).json(err);
+    res.json({ success: true });
+  });
 });
