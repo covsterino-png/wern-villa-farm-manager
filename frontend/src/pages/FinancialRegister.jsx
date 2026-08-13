@@ -81,48 +81,7 @@ export default function FinancialRegister({ user }) {
       )
     : transactions;
 
-  return (
-    <div>
-      <h2>Financial Register</h2>
-
-      <div style={{ marginBottom: 12 }}>
-        <strong>Balances</strong>
-        <div style={{ display: "flex", gap: 12, marginTop: 8, flexWrap: "wrap" }}>
-          {users.length === 0 && <div>No balances yet</div>}
-          {users.map((person) => {
-            const amt = balances[person] || 0;
-            return (
-              <button
-                key={person}
-                onClick={() => setSelectedUser(person)}
-                style={{
-                  background: selectedUser === person ? "#03a9f4" : "#2b2b2b",
-                  color: "white",
-                  border: "none",
-                  padding: "8px",
-                  borderRadius: 8,
-                  cursor: "pointer",
-                }}
-              >
-                {person}: {amt >= 0 ? "is owed " : "owes "}
-                £{Math.abs(amt).toFixed(2)}
-              </button>
-            );
-          })}
-
-          {selectedUser && (
-            <button
-              onClick={() => setSelectedUser(null)}
-              style={{ background: "#444", color: "white", border: "none", padding: "8px", borderRadius: 8 }}
-            >
-              Clear
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
-
+  
       <div style={{ padding: "20px", color: "white" }}>
         <h1 style={{ color: "#03a9f4" }}>💷 Finances</h1>
 
