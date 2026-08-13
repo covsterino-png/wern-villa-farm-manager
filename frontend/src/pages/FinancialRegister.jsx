@@ -385,6 +385,7 @@ export default function FinancialRegister({ user }) {
             <input
               type="file"
               accept="image/*"
+              capture="environment"
               onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
               style={{ padding: "8px", borderRadius: 8, border: "none", background: "#121212", color: "white", cursor: "pointer" }}
             />

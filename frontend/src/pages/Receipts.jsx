@@ -9,9 +9,8 @@ export default function Receipts() {
   useState([]);
   const [selectedReceipt, setSelectedReceipt] =
   useState(null);
+  const [error, setError] = useState("");
 
-const [receiptItems, setReceiptItems] =
-  useState([]);
 function resizeImage(file) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -75,12 +74,12 @@ function resizeImage(file) {
   const data = await response.json();
 
   setSelectedReceipt(data.receipt);
-  setReceiptItems(data.items);
 } 
   async function processReceipt() {
     if (!file) return;
 
     setLoading(true);
+    setError("");
 
     try {
 const compressedFile =
@@ -103,13 +102,21 @@ formData.append(
 
       const data = await response.json();
 
+      if (!response.ok) {
+        throw new Error(data.error || "Receipt processing failed");
+      }
+
       setOcrText(data.rawText || "");
+      const receiptResponse = await fetch(`${API}/receipts/${data.receiptId}`);
+      const receiptData = await receiptResponse.json();
+      setSelectedReceipt(receiptData.receipt);
+      const historyResponse = await fetch(`${API}/receipts`);
+      setReceipts(await historyResponse.json());
+      setFile(null);
     } catch (err) {
       console.error(err);
 
-      alert(
-        "Failed to process receipt"
-      );
+      setError(err.message || "Failed to process receipt");
     }
 
     setLoading(false);
@@ -130,6 +137,8 @@ formData.append(
         Take a photo of a receipt and
         extract information automatically.
       </p>
+
+      {error && <p style={{ color: "#ff8a80" }}>{error}</p>}
 
       <input
         type="file"
@@ -158,6 +167,19 @@ formData.append(
             {" "}
             {file.name}
           </p>
+
+          <img
+            src={URL.createObjectURL(file)}
+            alt="Selected receipt"
+            style={{
+              display: "block",
+              maxWidth: "min(100%, 420px)",
+              maxHeight: "360px",
+              objectFit: "contain",
+              marginBottom: "16px",
+              borderRadius: "8px",
+            }}
+          />
 
           <button
             onClick={
@@ -217,6 +239,21 @@ formData.append(
     }}
   >
     <h2>🧾 Receipt Details</h2>
+
+    {selectedReceipt.imageUrl && (
+      <img
+        src={selectedReceipt.imageUrl}
+        alt="Receipt"
+        style={{
+          display: "block",
+          maxWidth: "min(100%, 520px)",
+          maxHeight: "520px",
+          objectFit: "contain",
+          marginBottom: "16px",
+          borderRadius: "8px",
+        }}
+      />
+    )}
 
     <p>
       Date:

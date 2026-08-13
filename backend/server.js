@@ -49,6 +49,31 @@ async function ensureTransactionsTable() {
   });
 }
 
+async function ensureReceiptsTable() {
+  await turso.execute({
+    sql: `
+      CREATE TABLE IF NOT EXISTS receipts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        imageUrl TEXT,
+        rawText TEXT,
+        supplier TEXT,
+        total REAL,
+        createdDate TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `,
+  });
+
+  for (const column of ["supplier TEXT", "total REAL"]) {
+    try {
+      await turso.execute(`ALTER TABLE receipts ADD COLUMN ${column}`);
+    } catch (error) {
+      if (!error.message.includes("duplicate column")) {
+        throw error;
+      }
+    }
+  }
+}
+
 app.use(
   cors({
     origin: "*"
@@ -59,6 +84,10 @@ app.use(
 
 ensureTransactionsTable().catch((error) => {
   console.error("Failed to ensure transactions table:", error);
+});
+
+ensureReceiptsTable().catch((error) => {
+  console.error("Failed to ensure receipts table:", error);
 });
 
 app.post("/sheep/:id/scheduled", async (req, res) => {
@@ -390,7 +419,7 @@ console.log(rawText);
 
 console.log("SUPPLIER:", supplier);
 console.log("TOTAL:", total);
-await turso.execute({
+const insertResult = await turso.execute({
   sql: `
     INSERT INTO receipts
     (
@@ -414,6 +443,8 @@ args: [
       res.json({
         success: true,
         rawText,
+        receiptId: Number(insertResult.lastInsertRowid),
+        imageUrl,
       });
     } catch (error) {
       console.error(
