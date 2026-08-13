@@ -17,7 +17,8 @@ export default function FinancialRegister({ user }) {
     try {
       const res = await fetch(`${API}/transactions`);
       const data = await res.json();
-      setTransactions(data);
+      const rows = Array.isArray(data) ? data : data?.rows || [];
+      setTransactions(rows);
     } catch (e) {
       console.error(e);
     }
@@ -57,7 +58,7 @@ export default function FinancialRegister({ user }) {
   };
 
   // compute balances between people based on shared transactions
-  const balances = transactions.reduce((acc, t) => {
+  const balances = (transactions || []).reduce((acc, t) => {
     const payer = t.payer || "Unknown";
     const payee = t.payee;
     const amount = Number(t.amount) || 0;
