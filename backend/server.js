@@ -153,6 +153,19 @@ async function ensureHeroPointsTables() {
       updatedDate TEXT
     )
   `);
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS heroRedemptions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      rewardId INTEGER NOT NULL,
+      rewardName TEXT NOT NULL,
+      cost INTEGER NOT NULL,
+      requestedBy TEXT NOT NULL,
+      requestedDate TEXT DEFAULT CURRENT_TIMESTAMP,
+      status TEXT NOT NULL DEFAULT 'requested',
+      completedBy TEXT,
+      completedDate TEXT
+    )
+  `);
 }
 
 async function ensureReceiptsTable() {
@@ -2576,12 +2589,13 @@ app.get("/field-status", async (req, res) => {
 
 app.get("/hero-points", async (req, res) => {
   try {
-    const [entries, rewards] = await Promise.all([
+    const [entries, rewards, redemptions] = await Promise.all([
       turso.execute("SELECT * FROM heroPoints ORDER BY id DESC"),
       turso.execute("SELECT * FROM heroRewards WHERE active = 1 ORDER BY cost, name"),
+      turso.execute("SELECT * FROM heroRedemptions ORDER BY id DESC"),
     ]);
     const balance = entries.rows.reduce((total, entry) => total + Number(entry.points), 0);
-    res.json({ balance, entries: entries.rows, rewards: rewards.rows });
+    res.json({ balance, entries: entries.rows, rewards: rewards.rows, redemptions: redemptions.rows });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -2656,18 +2670,43 @@ app.put("/hero-rewards/:id", async (req, res) => {
 
 app.post("/hero-rewards/:id/redeem", async (req, res) => {
   try {
-    if (req.user !== "David") return res.status(403).json({ error: "Only David can redeem Hero Points" });
+    if (req.user !== "David" && req.user !== "Gemma") return res.status(403).json({ error: "Unknown user" });
     const rewardResult = await turso.execute({ sql: "SELECT * FROM heroRewards WHERE id = ? AND active = 1", args: [req.params.id] });
     const reward = rewardResult.rows[0];
     if (!reward) return res.status(404).json({ error: "Reward not found" });
     const entries = await turso.execute("SELECT points FROM heroPoints");
     const balance = entries.rows.reduce((total, entry) => total + Number(entry.points), 0);
     if (balance < Number(reward.cost)) return res.status(400).json({ error: "Not enough Hero Points" });
+    const pending = await turso.execute({ sql: "SELECT id FROM heroRedemptions WHERE status = 'requested' AND rewardId = ?", args: [req.params.id] });
+    if (pending.rows.length > 0) return res.status(409).json({ error: "This reward already has a pending request" });
+    await turso.execute({
+      sql: "INSERT INTO heroRedemptions (rewardId, rewardName, cost, requestedBy) VALUES (?, ?, ?, ?)",
+      args: [reward.id, reward.name, reward.cost, req.user],
+    });
+    return res.json({ success: true, status: "requested" });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.put("/hero-redemptions/:id/complete", async (req, res) => {
+  try {
+    if (req.user !== "David") return res.status(403).json({ error: "Only David can mark redemptions complete" });
+    const result = await turso.execute({ sql: "SELECT * FROM heroRedemptions WHERE id = ? AND status = 'requested'", args: [req.params.id] });
+    const redemption = result.rows[0];
+    if (!redemption) return res.status(404).json({ error: "Pending redemption not found" });
+    const entries = await turso.execute("SELECT points FROM heroPoints");
+    const balance = entries.rows.reduce((total, entry) => total + Number(entry.points), 0);
+    if (balance < Number(redemption.cost)) return res.status(400).json({ error: "Not enough Hero Points" });
     await turso.execute({
       sql: "INSERT INTO heroPoints (points, description, createdBy) VALUES (?, ?, ?)",
-      args: [-Number(reward.cost), `Redeemed: ${reward.name}`, req.user],
+      args: [-Number(redemption.cost), `Redeemed: ${redemption.rewardName}`, req.user],
     });
-    return res.json({ success: true });
+    await turso.execute({
+      sql: "UPDATE heroRedemptions SET status = 'completed', completedBy = ?, completedDate = CURRENT_TIMESTAMP WHERE id = ?",
+      args: [req.user, req.params.id],
+    });
+    return res.json({ success: true, status: "completed" });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

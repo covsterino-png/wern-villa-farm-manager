@@ -19,7 +19,7 @@ const panelStyle = {
 };
 
 export default function HeroPoints({ user }) {
-  const [data, setData] = useState({ balance: 0, entries: [], rewards: [] });
+  const [data, setData] = useState({ balance: 0, entries: [], rewards: [], redemptions: [] });
   const [points, setPoints] = useState("");
   const [description, setDescription] = useState("");
   const [rewardName, setRewardName] = useState("");
@@ -72,10 +72,19 @@ export default function HeroPoints({ user }) {
   }
 
   async function redeem(reward) {
-    if (!window.confirm(`Redeem ${reward.name} for ${reward.cost} points?`)) return;
+    if (!window.confirm(`Request ${reward.name} for ${reward.cost} points?`)) return;
     try {
       await fetchJson(`/hero-rewards/${reward.id}/redeem`, { method: "POST" });
-      setMessage("Reward redeemed");
+      setMessage("Redemption requested");
+      await load();
+    } catch (error) { setMessage(error.message); }
+  }
+
+  async function completeRedemption(redemption) {
+    if (!window.confirm(`Mark ${redemption.rewardName} as complete?`)) return;
+    try {
+      await fetchJson(`/hero-redemptions/${redemption.id}/complete`, { method: "PUT" });
+      setMessage("Redemption marked complete");
       await load();
     } catch (error) { setMessage(error.message); }
   }
@@ -108,12 +117,13 @@ export default function HeroPoints({ user }) {
       </div>
 
       <div style={panelStyle}>
-        <h2>{editingEntry ? "Edit points" : "Add points"}</h2>
+        <h2>{editingEntry ? "Edit point request" : "Request Hero Points"}</h2>
+        {!editingEntry && <p style={{ color: "#aaa" }}>Submit a request for points with a reason. David can review and edit requests.</p>}
         <form onSubmit={saveEntry} style={{ display: "grid", gap: "10px", maxWidth: "520px" }}>
           <input required min="1" step="1" type="number" value={points} onChange={(event) => setPoints(event.target.value)} placeholder="Points" style={inputStyle} />
           <input required value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Reason or description" style={inputStyle} />
           <div style={{ display: "flex", gap: "8px" }}>
-            <button type="submit">{editingEntry ? "Save changes" : "Add points"}</button>
+            <button type="submit">{editingEntry ? "Save changes" : "Submit points request"}</button>
             {editingEntry && <button type="button" onClick={() => { setEditingEntry(null); setPoints(""); setDescription(""); }}>Cancel</button>}
           </div>
         </form>
@@ -121,17 +131,29 @@ export default function HeroPoints({ user }) {
       </div>
 
       <div style={panelStyle}>
-        <h2>Rewards</h2>
+        <h2>Request Hero Points Redemption</h2>
+        <p style={{ color: "#aaa" }}>Choose a reward from the price list. The request stays pending until David marks it complete.</p>
         {data.rewards.length === 0 && <p style={{ color: "#aaa" }}>No rewards have been added yet.</p>}
         <div style={{ display: "grid", gap: "10px" }}>
           {data.rewards.map((reward) => (
             <div key={reward.id} style={{ display: "flex", gap: "10px", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #444", padding: "10px 0", flexWrap: "wrap" }}>
               <span>{reward.name} <strong style={{ color: "#03a9f4" }}>{reward.cost} points</strong></span>
-              {user === "David" && <div style={{ display: "flex", gap: "8px" }}><button onClick={() => redeem(reward)}>Redeem</button><button onClick={() => { setEditingReward(reward); setRewardName(reward.name); setRewardCost(reward.cost); }}>Edit list item</button></div>}
+              <div style={{ display: "flex", gap: "8px" }}><button onClick={() => redeem(reward)}>Request redemption</button>{user === "David" && <button onClick={() => { setEditingReward(reward); setRewardName(reward.name); setRewardCost(reward.cost); }}>Edit list item</button>}</div>
             </div>
           ))}
         </div>
         {user === "David" && <form onSubmit={addReward} style={{ display: "grid", gap: "10px", maxWidth: "520px", marginTop: "20px" }}><h3>{editingReward ? "Edit price list item" : "Add reward to price list"}</h3><input required value={rewardName} onChange={(event) => setRewardName(event.target.value)} placeholder="Reward name" style={inputStyle} /><input required min="1" step="1" type="number" value={rewardCost} onChange={(event) => setRewardCost(event.target.value)} placeholder="Cost in points" style={inputStyle} /><div style={{ display: "flex", gap: "8px" }}><button type="submit">{editingReward ? "Save reward" : "Add reward"}</button>{editingReward && <button type="button" onClick={() => { setEditingReward(null); setRewardName(""); setRewardCost(""); }}>Cancel</button>}</div></form>}
+      </div>
+
+      <div style={panelStyle}>
+        <h2>Mark as Complete</h2>
+        {data.redemptions.filter((item) => item.status === "requested").length === 0 && <p style={{ color: "#aaa" }}>No pending redemption requests.</p>}
+        {data.redemptions.filter((item) => item.status === "requested").map((redemption) => (
+          <div key={redemption.id} style={{ display: "flex", justifyContent: "space-between", gap: "10px", alignItems: "center", borderBottom: "1px solid #444", padding: "10px 0", flexWrap: "wrap" }}>
+            <span>{redemption.rewardName} <strong style={{ color: "#03a9f4" }}>{redemption.cost} points</strong><br /><small style={{ color: "#aaa" }}>Requested by {redemption.requestedBy} • {redemption.requestedDate}</small></span>
+            {user === "David" && <button onClick={() => completeRedemption(redemption)}>Mark as complete</button>}
+          </div>
+        ))}
       </div>
 
       {entryList("Requested", data.entries.filter((entry) => Number(entry.points) > 0), "No points requested yet.")}
