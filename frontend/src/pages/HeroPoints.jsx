@@ -22,6 +22,9 @@ export default function HeroPoints({ user }) {
   const [data, setData] = useState({ balance: 0, entries: [], rewards: [], redemptions: [] });
   const [points, setPoints] = useState("");
   const [description, setDescription] = useState("");
+  const [entryDate, setEntryDate] = useState(new Date().toISOString().slice(0, 10));
+  const [requestDate, setRequestDate] = useState(new Date().toISOString().slice(0, 10));
+  const [deliveryDate, setDeliveryDate] = useState("");
   const [rewardName, setRewardName] = useState("");
   const [rewardCost, setRewardCost] = useState("");
   const [editingReward, setEditingReward] = useState(null);
@@ -45,10 +48,11 @@ export default function HeroPoints({ user }) {
       await fetchJson(path, {
         method: editingEntry ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ points, description }),
+        body: JSON.stringify({ points, description, entryDate }),
       });
       setPoints("");
       setDescription("");
+      setEntryDate(new Date().toISOString().slice(0, 10));
       setEditingEntry(null);
       setMessage("Points saved");
       await load();
@@ -74,8 +78,10 @@ export default function HeroPoints({ user }) {
   async function redeem(reward) {
     if (!window.confirm(`Request ${reward.name} for ${reward.cost} points?`)) return;
     try {
-      await fetchJson(`/hero-rewards/${reward.id}/redeem`, { method: "POST" });
+      await fetchJson(`/hero-rewards/${reward.id}/redeem`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requestDate, deliveryDate: deliveryDate || null }) });
       setMessage("Redemption requested");
+      setRequestDate(new Date().toISOString().slice(0, 10));
+      setDeliveryDate("");
       await load();
     } catch (error) { setMessage(error.message); }
   }
@@ -99,7 +105,7 @@ export default function HeroPoints({ user }) {
             <span>{entry.description}<br /><small style={{ color: "#aaa" }}>{entry.createdBy} • {entry.createdDate}</small></span>
             <span style={{ color: Number(entry.points) >= 0 ? "#8bc34a" : "#ff8a80", fontWeight: "bold" }}>
               {Number(entry.points) >= 0 ? "+" : ""}{entry.points}
-              {user === "David" && Number(entry.points) > 0 && <button onClick={() => { setEditingEntry(entry); setPoints(entry.points); setDescription(entry.description); }} style={{ marginLeft: "8px" }}>Edit</button>}
+              {user === "David" && Number(entry.points) > 0 && <button onClick={() => { setEditingEntry(entry); setPoints(entry.points); setDescription(entry.description); setEntryDate(entry.createdDate?.slice(0, 10)); }} style={{ marginLeft: "8px" }}>Edit</button>}
             </span>
           </div>
         ))}
@@ -122,6 +128,7 @@ export default function HeroPoints({ user }) {
         <form onSubmit={saveEntry} style={{ display: "grid", gap: "10px", maxWidth: "520px" }}>
           <input required min="1" step="1" type="number" value={points} onChange={(event) => setPoints(event.target.value)} placeholder="Points" style={inputStyle} />
           <input required value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Reason or description" style={inputStyle} />
+          <label>Date added<input required type="date" value={entryDate} onChange={(event) => setEntryDate(event.target.value)} style={inputStyle} /></label>
           <div style={{ display: "flex", gap: "8px" }}>
             <button type="submit">{editingEntry ? "Save changes" : "Add points"}</button>
             {editingEntry && <button type="button" onClick={() => { setEditingEntry(null); setPoints(""); setDescription(""); }}>Cancel</button>}
@@ -133,6 +140,10 @@ export default function HeroPoints({ user }) {
       <div style={panelStyle}>
         <h2>Request Hero Points Redemption</h2>
         <p style={{ color: "#aaa" }}>Choose a reward from the price list. The request stays pending until David marks it complete.</p>
+        <div style={{ display: "grid", gap: "10px", maxWidth: "520px", marginBottom: "12px" }}>
+          <label>Request date<input required type="date" value={requestDate} onChange={(event) => setRequestDate(event.target.value)} style={inputStyle} /></label>
+          <label>Reward delivery date<input required type="date" value={deliveryDate} onChange={(event) => setDeliveryDate(event.target.value)} style={inputStyle} /></label>
+        </div>
         {data.rewards.length === 0 && <p style={{ color: "#aaa" }}>No rewards have been added yet.</p>}
         <div style={{ display: "grid", gap: "10px" }}>
           {data.rewards.map((reward) => (
@@ -150,7 +161,7 @@ export default function HeroPoints({ user }) {
         {data.redemptions.filter((item) => item.status === "requested").length === 0 && <p style={{ color: "#aaa" }}>No pending redemption requests.</p>}
         {data.redemptions.filter((item) => item.status === "requested").map((redemption) => (
           <div key={redemption.id} style={{ display: "flex", justifyContent: "space-between", gap: "10px", alignItems: "center", borderBottom: "1px solid #444", padding: "10px 0", flexWrap: "wrap" }}>
-            <span>{redemption.rewardName} <strong style={{ color: "#03a9f4" }}>{redemption.cost} points</strong><br /><small style={{ color: "#aaa" }}>Requested by {redemption.requestedBy} • {redemption.requestedDate}</small></span>
+            <span>{redemption.rewardName} <strong style={{ color: "#03a9f4" }}>{redemption.cost} points</strong><br /><small style={{ color: "#aaa" }}>Requested by {redemption.requestedBy} • Requested {redemption.requestedDate}{redemption.deliveryDate ? ` • Deliver by ${redemption.deliveryDate}` : ""}</small></span>
             {user === "David" && <button onClick={() => completeRedemption(redemption)}>Mark as complete</button>}
           </div>
         ))}

@@ -161,11 +161,17 @@ async function ensureHeroPointsTables() {
       cost INTEGER NOT NULL,
       requestedBy TEXT NOT NULL,
       requestedDate TEXT DEFAULT CURRENT_TIMESTAMP,
+      deliveryDate TEXT,
       status TEXT NOT NULL DEFAULT 'requested',
       completedBy TEXT,
       completedDate TEXT
     )
   `);
+  try {
+    await turso.execute("ALTER TABLE heroRedemptions ADD COLUMN deliveryDate TEXT");
+  } catch (error) {
+    if (!error.message.toLowerCase().includes("duplicate column")) throw error;
+  }
 }
 
 async function ensureReceiptsTable() {
@@ -2603,14 +2609,14 @@ app.get("/hero-points", async (req, res) => {
 
 app.post("/hero-points", async (req, res) => {
   try {
-    const { points, description } = req.body || {};
+    const { points, description, entryDate } = req.body || {};
     const amount = Number(points);
     if (!Number.isInteger(amount) || amount <= 0 || !String(description || "").trim()) {
       return res.status(400).json({ error: "Points must be a positive whole number with a description" });
     }
     const result = await turso.execute({
-      sql: "INSERT INTO heroPoints (points, description, createdBy) VALUES (?, ?, ?)",
-      args: [amount, String(description).trim(), req.user],
+      sql: "INSERT INTO heroPoints (points, description, createdBy, createdDate) VALUES (?, ?, ?, ?)",
+      args: [amount, String(description).trim(), req.user, entryDate || new Date().toISOString().slice(0, 10)],
     });
     return res.json({ success: true, id: Number(result.lastInsertRowid) });
   } catch (error) {
@@ -2621,14 +2627,14 @@ app.post("/hero-points", async (req, res) => {
 app.put("/hero-points/:id", async (req, res) => {
   try {
     if (req.user !== "David") return res.status(403).json({ error: "Only David can edit Hero Points" });
-    const { points, description } = req.body || {};
+    const { points, description, entryDate } = req.body || {};
     const amount = Number(points);
     if (!Number.isInteger(amount) || amount <= 0 || !String(description || "").trim()) {
       return res.status(400).json({ error: "Points must be a positive whole number with a description" });
     }
     await turso.execute({
-      sql: "UPDATE heroPoints SET points = ?, description = ?, updatedBy = ?, updatedDate = CURRENT_TIMESTAMP WHERE id = ?",
-      args: [amount, String(description).trim(), req.user, req.params.id],
+      sql: "UPDATE heroPoints SET points = ?, description = ?, createdDate = ?, updatedBy = ?, updatedDate = CURRENT_TIMESTAMP WHERE id = ?",
+      args: [amount, String(description).trim(), entryDate || new Date().toISOString().slice(0, 10), req.user, req.params.id],
     });
     return res.json({ success: true });
   } catch (error) {
@@ -2679,9 +2685,11 @@ app.post("/hero-rewards/:id/redeem", async (req, res) => {
     if (balance < Number(reward.cost)) return res.status(400).json({ error: "Not enough Hero Points" });
     const pending = await turso.execute({ sql: "SELECT id FROM heroRedemptions WHERE status = 'requested' AND rewardId = ?", args: [req.params.id] });
     if (pending.rows.length > 0) return res.status(409).json({ error: "This reward already has a pending request" });
+    const requestDate = req.body?.requestDate || new Date().toISOString().slice(0, 10);
+    const deliveryDate = req.body?.deliveryDate || null;
     await turso.execute({
-      sql: "INSERT INTO heroRedemptions (rewardId, rewardName, cost, requestedBy) VALUES (?, ?, ?, ?)",
-      args: [reward.id, reward.name, reward.cost, req.user],
+      sql: "INSERT INTO heroRedemptions (rewardId, rewardName, cost, requestedBy, requestedDate, deliveryDate) VALUES (?, ?, ?, ?, ?, ?)",
+      args: [reward.id, reward.name, reward.cost, req.user, requestDate, deliveryDate],
     });
     return res.json({ success: true, status: "requested" });
   } catch (error) {
