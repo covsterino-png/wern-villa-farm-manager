@@ -1,4 +1,11 @@
 require("dotenv").config();
+const crypto = require("crypto");
+const {
+  generateAuthenticationOptions,
+  generateRegistrationOptions,
+  verifyAuthenticationResponse,
+  verifyRegistrationResponse,
+} = require("@simplewebauthn/server");
 
 const { createClient } =
   require("@libsql/client");
@@ -31,6 +38,53 @@ cloudinary.config({
 const app = express();
 const upload = multer();
 
+const authSecret = process.env.AUTH_SECRET;
+const loginUsers = {
+  David: process.env.DAVID_PASSWORD,
+  Gemma: process.env.GEMMA_PASSWORD,
+};
+const authSetupKey = process.env.AUTH_SETUP_KEY;
+const rpName = "Wern Villa Farm Manager";
+const rpID = process.env.WEBAUTHN_RP_ID || "localhost";
+const expectedOrigin = process.env.WEBAUTHN_ORIGIN || "http://localhost:5173";
+const passkeyChallenges = new Map();
+
+function createSessionToken(user) {
+  const payload = Buffer.from(JSON.stringify({
+    user,
+    expiresAt: Date.now() + 1000 * 60 * 60 * 24 * 30,
+  })).toString("base64url");
+  const signature = crypto.createHmac("sha256", authSecret).update(payload).digest("base64url");
+  return `${payload}.${signature}`;
+}
+
+function readSessionToken(token) {
+  if (!authSecret || !token) return null;
+  const [payload, signature] = token.split(".");
+  if (!payload || !signature) return null;
+  const expected = crypto.createHmac("sha256", authSecret).update(payload).digest("base64url");
+  if (signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
+  try {
+    const session = JSON.parse(Buffer.from(payload, "base64url").toString());
+    return session.expiresAt > Date.now() ? session : null;
+  } catch {
+    return null;
+  }
+}
+
+function hashPassword(password, salt = crypto.randomBytes(16)) {
+  return {
+    salt: salt.toString("base64url"),
+    hash: crypto.scryptSync(password, salt, 64).toString("base64url"),
+  };
+}
+
+function passwordsMatch(password, storedHash, storedSalt) {
+  const candidate = crypto.scryptSync(password, Buffer.from(storedSalt, "base64url"), 64);
+  const expected = Buffer.from(storedHash, "base64url");
+  return candidate.length === expected.length && crypto.timingSafeEqual(candidate, expected);
+}
+
 async function ensureTransactionsTable() {
   await turso.execute({
     sql: `
@@ -47,6 +101,32 @@ async function ensureTransactionsTable() {
       )
     `,
   });
+}
+
+async function ensurePasskeysTable() {
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS passkeys (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userName TEXT NOT NULL,
+      credentialId TEXT NOT NULL UNIQUE,
+      publicKey TEXT NOT NULL,
+      counter INTEGER NOT NULL DEFAULT 0,
+      transports TEXT,
+      createdDate TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
+async function ensureAuthUsersTable() {
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS authUsers (
+      userName TEXT PRIMARY KEY,
+      passwordHash TEXT NOT NULL,
+      passwordSalt TEXT NOT NULL,
+      createdDate TEXT DEFAULT CURRENT_TIMESTAMP,
+      updatedDate TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 }
 
 async function ensureReceiptsTable() {
@@ -81,6 +161,201 @@ app.use(
 
   
 );app.use(express.json());
+
+async function getStoredUser(username) {
+  const result = await turso.execute({
+    sql: "SELECT * FROM authUsers WHERE userName = ?",
+    args: [username],
+  });
+  return result.rows[0] || null;
+}
+
+function isValidUserName(username) {
+  return username === "David" || username === "Gemma";
+}
+
+app.post("/auth/setup-password", async (req, res) => {
+  try {
+    const { username, password, setupKey } = req.body || {};
+    if (!isValidUserName(username) || !authSetupKey || setupKey !== authSetupKey || typeof password !== "string" || password.length < 8) {
+      return res.status(400).json({ error: "Password setup is not available or the details are invalid" });
+    }
+    if (await getStoredUser(username)) return res.status(409).json({ error: "This user already has a password" });
+    const { hash, salt } = hashPassword(password);
+    await turso.execute({
+      sql: "INSERT INTO authUsers (userName, passwordHash, passwordSalt) VALUES (?, ?, ?)",
+      args: [username, hash, salt],
+    });
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("Password setup error:", error);
+    return res.status(500).json({ error: "Could not set password" });
+  }
+});
+
+app.post("/auth/login", async (req, res) => {
+  const { username, password } = req.body || {};
+  const storedUser = await getStoredUser(username);
+  const passwordIsValid = storedUser
+    ? typeof password === "string" && passwordsMatch(password, storedUser.passwordHash, storedUser.passwordSalt)
+    : typeof password === "string" && loginUsers[username] && password === loginUsers[username];
+  if (!authSecret || !isValidUserName(username) || !passwordIsValid) {
+    return res.status(401).json({ error: "Invalid username or password" });
+  }
+  return res.json({ user: username, token: createSessionToken(username) });
+});
+
+app.use((req, res, next) => {
+  if (
+    req.path === "/" ||
+    req.path === "/auth/login" ||
+    req.path === "/auth/setup-password" ||
+    req.path === "/auth/passkey/login/options" ||
+    req.path === "/auth/passkey/login/verify"
+  ) return next();
+  const token = req.get("authorization")?.replace(/^Bearer\s+/i, "");
+  const session = readSessionToken(token);
+  if (!session) return res.status(401).json({ error: "Authentication required" });
+  req.user = session.user;
+  return next();
+});
+
+app.post("/auth/change-password", async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body || {};
+    if (typeof newPassword !== "string" || newPassword.length < 8) return res.status(400).json({ error: "Password must be at least 8 characters" });
+    const storedUser = await getStoredUser(req.user);
+    const currentIsValid = storedUser
+      ? typeof currentPassword === "string" && passwordsMatch(currentPassword, storedUser.passwordHash, storedUser.passwordSalt)
+      : typeof currentPassword === "string" && currentPassword === loginUsers[req.user];
+    if (!currentIsValid) return res.status(401).json({ error: "Current password is incorrect" });
+    const { hash, salt } = hashPassword(newPassword);
+    await turso.execute({
+      sql: `
+        INSERT INTO authUsers (userName, passwordHash, passwordSalt)
+        VALUES (?, ?, ?)
+        ON CONFLICT(userName) DO UPDATE SET
+          passwordHash = excluded.passwordHash,
+          passwordSalt = excluded.passwordSalt,
+          updatedDate = CURRENT_TIMESTAMP
+      `,
+      args: [req.user, hash, salt],
+    });
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("Password change error:", error);
+    return res.status(500).json({ error: "Could not change password" });
+  }
+});
+
+app.post("/auth/passkey/login/options", async (req, res) => {
+  try {
+    const { username } = req.body || {};
+    if (!isValidUserName(username)) return res.status(400).json({ error: "Unknown user" });
+    const result = await turso.execute({
+      sql: "SELECT credentialId, transports FROM passkeys WHERE userName = ?",
+      args: [username],
+    });
+    if (result.rows.length === 0) return res.status(404).json({ error: "No passkey registered for this user" });
+    const options = await generateAuthenticationOptions({
+      rpID,
+      userVerification: "required",
+      allowCredentials: result.rows.map((row) => ({
+        id: row.credentialId,
+        transports: row.transports ? JSON.parse(row.transports) : undefined,
+      })),
+    });
+    passkeyChallenges.set(`login:${username}`, options.challenge);
+    return res.json(options);
+  } catch (error) {
+    console.error("Passkey login options error:", error);
+    return res.status(500).json({ error: "Could not start passkey login" });
+  }
+});
+
+app.post("/auth/passkey/login/verify", async (req, res) => {
+  try {
+    const { username, response } = req.body || {};
+    const expectedChallenge = passkeyChallenges.get(`login:${username}`);
+    passkeyChallenges.delete(`login:${username}`);
+    if (!expectedChallenge || !isValidUserName(username)) return res.status(400).json({ error: "Passkey login has expired" });
+    const result = await turso.execute({
+      sql: "SELECT * FROM passkeys WHERE userName = ? AND credentialId = ?",
+      args: [username, response?.id],
+    });
+    const stored = result.rows[0];
+    if (!stored) return res.status(401).json({ error: "This passkey is not registered" });
+    const verification = await verifyAuthenticationResponse({
+      response,
+      expectedChallenge,
+      expectedOrigin,
+      expectedRPID: rpID,
+      credential: {
+        id: stored.credentialId,
+        publicKey: Buffer.from(stored.publicKey, "base64url"),
+        counter: Number(stored.counter),
+        transports: stored.transports ? JSON.parse(stored.transports) : undefined,
+      },
+    });
+    if (!verification.verified) return res.status(401).json({ error: "Passkey verification failed" });
+    await turso.execute({
+      sql: "UPDATE passkeys SET counter = ? WHERE credentialId = ?",
+      args: [verification.authenticationInfo.newCounter, stored.credentialId],
+    });
+    return res.json({ user: username, token: createSessionToken(username) });
+  } catch (error) {
+    console.error("Passkey login verification error:", error);
+    return res.status(401).json({ error: "Passkey verification failed" });
+  }
+});
+
+app.post("/auth/passkey/register/options", async (req, res) => {
+  try {
+    const result = await turso.execute({
+      sql: "SELECT credentialId FROM passkeys WHERE userName = ?",
+      args: [req.user],
+    });
+    const options = await generateRegistrationOptions({
+      rpName,
+      rpID,
+      userName: req.user,
+      userDisplayName: req.user,
+      userID: Buffer.from(req.user),
+      attestationType: "none",
+      userVerification: "required",
+      excludeCredentials: result.rows.map((row) => ({ id: row.credentialId })),
+    });
+    passkeyChallenges.set(`register:${req.user}`, options.challenge);
+    return res.json(options);
+  } catch (error) {
+    console.error("Passkey registration options error:", error);
+    return res.status(500).json({ error: "Could not start passkey registration" });
+  }
+});
+
+app.post("/auth/passkey/register/verify", async (req, res) => {
+  try {
+    const expectedChallenge = passkeyChallenges.get(`register:${req.user}`);
+    passkeyChallenges.delete(`register:${req.user}`);
+    if (!expectedChallenge) return res.status(400).json({ error: "Passkey registration has expired" });
+    const verification = await verifyRegistrationResponse({
+      response: req.body,
+      expectedChallenge,
+      expectedOrigin,
+      expectedRPID: rpID,
+    });
+    if (!verification.verified || !verification.registrationInfo) return res.status(400).json({ error: "Passkey registration failed" });
+    const { credential, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
+    await turso.execute({
+      sql: "INSERT INTO passkeys (userName, credentialId, publicKey, counter, transports) VALUES (?, ?, ?, ?, ?)",
+      args: [req.user, credential.id, Buffer.from(credential.publicKey).toString("base64url"), credential.counter, JSON.stringify(req.body.response?.transports || [])],
+    });
+    return res.json({ success: true, credentialDeviceType, credentialBackedUp });
+  } catch (error) {
+    console.error("Passkey registration verification error:", error);
+    return res.status(400).json({ error: "Passkey registration failed" });
+  }
+});
 
 ensureTransactionsTable().catch((error) => {
   console.error("Failed to ensure transactions table:", error);
@@ -2313,4 +2588,12 @@ cron.schedule("*/1 * * * *", async () => {
   } catch (err) {
     console.error("Reminder scheduler error:", err.message || err);
   }
+});
+
+ensurePasskeysTable().catch((error) => {
+  console.error("Failed to ensure passkeys table:", error);
+});
+
+ensureAuthUsersTable().catch((error) => {
+  console.error("Failed to ensure auth users table:", error);
 });

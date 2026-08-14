@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { API } from "../api";
+import { API, fetchJson } from "../api";
 
-export default function Settings() {
+export default function Settings({ user }) {
 const [fields, setFields] = useState([]);
 const [newField, setNewField] = useState("");
 const [fieldSize, setFieldSize] =  useState("");
@@ -10,6 +10,32 @@ const [newMedicine, setNewMedicine] = useState("");
 const [doseRate, setDoseRate] =  useState("");
 const [withdrawalDays,  setWithdrawalDays,] = useState("");
 const [administrationMethod, setAdministrationMethod,] = useState("");
+const [currentPassword, setCurrentPassword] = useState("");
+const [newPassword, setNewPassword] = useState("");
+const [confirmPassword, setConfirmPassword] = useState("");
+const [passwordMessage, setPasswordMessage] = useState("");
+
+async function changePassword(event) {
+  event.preventDefault();
+  setPasswordMessage("");
+  if (newPassword !== confirmPassword) {
+    setPasswordMessage("New passwords do not match");
+    return;
+  }
+  try {
+    await fetchJson("/auth/change-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setPasswordMessage("Password changed successfully");
+  } catch (error) {
+    setPasswordMessage(error.message);
+  }
+}
 
   function loadMedicines() {
   fetch(`${API}/medicines`)
@@ -95,6 +121,18 @@ body: JSON.stringify({
           marginBottom: "20px",
         }}
       >
+      </div>
+
+      <div style={{ background: "#1f1f1f", padding: "20px", borderRadius: "12px", marginBottom: "20px" }}>
+        <h2 style={{ color: "#03a9f4" }}>🔐 Password</h2>
+        <p style={{ color: "#aaa" }}>Change the password for {user || "your account"}.</p>
+        <form onSubmit={changePassword} style={{ display: "grid", gap: "10px", maxWidth: "420px" }}>
+          <input required type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="Current password" autoComplete="current-password" />
+          <input required minLength={8} type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="New password" autoComplete="new-password" />
+          <input required minLength={8} type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Confirm new password" autoComplete="new-password" />
+          <button type="submit">Change password</button>
+        </form>
+        {passwordMessage && <p style={{ color: passwordMessage.includes("successfully") ? "#8bc34a" : "#ff8a80" }}>{passwordMessage}</p>}
       </div>
 
       <div

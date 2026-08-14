@@ -34,7 +34,9 @@ function App() {
   });
 
   const [user] = useState(
-    localStorage.getItem("user")
+    localStorage.getItem("authToken")
+      ? localStorage.getItem("user")
+      : null
   );
 
   const [unreadCount, setUnreadCount] =
@@ -66,13 +68,15 @@ function App() {
     useState([]);
     function logout() {
   localStorage.removeItem("user");
+    localStorage.removeItem("authToken");
   window.location.reload();
 }
   if (!user) {
     return (
       <Login
-        onLogin={(username) => {
+        onLogin={(username, token) => {
           localStorage.setItem("user", username);
+          localStorage.setItem("authToken", token);
           setTimeout(() => window.location.reload(), 0);
         }}
       />
@@ -278,7 +282,7 @@ Receipts
 
         {page === "settings" &&
           user === "David" && (
-            <Settings />
+            <Settings user={user} />
           )}
 
 {page === "move" && (
