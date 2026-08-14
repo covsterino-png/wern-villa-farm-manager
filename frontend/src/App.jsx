@@ -19,6 +19,7 @@ import { API } from "./api";
 
 function App() {
   const [page, setPage] = useState("dashboard");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [farmData, setFarmData] = useState({
     totalSheep: 150,
@@ -104,6 +105,26 @@ function App() {
         : "normal",
   });
 
+  const navigate = (nextPage) => {
+    setPage(nextPage);
+    if (isMobile) setMobileMenuOpen(false);
+  };
+
+  const navItems = [
+    ["move", "Move"],
+    ["history", "History"],
+    ["receipts", "Receipts"],
+    ["financial", "Finances"],
+    ["notifications", `Notifications${unreadCount > 0 ? ` (${unreadCount})` : ""}`],
+    ["calendar", "Calendar"],
+    ["notes", "Notes"],
+    ["tasks", "Tasks"],
+    ["treatments", "Treatments"],
+    ["sheep-register", "Sheep Register"],
+    ["flock-register", "Flock Register"],
+    ["farm-map", "Farm Map"],
+  ];
+
   return (
     <div
       style={{
@@ -187,32 +208,47 @@ function App() {
 
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            flexDirection: isMobile
-              ? "row"
-              : "column",
-            flexWrap: "wrap",
-            gap: "10px",
-          }}
-        >
+        {isMobile ? (
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <button
+              onClick={() => navigate("dashboard")}
+              style={{ ...buttonStyle("dashboard"), flex: 1, textAlign: "center", padding: "12px" }}
+            >
+              Home
+            </button>
+            <button
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              aria-expanded={mobileMenuOpen}
+              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              style={{
+                background: "#2b2b2b",
+                color: "white",
+                border: "none",
+                borderRadius: "10px",
+                cursor: "pointer",
+                width: "48px",
+                height: "44px",
+                fontSize: "1.5rem",
+                lineHeight: 1,
+              }}
+            >
+              {mobileMenuOpen ? "✕" : "☰"}
+            </button>
+          </div>
+        ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <button
             style={buttonStyle(
               "dashboard"
             )}
-            onClick={() =>
-              setPage("dashboard")
-            }
+            onClick={() => navigate("dashboard")}
           >
             Home
           </button>
 
           <button
             style={buttonStyle("move")}
-            onClick={() =>
-              setPage("move")
-            }
+            onClick={() => navigate("move")}
           >
 Move
           </button>
@@ -221,9 +257,7 @@ Move
             style={buttonStyle(
               "history"
             )}
-            onClick={() =>
-              setPage("history")
-            }
+            onClick={() => navigate("history")}
           >
             History
           </button>
@@ -231,24 +265,48 @@ Move
 
           <button
   style={buttonStyle("receipts")}
-  onClick={() => setPage("receipts")}
+  onClick={() => navigate("receipts")}
 >
 Receipts
 </button>
           <button
             style={buttonStyle("financial")}
-            onClick={() => setPage("financial")}
+            onClick={() => navigate("financial")}
           >
             Finances
           </button>
           
           <button
             style={buttonStyle("notifications")}
-            onClick={() => setPage("notifications")}
+            onClick={() => navigate("notifications")}
           >
             🔔 Notifications {unreadCount > 0 && `(${unreadCount})`}
           </button>
         </div>
+        )}
+
+        {isMobile && mobileMenuOpen && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: "8px",
+              marginTop: "10px",
+              paddingTop: "10px",
+              borderTop: "1px solid #333",
+            }}
+          >
+            {navItems.map(([nextPage, label]) => (
+              <button
+                key={nextPage}
+                onClick={() => navigate(nextPage)}
+                style={{ ...buttonStyle(nextPage), padding: "10px", minHeight: "42px" }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div
