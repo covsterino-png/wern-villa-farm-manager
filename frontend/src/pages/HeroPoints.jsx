@@ -117,17 +117,17 @@ export default function HeroPoints({ user }) {
       </div>
 
       <div style={panelStyle}>
-        <h2>{editingEntry ? "Edit point request" : "Request Hero Points"}</h2>
-        {!editingEntry && <p style={{ color: "#aaa" }}>Submit a request for points with a reason. David can review and edit requests.</p>}
+        <h2>{editingEntry ? "Edit points" : "Add Hero Points"}</h2>
+        {!editingEntry && <p style={{ color: "#aaa" }}>Add points immediately with a reason. David can edit entries later.</p>}
         <form onSubmit={saveEntry} style={{ display: "grid", gap: "10px", maxWidth: "520px" }}>
           <input required min="1" step="1" type="number" value={points} onChange={(event) => setPoints(event.target.value)} placeholder="Points" style={inputStyle} />
           <input required value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Reason or description" style={inputStyle} />
           <div style={{ display: "flex", gap: "8px" }}>
-            <button type="submit">{editingEntry ? "Save changes" : "Submit points request"}</button>
+            <button type="submit">{editingEntry ? "Save changes" : "Add points"}</button>
             {editingEntry && <button type="button" onClick={() => { setEditingEntry(null); setPoints(""); setDescription(""); }}>Cancel</button>}
           </div>
         </form>
-        <p style={{ color: "#aaa" }}>{user} is recording this entry. David can edit entries later.</p>
+        <p style={{ color: "#aaa" }}>{user} is recording this entry.</p>
       </div>
 
       <div style={panelStyle}>
