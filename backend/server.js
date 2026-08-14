@@ -178,9 +178,10 @@ function isValidUserName(username) {
 app.post("/auth/setup-password", async (req, res) => {
   try {
     const { username, password, setupKey } = req.body || {};
-    if (!isValidUserName(username) || !authSetupKey || setupKey !== authSetupKey || typeof password !== "string" || password.length < 8) {
-      return res.status(400).json({ error: "Password setup is not available or the details are invalid" });
-    }
+    if (!authSetupKey) return res.status(503).json({ error: "Password setup is not configured on the server" });
+    if (!isValidUserName(username)) return res.status(400).json({ error: "Unknown user" });
+    if (setupKey !== authSetupKey) return res.status(401).json({ error: "The setup key is incorrect" });
+    if (typeof password !== "string" || password.length < 8) return res.status(400).json({ error: "Password must be at least 8 characters" });
     if (await getStoredUser(username)) return res.status(409).json({ error: "This user already has a password" });
     const { hash, salt } = hashPassword(password);
     await turso.execute({
