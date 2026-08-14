@@ -1,5 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SheepDetail from "./SheepDetail";
+
+function normalizeEid(value) {
+  return String(value || "").replace(/[^a-z0-9]/gi, "").toUpperCase();
+}
 
 export default function SheepRegister() {
   const [sheep, setSheep] = useState([]);
@@ -32,6 +36,9 @@ export default function SheepRegister() {
   const [fields, setFields] = useState([]);
   const [allSheep, setAllSheep] =
     useState([]);
+  const [eidSearch, setEidSearch] = useState("");
+  const [eidMessage, setEidMessage] = useState("");
+  const eidLookupTimer = useRef(null);
     const inputStyle = {
   width: "100%",
   padding: "12px",
@@ -82,6 +89,7 @@ const cardStyle = {
     loadSheep();
     loadGroups();
     loadFields();
+    return () => clearTimeout(eidLookupTimer.current);
   }, []);
 
   function addSheep() {
@@ -127,6 +135,44 @@ const cardStyle = {
     });
   }
 
+  function findByEid(event) {
+    event.preventDefault();
+    lookupEid(eidSearch);
+  }
+
+  function lookupEid(value) {
+    const scannedEid = normalizeEid(value);
+    if (!scannedEid) {
+      setEidMessage("Enter or scan an EID first.");
+      return;
+    }
+
+    const match = allSheep.find(
+      (animal) => normalizeEid(animal.eid) === scannedEid
+    );
+
+    if (match) {
+      setEidMessage(`Found ${match.name || "sheep"}.`);
+      setSelectedSheep(match);
+      return;
+    }
+
+    setEid(scannedEid);
+    setShowAddSheep(true);
+    setEidMessage("No sheep found. Complete the form to add this EID.");
+  }
+
+  function handleEidChange(event) {
+    const value = event.target.value;
+    setEidSearch(value);
+    clearTimeout(eidLookupTimer.current);
+
+    const normalized = normalizeEid(value);
+    if (normalized.length === 10 || normalized.length === 15) {
+      eidLookupTimer.current = setTimeout(() => lookupEid(value), 400);
+    }
+  }
+
 if (selectedSheep) {
   return (
     <SheepDetail
@@ -152,6 +198,28 @@ return (
   >
     🐑 Sheep Register
   </h1>
+
+  <div style={{ ...cardStyle, border: "1px solid #03a9f4" }}>
+    <h2 style={{ marginTop: 0, color: "#03a9f4" }}>Scan or search EID</h2>
+    <form onSubmit={findByEid} style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+      <input
+        autoFocus
+        style={{ ...inputStyle, flex: "1 1 220px", marginBottom: 0 }}
+        value={eidSearch}
+        onChange={handleEidChange}
+        placeholder="Scan EID or type tag number"
+        inputMode="numeric"
+        aria-label="Scan or search EID"
+      />
+      <button
+        type="submit"
+        style={{ background: "#03a9f4", color: "white", border: "none", padding: "12px 18px", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}
+      >
+        Find sheep
+      </button>
+    </form>
+    {eidMessage && <p style={{ marginBottom: 0, color: eidMessage.startsWith("Found") ? "#8bc34a" : "#ffcc80" }}>{eidMessage}</p>}
+  </div>
 
   <div style={cardStyle}>
     <button
