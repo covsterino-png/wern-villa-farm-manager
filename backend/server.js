@@ -46,8 +46,8 @@ const loginUsers = {
 };
 const authSetupKey = process.env.AUTH_SETUP_KEY;
 const rpName = "Wern Villa Farm Manager";
-const rpID = process.env.WEBAUTHN_RP_ID || "localhost";
-const expectedOrigin = process.env.WEBAUTHN_ORIGIN || "http://localhost:5173";
+const rpID = process.env.WEBAUTHN_RP_ID || "n-villa-frontend.onrender.com";
+const expectedOrigin = process.env.WEBAUTHN_ORIGIN || "https://n-villa-frontend.onrender.com";
 const passkeyChallenges = new Map();
 
 function createSessionToken(user) {
