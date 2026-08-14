@@ -37,6 +37,7 @@ const [actionNotes, setActionNotes] =
     useState(0);
   const [transactionCount, setTransactionCount] =
     useState(0);
+  const [heroPoints, setHeroPoints] = useState({ balance: 0, pending: 0 });
     const [showTasks, setShowTasks] =
   useState(false);
   const [showActivity, setShowActivity] =
@@ -45,6 +46,18 @@ const [actionNotes, setActionNotes] =
 
     const [todayTasks, setTodayTasks] =
   useState([]);
+
+    useEffect(() => {
+      fetch(`${API}/hero-points`)
+        .then((res) => res.json())
+        .then((data) => {
+          setHeroPoints({
+            balance: data.balance ?? 0,
+            pending: (data.redemptions || []).filter((item) => item.status === "requested").length,
+          });
+        })
+        .catch(() => {});
+    }, []);
 
   useEffect(() => {
   fetch(
@@ -768,6 +781,15 @@ boxShadow:
   onClick={() =>
     setPage("notes")
   }
+/>
+
+<DashboardCard
+  icon="🏆"
+  title="Hero Points"
+  value={heroPoints.balance}
+  subtitle={`${heroPoints.pending} Pending Redemption${heroPoints.pending === 1 ? "" : "s"}`}
+  colour="#03a9f4"
+  onClick={() => setPage("hero-points")}
 />
       </div>
 
