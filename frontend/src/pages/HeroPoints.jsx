@@ -80,6 +80,24 @@ export default function HeroPoints({ user }) {
     } catch (error) { setMessage(error.message); }
   }
 
+  function entryList(title, entries, emptyMessage) {
+    return (
+      <div style={panelStyle}>
+        <h2>{title}</h2>
+        {entries.length === 0 && <p style={{ color: "#aaa" }}>{emptyMessage}</p>}
+        {entries.map((entry) => (
+          <div key={entry.id} style={{ display: "flex", justifyContent: "space-between", gap: "10px", borderBottom: "1px solid #444", padding: "10px 0", flexWrap: "wrap" }}>
+            <span>{entry.description}<br /><small style={{ color: "#aaa" }}>{entry.createdBy} • {entry.createdDate}</small></span>
+            <span style={{ color: Number(entry.points) >= 0 ? "#8bc34a" : "#ff8a80", fontWeight: "bold" }}>
+              {Number(entry.points) >= 0 ? "+" : ""}{entry.points}
+              {user === "David" && Number(entry.points) > 0 && <button onClick={() => { setEditingEntry(entry); setPoints(entry.points); setDescription(entry.description); }} style={{ marginLeft: "8px" }}>Edit</button>}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div style={{ maxWidth: "1000px", margin: "0 auto", padding: "20px" }}>
       <h1 style={{ color: "#03a9f4" }}>Hero Points</h1>
@@ -116,11 +134,8 @@ export default function HeroPoints({ user }) {
         {user === "David" && <form onSubmit={addReward} style={{ display: "grid", gap: "10px", maxWidth: "520px", marginTop: "20px" }}><h3>{editingReward ? "Edit price list item" : "Add reward to price list"}</h3><input required value={rewardName} onChange={(event) => setRewardName(event.target.value)} placeholder="Reward name" style={inputStyle} /><input required min="1" step="1" type="number" value={rewardCost} onChange={(event) => setRewardCost(event.target.value)} placeholder="Cost in points" style={inputStyle} /><div style={{ display: "flex", gap: "8px" }}><button type="submit">{editingReward ? "Save reward" : "Add reward"}</button>{editingReward && <button type="button" onClick={() => { setEditingReward(null); setRewardName(""); setRewardCost(""); }}>Cancel</button>}</div></form>}
       </div>
 
-      <div style={panelStyle}>
-        <h2>History</h2>
-        {data.entries.length === 0 && <p style={{ color: "#aaa" }}>No points recorded yet.</p>}
-        {data.entries.map((entry) => <div key={entry.id} style={{ display: "flex", justifyContent: "space-between", gap: "10px", borderBottom: "1px solid #444", padding: "10px 0", flexWrap: "wrap" }}><span>{entry.description}<br /><small style={{ color: "#aaa" }}>{entry.createdBy} • {entry.createdDate}</small></span><span style={{ color: Number(entry.points) >= 0 ? "#8bc34a" : "#ff8a80", fontWeight: "bold" }}>{Number(entry.points) >= 0 ? "+" : ""}{entry.points}{user === "David" && Number(entry.points) > 0 && <button onClick={() => { setEditingEntry(entry); setPoints(entry.points); setDescription(entry.description); }} style={{ marginLeft: "8px" }}>Edit</button>}</span></div>)}
-      </div>
+      {entryList("Requested", data.entries.filter((entry) => Number(entry.points) > 0), "No points requested yet.")}
+      {entryList("Redeemed", data.entries.filter((entry) => Number(entry.points) < 0), "No points redeemed yet.")}
       {message && <p style={{ color: "#ffcc80" }}>{message}</p>}
     </div>
   );
