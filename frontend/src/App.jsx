@@ -15,6 +15,7 @@ import Receipts from "./pages/Receipts";
 import Notes from "./pages/Notes";
 import Notifications from "./pages/Notifications";
 import FinancialRegister from "./pages/FinancialRegister";
+import HeroPoints from "./pages/HeroPoints";
 import { API } from "./api";
 
 function App() {
@@ -123,6 +124,7 @@ function App() {
     ["sheep-register", "Sheep Register"],
     ["flock-register", "Flock Register"],
     ["farm-map", "Farm Map"],
+    ["hero-points", "Hero Points"],
   ];
 
   return (
@@ -282,6 +284,12 @@ Receipts
           >
             🔔 Notifications {unreadCount > 0 && `(${unreadCount})`}
           </button>
+          <button
+            style={buttonStyle("hero-points")}
+            onClick={() => navigate("hero-points")}
+          >
+            Hero Points
+          </button>
         </div>
         )}
 
@@ -373,6 +381,9 @@ Receipts
 )}
 {page === "notifications" && (
   <Notifications user={user} />
+)}
+{page === "hero-points" && (
+  <HeroPoints user={user} />
 )}
       </div>
     </div>

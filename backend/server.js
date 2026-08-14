@@ -130,6 +130,31 @@ async function ensureAuthUsersTable() {
   `);
 }
 
+async function ensureHeroPointsTables() {
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS heroPoints (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      points INTEGER NOT NULL,
+      description TEXT NOT NULL,
+      createdBy TEXT NOT NULL,
+      createdDate TEXT DEFAULT CURRENT_TIMESTAMP,
+      updatedBy TEXT,
+      updatedDate TEXT
+    )
+  `);
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS heroRewards (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      cost INTEGER NOT NULL,
+      active INTEGER DEFAULT 1,
+      createdBy TEXT NOT NULL,
+      createdDate TEXT DEFAULT CURRENT_TIMESTAMP,
+      updatedDate TEXT
+    )
+  `);
+}
+
 async function ensureReceiptsTable() {
   await turso.execute({
     sql: `
@@ -2548,6 +2573,106 @@ app.get("/field-status", async (req, res) => {
     res.status(500).json(error);
   }
 });
+
+app.get("/hero-points", async (req, res) => {
+  try {
+    const [entries, rewards] = await Promise.all([
+      turso.execute("SELECT * FROM heroPoints ORDER BY id DESC"),
+      turso.execute("SELECT * FROM heroRewards WHERE active = 1 ORDER BY cost, name"),
+    ]);
+    const balance = entries.rows.reduce((total, entry) => total + Number(entry.points), 0);
+    res.json({ balance, entries: entries.rows, rewards: rewards.rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/hero-points", async (req, res) => {
+  try {
+    const { points, description } = req.body || {};
+    const amount = Number(points);
+    if (!Number.isInteger(amount) || amount <= 0 || !String(description || "").trim()) {
+      return res.status(400).json({ error: "Points must be a positive whole number with a description" });
+    }
+    const result = await turso.execute({
+      sql: "INSERT INTO heroPoints (points, description, createdBy) VALUES (?, ?, ?)",
+      args: [amount, String(description).trim(), req.user],
+    });
+    return res.json({ success: true, id: Number(result.lastInsertRowid) });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.put("/hero-points/:id", async (req, res) => {
+  try {
+    if (req.user !== "David") return res.status(403).json({ error: "Only David can edit Hero Points" });
+    const { points, description } = req.body || {};
+    const amount = Number(points);
+    if (!Number.isInteger(amount) || amount <= 0 || !String(description || "").trim()) {
+      return res.status(400).json({ error: "Points must be a positive whole number with a description" });
+    }
+    await turso.execute({
+      sql: "UPDATE heroPoints SET points = ?, description = ?, updatedBy = ?, updatedDate = CURRENT_TIMESTAMP WHERE id = ?",
+      args: [amount, String(description).trim(), req.user, req.params.id],
+    });
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/hero-rewards", async (req, res) => {
+  try {
+    if (req.user !== "David") return res.status(403).json({ error: "Only David can manage rewards" });
+    const { name, cost } = req.body || {};
+    const amount = Number(cost);
+    if (!String(name || "").trim() || !Number.isInteger(amount) || amount <= 0) return res.status(400).json({ error: "Reward name and positive whole-number cost are required" });
+    const result = await turso.execute({
+      sql: "INSERT INTO heroRewards (name, cost, createdBy) VALUES (?, ?, ?)",
+      args: [String(name).trim(), amount, req.user],
+    });
+    return res.json({ success: true, id: Number(result.lastInsertRowid) });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.put("/hero-rewards/:id", async (req, res) => {
+  try {
+    if (req.user !== "David") return res.status(403).json({ error: "Only David can manage rewards" });
+    const { name, cost } = req.body || {};
+    const amount = Number(cost);
+    if (!String(name || "").trim() || !Number.isInteger(amount) || amount <= 0) return res.status(400).json({ error: "Reward name and positive whole-number cost are required" });
+    await turso.execute({
+      sql: "UPDATE heroRewards SET name = ?, cost = ?, updatedDate = CURRENT_TIMESTAMP WHERE id = ?",
+      args: [String(name).trim(), amount, req.params.id],
+    });
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/hero-rewards/:id/redeem", async (req, res) => {
+  try {
+    if (req.user !== "David") return res.status(403).json({ error: "Only David can redeem Hero Points" });
+    const rewardResult = await turso.execute({ sql: "SELECT * FROM heroRewards WHERE id = ? AND active = 1", args: [req.params.id] });
+    const reward = rewardResult.rows[0];
+    if (!reward) return res.status(404).json({ error: "Reward not found" });
+    const entries = await turso.execute("SELECT points FROM heroPoints");
+    const balance = entries.rows.reduce((total, entry) => total + Number(entry.points), 0);
+    if (balance < Number(reward.cost)) return res.status(400).json({ error: "Not enough Hero Points" });
+    await turso.execute({
+      sql: "INSERT INTO heroPoints (points, description, createdBy) VALUES (?, ?, ?)",
+      args: [-Number(reward.cost), `Redeemed: ${reward.name}`, req.user],
+    });
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(3001, () => {
   console.log(
     "Farm API running on https://wern-villa-api.onrender.com"
@@ -2598,4 +2723,8 @@ ensurePasskeysTable().catch((error) => {
 
 ensureAuthUsersTable().catch((error) => {
   console.error("Failed to ensure auth users table:", error);
+});
+
+ensureHeroPointsTables().catch((error) => {
+  console.error("Failed to ensure Hero Points tables:", error);
 });
