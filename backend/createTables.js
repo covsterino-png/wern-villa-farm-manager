@@ -22,7 +22,9 @@ CREATE TABLE IF NOT EXISTS medicines (
   doseRate TEXT,
   withdrawalDays INTEGER,
   administrationMethod TEXT,
-  costPerMl REAL
+  costPerMl REAL,
+  bottleVolumeMl REAL,
+  bottleCost REAL
 )
     `);
   await db.execute(`  

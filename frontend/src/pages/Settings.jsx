@@ -10,7 +10,8 @@ const [newMedicine, setNewMedicine] = useState("");
 const [doseRate, setDoseRate] =  useState("");
 const [withdrawalDays,  setWithdrawalDays,] = useState("");
 const [administrationMethod, setAdministrationMethod,] = useState("");
-const [costPerMl, setCostPerMl] = useState("");
+const [bottleVolumeMl, setBottleVolumeMl] = useState("");
+const [bottleCost, setBottleCost] = useState("");
 const [currentPassword, setCurrentPassword] = useState("");
 const [newPassword, setNewPassword] = useState("");
 const [confirmPassword, setConfirmPassword] = useState("");
@@ -60,6 +61,14 @@ useEffect(() => {
 }, []);
 function addMedicine() {
   if (!newMedicine.trim()) return;
+  if (!(Number(bottleVolumeMl) > 0)) {
+    alert("Enter the bottle volume in ml.");
+    return;
+  }
+  if (!(Number(bottleCost) >= 0)) {
+    alert("Enter the bottle cost.");
+    return;
+  }
 
   fetch(`${API}/medicines`,
     {
@@ -72,14 +81,16 @@ body: JSON.stringify({
   doseRate,
   withdrawalDays,
   administrationMethod,
-  costPerMl: Number(costPerMl) || 0,
+  bottleVolumeMl: Number(bottleVolumeMl) || 0,
+  bottleCost: Number(bottleCost) || 0,
 })
 }).then(() => {
   setNewMedicine("");
   setDoseRate("");
   setWithdrawalDays("");
   setAdministrationMethod("");
-  setCostPerMl("");
+  setBottleVolumeMl("");
+  setBottleCost("");
   loadMedicines();
 });
 }
@@ -306,14 +317,25 @@ body: JSON.stringify({
 />
 
 <input
-  value={costPerMl}
+  value={bottleVolumeMl}
   onChange={(e) =>
-    setCostPerMl(e.target.value)
+    setBottleVolumeMl(e.target.value)
   }
-  placeholder="Cost per ml (£)..."
+  placeholder="Bottle volume (ml)..."
+  type="number"
+  min="0.01"
+  step="0.01"
+/>
+
+<input
+  value={bottleCost}
+  onChange={(e) =>
+    setBottleCost(e.target.value)
+  }
+  placeholder="Bottle cost (£)..."
   type="number"
   min="0"
-  step="0.0001"
+  step="0.01"
 />
 
   <button
@@ -362,7 +384,9 @@ body: JSON.stringify({
     {medicine.administrationMethod}
   </div>
   <div>
-    Cost per ml: £{medicine.costPerMl || 0}
+    Bottle: {medicine.bottleVolumeMl || 0} ml for £{medicine.bottleCost || 0}
+    <br />
+    Cost per ml: £{Number(medicine.costPerMl || 0).toFixed(4)}
   </div>
   <button
   onClick={async () => {
@@ -394,12 +418,19 @@ body: JSON.stringify({
 
     if (newMethod === null) return;
 
-    const newCostPerMl = prompt(
-      "Cost per ml (£):",
-      medicine.costPerMl || ""
+    const newBottleVolume = prompt(
+      "Bottle volume (ml):",
+      medicine.bottleVolumeMl || ""
     );
 
-    if (newCostPerMl === null) return;
+    if (newBottleVolume === null) return;
+
+    const newBottleCost = prompt(
+      "Bottle cost (£):",
+      medicine.bottleCost || ""
+    );
+
+    if (newBottleCost === null) return;
 
     await fetch(`${API}/medicines/${medicine.id}`,
       {
@@ -416,7 +447,8 @@ body: JSON.stringify({
           ),
           administrationMethod:
             newMethod,
-          costPerMl: Number(newCostPerMl) || 0,
+          bottleVolumeMl: Number(newBottleVolume) || 0,
+          bottleCost: Number(newBottleCost) || 0,
         }),
       }
     );

@@ -117,13 +117,15 @@ async function ensureTreatmentColumns() {
 }
 
 async function ensureMedicineColumns() {
-  try {
-    await turso.execute(
-      "ALTER TABLE medicines ADD COLUMN costPerMl REAL"
-    );
-  } catch (error) {
-    if (!error.message.toLowerCase().includes("duplicate column")) {
-      throw error;
+  for (const column of ["costPerMl REAL", "bottleVolumeMl REAL", "bottleCost REAL"]) {
+    try {
+      await turso.execute(
+        `ALTER TABLE medicines ADD COLUMN ${column}`
+      );
+    } catch (error) {
+      if (!error.message.toLowerCase().includes("duplicate column")) {
+        throw error;
+      }
     }
   }
 }
@@ -2298,8 +2300,12 @@ app.put("/medicines/:id", async (req, res) => {
     doseRate,
     withdrawalDays,
     administrationMethod,
-    costPerMl,
+    bottleVolumeMl,
+    bottleCost,
   } = req.body;
+  const calculatedCostPerMl = Number(bottleVolumeMl) > 0
+    ? Number(bottleCost || 0) / Number(bottleVolumeMl)
+    : Number(req.body.costPerMl) || 0;
 
   await turso.execute({
     sql: `
@@ -2309,7 +2315,9 @@ app.put("/medicines/:id", async (req, res) => {
         doseRate = ?,
         withdrawalDays = ?,
         administrationMethod = ?,
-        costPerMl = ?
+        costPerMl = ?,
+        bottleVolumeMl = ?,
+        bottleCost = ?
       WHERE id = ?
     `,
     args: [
@@ -2317,7 +2325,9 @@ app.put("/medicines/:id", async (req, res) => {
       doseRate,
       withdrawalDays,
       administrationMethod,
-      costPerMl,
+      calculatedCostPerMl,
+      Number(bottleVolumeMl) || 0,
+      Number(bottleCost) || 0,
       req.params.id,
     ],
   });
@@ -2334,8 +2344,12 @@ app.post("/medicines", async (req, res) => {
       doseRate,
       withdrawalDays,
       administrationMethod,
-      costPerMl,
+      bottleVolumeMl,
+      bottleCost,
     } = req.body;
+    const calculatedCostPerMl = Number(bottleVolumeMl) > 0
+      ? Number(bottleCost || 0) / Number(bottleVolumeMl)
+      : 0;
 
     const result = await turso.execute({
       sql: `
@@ -2344,16 +2358,20 @@ app.post("/medicines", async (req, res) => {
           doseRate,
           withdrawalDays,
           administrationMethod,
-          costPerMl
+          costPerMl,
+          bottleVolumeMl,
+          bottleCost
         )
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `,
       args: [
         name,
         doseRate,
         withdrawalDays,
         administrationMethod,
-        costPerMl,
+        calculatedCostPerMl,
+        Number(bottleVolumeMl) || 0,
+        Number(bottleCost) || 0,
       ],
     });
 
