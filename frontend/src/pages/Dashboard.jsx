@@ -785,7 +785,7 @@ boxShadow:
     display: "grid",
     gridTemplateColumns:
       window.innerWidth < 768
-        ? "repeat(2, 1fr)"
+        ? "repeat(3, 1fr)"
         : "repeat(auto-fit, minmax(220px, 1fr))",
     gap: "12px",
     marginBottom: "20px",
