@@ -8,23 +8,10 @@ export default function SheepDetail({
 
     const [activeTab, setActiveTab] = useState("overview");
 
-    const [repeatEvery, setRepeatEvery] =
-  useState(1);
-
-const [numberOfEvents, setNumberOfEvents] =
-  useState(1);
   const [caseActions, setCaseActions] =
   useState({});
 
 const [newActionType, setNewActionType] =
-  useState("Health Check");
-
-  const [showMonitoringFor,
-  setShowMonitoringFor] =
-  useState(null);
-
-const [monitoringType,
-  setMonitoringType] =
   useState("Health Check");
 
 const [newActionNotes, setNewActionNotes] =
@@ -59,30 +46,6 @@ const [casePriority,
 
   const [scheduledEvents, setScheduledEvents] =
   useState([]);
-
-const [showScheduledForm, setShowScheduledForm] =
-  useState(false);
-
-  const [repeatUntilResolved, setRepeatUntilResolved] =
-  useState(false);
-
-const [scheduledDate, setScheduledDate] =
-  useState(
-    new Date()
-      .toISOString()
-      .split("T")[0]
-  );
-
-const [scheduledType, setScheduledType] =
-  useState("Injection");
-
-const [scheduledNotes, setScheduledNotes] =
-  useState("");
-
-const [medicines, setMedicines] = useState([]);
-
-const [scheduledMedicine, setScheduledMedicine] =
-  useState("");
 
  
   const [showScanForm, setShowScanForm] = useState(false);
@@ -209,11 +172,6 @@ const [scanResult, setScanResult] = useState("Single");
   .then((data) =>
     setHealthCases(data)
   );
-fetch(
-  "https://wern-villa-api.onrender.com/medicines"
-)
-  .then((res) => res.json())
-  .then((data) => setMedicines(data));
 fetch(
   `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scheduled`
 )
@@ -367,40 +325,6 @@ function saveAction(caseId) {
     });
 }
 
-function createMonitoring(caseId) {
-  fetch(
-    `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scheduled`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        dueDate: new Date()
-          .toISOString()
-          .split("T")[0],
-
-        eventType: monitoringType,
-
-        notes: `Health Case #${caseId}`,
-
-        numberOfEvents: 1,
-
-        caseId,
-      }),
-    }
-  )
-    .then((res) => res.json())
-    .then(() => {
-      setToast("✅ Monitoring created");
-
-      setShowMonitoringFor(null);
-
-      setTimeout(() => {
-        setToast("");
-      }, 3000);
-    });
-}
 function resolveCase(caseId) {
   fetch(
     `https://wern-villa-api.onrender.com/health-cases/${caseId}/resolve`,
@@ -627,58 +551,6 @@ function saveEvent() {
 
       setEventType("Foot Trim");
       setEventNotes("");
-    });
-}
-
-function saveScheduledEvent() {
-
-  if (
-    numberOfEvents > 1 &&
-    repeatEvery < 1
-  ) {
-    alert(
-      "Repeat Every must be at least 1 day."
-    );
-    return;
-  }
-
-  fetch(
-    `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scheduled`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
-      body: JSON.stringify({
-        dueDate: scheduledDate,
-        eventType: scheduledType,
-        notes: scheduledMedicine
-          ? `Medicine: ${scheduledMedicine}${scheduledNotes ? `\n${scheduledNotes}` : ""}`
-          : scheduledNotes,
-        repeatEvery:
-          Number(repeatEvery),
-        numberOfEvents:
-          Number(numberOfEvents),
-          repeatUntilResolved,
-      }),
-    }
-  )
-    .then((res) => res.json())
-    .then(() =>
-      fetch(
-        `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scheduled`
-      )
-    )
-    .then((res) => res.json())
-    .then((data) => {
-      setScheduledEvents(data);
-      setShowScheduledForm(false);
-      setScheduledNotes("");
-      setScheduledMedicine("");
-      setRepeatEvery(0);
-      setNumberOfEvents(1);
-      setToast("✅ Schedule created");
     });
 }
 
@@ -1454,192 +1326,6 @@ function saveScheduledEvent() {
     >
       ➕ Record Event
     </button>
-<button
-  onClick={() =>
-    setShowScheduledForm(
-      !showScheduledForm
-    )
-  }
-  style={{
-    background: "#03a9f4",
-    color: "white",
-    border: "none",
-    padding: "10px 16px",
-    borderRadius: "10px",
-    cursor: "pointer",
-    marginBottom: "15px",
-    marginLeft: "10px",
-  }}
->
-  📅 Schedule Event
-</button>
-
-{showScheduledForm && (
-  <div
-    style={{
-      background: "#1f1f1f",
-      padding: "15px",
-      borderRadius: "10px",
-      marginBottom: "20px",
-    }}
-  >
-    <label>Type</label>
-
-    <select
-      value={scheduledType}
-      onChange={(e) =>
-        setScheduledType(
-          e.target.value
-        )
-      }
-      style={inputStyle}
-    >
-      <option>
-        Injection
-      </option>
-
-      <option>
-        Health Check
-      </option>
-
-      <option>
-        Weight Check
-      </option>
-
-      <option>
-        Foot Trim
-      </option>
-
-      <option>
-        Other
-      </option>
-    </select>
-
-    {scheduledType === "Injection" && (
-      <select
-        value={scheduledMedicine}
-        onChange={(e) =>
-          setScheduledMedicine(e.target.value)
-        }
-        style={inputStyle}
-      >
-        <option value="">
-          Select Medicine
-        </option>
-        {medicines.map((medicine) => (
-          <option
-            key={medicine.id}
-            value={medicine.name}
-          >
-            {medicine.name}
-          </option>
-        ))}
-      </select>
-    )}
-
-    <label>
-      First Due Date
-    </label>
-
-    <input
-      type="date"
-      value={scheduledDate}
-      onChange={(e) =>
-        setScheduledDate(
-          e.target.value
-        )
-      }
-      style={inputStyle}
-    />
-
-    <label>
-      Repeat Every (Days)
-    </label>
-
-    <input
-      type="number"
-      value={repeatEvery}
-      onChange={(e) =>
-        setRepeatEvery(
-          e.target.value
-        )
-      }
-      style={inputStyle}
-    />
-
-{!repeatUntilResolved && (
-  <>
-    <label>
-      Number of Events
-    </label>
-
-    <input
-      type="number"
-      min="1"
-      value={numberOfEvents}
-      onChange={(e) =>
-        setNumberOfEvents(
-          e.target.value
-        )
-      }
-      style={inputStyle}
-    />
-  </>
-)}
-<div
-  style={{
-    marginTop: "15px",
-    marginBottom: "15px",
-    textAlign: "left",
-  }}
->
-  <label>
-    <input
-      type="checkbox"
-      checked={repeatUntilResolved}
-      onChange={(e) =>
-        setRepeatUntilResolved(
-          e.target.checked
-        )
-      }
-      style={{ marginRight: "10px" }}
-    />
-
-    Repeat until resolved
-  </label>
-</div>
-
-    <label>Notes</label>
-
-    <textarea
-      value={scheduledNotes}
-      onChange={(e) =>
-        setScheduledNotes(
-          e.target.value
-        )
-      }
-      style={{
-        ...inputStyle,
-        minHeight: "80px",
-      }}
-    />
-
-    <button
-      onClick={
-        saveScheduledEvent
-      }
-      style={{
-        background: "#4caf50",
-        color: "white",
-        border: "none",
-        padding: "10px 16px",
-        borderRadius: "10px",
-      }}
-    >
-      ✅ Create Schedule
-    </button>
-  </div>
-)}
     {showEventForm && (
       <div
         style={{
@@ -1921,18 +1607,6 @@ function saveScheduledEvent() {
   }}
 >
   📋 Actions
-</button>
-<button
-  onClick={() => createMonitoring(item.id)}
-  style={{
-    background: "#4caf50",
-    color: "white",
-    border: "none",
-    padding: "10px 14px",
-    borderRadius: "8px",
-  }}
->
-  ✅ Create Monitoring
 </button>
 {activeCaseId === item.id && (
   <div
