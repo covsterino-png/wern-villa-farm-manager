@@ -130,6 +130,30 @@ async function ensureMedicineColumns() {
   }
 }
 
+async function ensureFeedTable() {
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS feedRecords (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      groupName TEXT NOT NULL,
+      feedType TEXT NOT NULL,
+      feedDate TEXT NOT NULL,
+      totalCost REAL NOT NULL DEFAULT 0,
+      sheepCount INTEGER NOT NULL DEFAULT 0,
+      costPerSheep REAL NOT NULL DEFAULT 0,
+      notes TEXT,
+      recordedBy TEXT
+    )
+  `);
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS feedRecordGroups (
+      feedRecordId INTEGER NOT NULL,
+      groupName TEXT NOT NULL,
+      sheepCount INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (feedRecordId, groupName)
+    )
+  `);
+}
+
 async function ensurePasskeysTable() {
   await turso.execute(`
     CREATE TABLE IF NOT EXISTS passkeys (
@@ -439,6 +463,10 @@ ensureTreatmentColumns().catch((error) => {
 
 ensureMedicineColumns().catch((error) => {
   console.error("Failed to ensure medicine columns:", error);
+});
+
+ensureFeedTable().catch((error) => {
+  console.error("Failed to ensure feed table:", error);
 });
 
 ensureReceiptsTable().catch((error) => {
@@ -2054,9 +2082,43 @@ app.get("/sheep/:id/financial-analysis", async (req, res) => {
       args: [req.params.id],
     });
 
+    const sheep = await turso.execute({
+      sql: "SELECT groupName FROM sheep WHERE id = ?",
+      args: [req.params.id],
+    });
+    const feed = sheep.rows[0]?.groupName
+      ? await turso.execute({
+          sql: `
+            SELECT id, feedType AS description, feedDate,
+                   costPerSheep AS cost, notes
+            FROM feedRecords fr
+            JOIN feedRecordGroups fg ON fg.feedRecordId = fr.id
+            WHERE fg.groupName = ?
+            ORDER BY feedDate DESC, id DESC
+          `,
+          args: [sheep.rows[0].groupName],
+        })
+      : { rows: [] };
+
+    const feedSummary = feed.rows.reduce(
+      (summary, item) => {
+        summary.feedCount += 1;
+        summary.totalFeedCost += Number(item.cost) || 0;
+        return summary;
+      },
+      { feedCount: 0, totalFeedCost: 0 }
+    );
+
     res.json({
-      summary: result.rows[0],
+      summary: {
+        ...result.rows[0],
+        ...feedSummary,
+        totalCost:
+          Number(result.rows[0].totalTreatmentCost || 0) +
+          feedSummary.totalFeedCost,
+      },
       treatments: treatments.rows,
+      feed: feed.rows,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -2986,4 +3048,53 @@ ensureAuthUsersTable().catch((error) => {
 
 ensureHeroPointsTables().catch((error) => {
   console.error("Failed to ensure Hero Points tables:", error);
+});
+
+app.get("/feed-records", async (req, res) => {
+  try {
+    const result = await turso.execute(
+      "SELECT * FROM feedRecords ORDER BY feedDate DESC, id DESC"
+    );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/feed-records", async (req, res) => {
+  try {
+    const { groupNames, feedType, feedDate, totalCost, notes, recordedBy } = req.body;
+    const selectedGroups = Array.isArray(groupNames) ? groupNames.filter(Boolean) : [];
+    if (!feedType || !feedDate || selectedGroups.length === 0) {
+      return res.status(400).json({ error: "At least one flock, feed, and date are required" });
+    }
+    const placeholders = selectedGroups.map(() => "?").join(", ");
+    const flock = await turso.execute({
+      sql: `SELECT groupName, COUNT(*) AS count FROM sheep WHERE groupName IN (${placeholders}) GROUP BY groupName`,
+      args: selectedGroups,
+    });
+    const sheepCount = flock.rows.reduce((total, row) => total + Number(row.count || 0), 0);
+    if (sheepCount === 0) return res.status(400).json({ error: "No sheep found in the selected flocks" });
+    const cost = Number(totalCost);
+    if (!Number.isFinite(cost) || cost < 0) {
+      return res.status(400).json({ error: "Total feed cost must be zero or greater" });
+    }
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO feedRecords
+          (groupName, feedType, feedDate, totalCost, sheepCount, costPerSheep, notes, recordedBy)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      args: [selectedGroups.join(", "), feedType, feedDate, cost, sheepCount, cost / sheepCount, notes || "", recordedBy || ""],
+    });
+    for (const row of flock.rows) {
+      await turso.execute({
+        sql: "INSERT INTO feedRecordGroups (feedRecordId, groupName, sheepCount) VALUES (?, ?, ?)",
+        args: [Number(result.lastInsertRowid), row.groupName, Number(row.count)],
+      });
+    }
+    res.json({ success: true, id: Number(result.lastInsertRowid), sheepCount, costPerSheep: cost / sheepCount });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });

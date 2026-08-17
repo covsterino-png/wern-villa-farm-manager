@@ -47,8 +47,12 @@ const [casePriority,
           totalTreatmentCost: 0,
           totalVolumeMl: 0,
           averageTreatmentCost: 0,
+          feedCount: 0,
+          totalFeedCost: 0,
+          totalCost: 0,
         },
         treatments: [],
+        feed: [],
       });
 
   const [scans, setScans] = useState([]);
@@ -1848,7 +1852,7 @@ function saveEvent() {
   >
     <h2>💷 Financial Analysis</h2>
     <p style={{ color: "#aaa" }}>
-      Recorded treatment costs for this sheep. Farm-wide purchases and sale income are not allocated to sheep yet.
+      Treatment costs plus the approximate share of flock feed costs for this sheep.
     </p>
 
     <div
@@ -1874,6 +1878,14 @@ function saveEvent() {
       <FinancialMetric
         label="Average treatment cost"
         value={`£${Number(financialAnalysis.summary?.averageTreatmentCost || 0).toFixed(2)}`}
+      />
+      <FinancialMetric
+        label="Total cost including feed"
+        value={`£${Number(financialAnalysis.summary?.totalCost || 0).toFixed(2)}`}
+      />
+      <FinancialMetric
+        label="Feed cost"
+        value={`£${Number(financialAnalysis.summary?.totalFeedCost || 0).toFixed(2)}`}
       />
     </div>
 
@@ -1910,6 +1922,20 @@ function saveEvent() {
           )}
         </div>
       ))
+    )}
+
+    {financialAnalysis.feed?.length > 0 && (
+      <>
+        <h3>Flock feed allocation</h3>
+        {financialAnalysis.feed.map((feed) => (
+          <div key={`feed-${feed.id}`} style={{ background: "#1f1f1f", padding: "12px", borderRadius: "8px", marginBottom: "8px" }}>
+            <strong>{feed.description}</strong><br />
+            <small>{feed.feedDate}</small><br />
+            Approximate share: £{Number(feed.cost || 0).toFixed(2)}
+            {feed.notes && <><br />{feed.notes}</>}
+          </div>
+        ))}
+      </>
     )}
   </div>
 )}

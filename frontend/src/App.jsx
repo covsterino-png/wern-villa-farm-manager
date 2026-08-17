@@ -7,6 +7,7 @@ import MoveGroup from "./pages/MoveGroup";
 import MovementHistory from "./pages/MovementHistory";
 import Tasks from "./pages/Tasks";
 import Treatments from "./pages/Treatments";
+import Feed from "./pages/Feed";
 import Settings from "./pages/Settings";
 import FarmMap from "./pages/FarmMap";
 import FlockRegister from "./pages/FlockRegister";
@@ -121,6 +122,7 @@ function App() {
     ["notes", "Notes"],
     ["tasks", "Tasks"],
     ["treatments", "Treatments"],
+    ["feed", "Flock Feed"],
     ["sheep-register", "Sheep Register"],
     ["flock-register", "Flock Register"],
     ["farm-map", "Farm Map"],
@@ -361,6 +363,9 @@ Receipts
 
         {page === "treatments" && (
           <Treatments />
+        )}
+        {page === "feed" && (
+          <Feed />
         )}
 
         {page === "tasks" && (
