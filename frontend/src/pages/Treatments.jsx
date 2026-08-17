@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 
 export default function Treatments() {
   const [groupName, setGroupName] = useState("");
-  const [treatment, setTreatment] = useState("");
+  const [careType, setCareType] = useState("Injection");
+  const [medicine, setMedicine] = useState("");
   const [notes, setNotes] = useState("");
   const [treatments, setTreatments] = useState([]);
 
@@ -49,15 +50,19 @@ export default function Treatments() {
         setMedicines(data);
 
         if (data.length > 0) {
-          setTreatment(data[0].name);
+          setMedicine(data[0].name);
         }
       });
   }, []);
 
   function saveTreatment() {
-    if (!groupName || !treatment) {
+    if (!groupName || (careType !== "Footbath" && !medicine)) {
       return;
     }
+
+    const treatment = careType === "Footbath"
+      ? careType
+      : `${careType}: ${medicine}`;
 
     fetch(
       "https://wern-villa-api.onrender.com/treatments",
@@ -95,7 +100,7 @@ export default function Treatments() {
           marginBottom: "20px",
         }}
       >
-        💉 Treatments
+        💉 Whole Flock Care
       </h1>
 
       <div
@@ -134,33 +139,64 @@ export default function Treatments() {
         <br />
         <br />
 
-        <label>Medicine</label>
+        <label>Whole-flock care</label>
 
         <br />
         <br />
 
         <select
-          value={treatment}
+          value={careType}
           onChange={(e) =>
-            setTreatment(e.target.value)
+            setCareType(e.target.value)
           }
           style={{
             width: "100%",
             padding: "10px",
           }}
         >
-          {medicines.map((medicine) => (
-            <option
-              key={medicine.id}
-              value={medicine.name}
-            >
-              {medicine.name}
-            </option>
-          ))}
+          <option value="Injection">Injection</option>
+          <option value="Worming">Worming</option>
+          <option value="Footbath">Footbath</option>
+          <option value="Other">Other</option>
         </select>
 
         <br />
         <br />
+
+        {careType !== "Footbath" && (
+          <>
+            <label>Medicine or product</label>
+
+            <br />
+            <br />
+
+            <select
+              value={medicine}
+              onChange={(e) =>
+                setMedicine(e.target.value)
+              }
+              style={{
+                width: "100%",
+                padding: "10px",
+              }}
+            >
+              <option value="">
+                Select medicine or product
+              </option>
+              {medicines.map((item) => (
+                <option
+                  key={item.id}
+                  value={item.name}
+                >
+                  {item.name}
+                </option>
+              ))}
+            </select>
+
+            <br />
+            <br />
+          </>
+        )}
 
         <input
           placeholder="Cost (£)"
@@ -200,7 +236,7 @@ export default function Treatments() {
         <br />
 
         <button onClick={saveTreatment}>
-          Save Treatment
+          Record Flock Care
         </button>
       </div>
 
