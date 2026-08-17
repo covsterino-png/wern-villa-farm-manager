@@ -2008,6 +2008,70 @@ app.post("/treatments", async (req, res) => {
       administeredBy,
     } = req.body;
 
+    if (!sheepId && groupName) {
+      const flock = await turso.execute({
+        sql: `
+          SELECT id, name
+          FROM sheep
+          WHERE groupName = ?
+          ORDER BY name
+        `,
+        args: [groupName],
+      });
+
+      if (flock.rows.length === 0) {
+        return res.status(400).json({
+          error: "No sheep found in the selected group",
+        });
+      }
+
+      const flockCost = Number(cost) || 0;
+      const costPerSheep = flockCost / flock.rows.length;
+
+      for (const sheep of flock.rows) {
+        await turso.execute({
+          sql: `
+INSERT INTO treatments
+(
+  groupName,
+  sheepId,
+  sheepName,
+  treatment,
+  treatmentDate,
+  withdrawalDays,
+  cost,
+  notes,
+  administeredBy
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+          args: [
+            groupName,
+            sheep.id,
+            sheep.name,
+            treatment,
+            treatmentDate,
+            withdrawalDays,
+            costPerSheep,
+            notes,
+            administeredBy,
+          ],
+        });
+
+        await addHistory(
+          sheep.id,
+          "💉 Treatment",
+          `${treatment} - ${notes || ""}`,
+          treatmentDate
+        );
+      }
+
+      return res.json({
+        success: true,
+        count: flock.rows.length,
+      });
+    }
+
     const result = await turso.execute({
       sql: `
 INSERT INTO treatments
@@ -2024,24 +2088,24 @@ INSERT INTO treatments
 )
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
-args: [
-  groupName,
-  sheepId,
-  sheepName,
-  treatment,
-  treatmentDate,
-  withdrawalDays,
-  cost,
-  notes,
-  administeredBy,
-],
+      args: [
+        groupName,
+        sheepId,
+        sheepName,
+        treatment,
+        treatmentDate,
+        withdrawalDays,
+        cost,
+        notes,
+        administeredBy,
+      ],
     });
-await addHistory(
-  sheepId,
-  "💉 Treatment",
-  `${treatment} - ${notes || ""}`,
-  treatmentDate
-);
+    await addHistory(
+      sheepId,
+      "💉 Treatment",
+      `${treatment} - ${notes || ""}`,
+      treatmentDate
+    );
     res.json({
       success: true,
       id: Number(result.lastInsertRowid),
