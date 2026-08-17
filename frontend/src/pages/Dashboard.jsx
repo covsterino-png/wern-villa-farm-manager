@@ -21,6 +21,9 @@ const [expandedTask, setExpandedTask] =
 const [selectedMedicine, setSelectedMedicine] =
   useState({});
 
+  const [repeatAfterCompletion, setRepeatAfterCompletion] =
+    useState({});
+
 
   const [actionType, setActionType] =
   useState({});
@@ -163,7 +166,18 @@ function loadCaseActions(caseId) {
     });
 }
   function completeTask(taskId) {
-  fetch(`${API}/scheduled/${taskId}/complete`, { method: "PUT" })
+    const repeatEvery = Number(repeatAfterCompletion[taskId]);
+    const body = Number.isFinite(repeatEvery) && repeatEvery > 0
+      ? JSON.stringify({ repeatEvery })
+      : undefined;
+
+    fetch(`${API}/scheduled/${taskId}/complete`, {
+      method: "PUT",
+      ...(body && {
+        headers: { "Content-Type": "application/json" },
+        body,
+      }),
+    })
     .then((res) => res.json())
     .then(() => fetch(`${API}/tasks/today`))
     .then((res) => res.json())
@@ -663,6 +677,25 @@ boxShadow:
 >
   ✅ Complete
 </button>
+<input
+  type="number"
+  min="1"
+  placeholder="Repeat in days"
+  value={repeatAfterCompletion[task.id] || ""}
+  onChange={(e) =>
+    setRepeatAfterCompletion({
+      ...repeatAfterCompletion,
+      [task.id]: e.target.value,
+    })
+  }
+  style={{
+    width: "130px",
+    padding: "8px",
+    marginLeft: "10px",
+    borderRadius: "8px",
+    border: "1px solid #777",
+  }}
+/>
 {!!task.autoRepeat && (
   <button
     onClick={() =>

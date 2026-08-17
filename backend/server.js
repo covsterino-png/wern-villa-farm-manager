@@ -801,6 +801,7 @@ app.get("/sheep/group/:groupName", async (req, res) => {
 });
 
 app.put("/scheduled/:id/complete", async (req, res) => {
+  const repeatEvery = Number(req.body.repeatEvery);
   const event = await turso.execute({
     sql: `
       SELECT *
@@ -812,14 +813,14 @@ app.put("/scheduled/:id/complete", async (req, res) => {
 
   const scheduledEvent =
     event.rows[0];
-    if (scheduledEvent.autoRepeat) {
+    if (Number.isFinite(repeatEvery) && repeatEvery > 0) {
   const nextDate = new Date(
     scheduledEvent.dueDate
   );
 
   nextDate.setDate(
     nextDate.getDate() +
-    scheduledEvent.repeatEvery
+    repeatEvery
   );
 
   await turso.execute({
@@ -833,10 +834,11 @@ app.put("/scheduled/:id/complete", async (req, res) => {
         dueDate,
         autoRepeat,
         repeatEvery,
-        repeatNumber
+        repeatNumber,
+        caseId
       )
       VALUES
-      (?, ?, ?, 'scheduled', ?, 1, ?, ?)
+      (?, ?, ?, 'scheduled', ?, 1, ?, ?, ?)
     `,
     args: [
       scheduledEvent.sheepId,
@@ -850,8 +852,9 @@ app.put("/scheduled/:id/complete", async (req, res) => {
       nextDate
         .toISOString()
         .split("T")[0],
-      scheduledEvent.repeatEvery,
+      repeatEvery,
       scheduledEvent.repeatNumber + 1,
+      scheduledEvent.caseId,
     ],
   });
 }

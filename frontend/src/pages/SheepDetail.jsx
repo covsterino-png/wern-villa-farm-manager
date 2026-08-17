@@ -27,10 +27,6 @@ const [monitoringType,
   setMonitoringType] =
   useState("Health Check");
 
-const [monitoringFrequency,
-  setMonitoringFrequency] =
-  useState(2);
-
 const [newActionNotes, setNewActionNotes] =
   useState("");
 
@@ -81,6 +77,11 @@ const [scheduledType, setScheduledType] =
   useState("Injection");
 
 const [scheduledNotes, setScheduledNotes] =
+  useState("");
+
+const [medicines, setMedicines] = useState([]);
+
+const [scheduledMedicine, setScheduledMedicine] =
   useState("");
 
  
@@ -208,6 +209,11 @@ const [scanResult, setScanResult] = useState("Single");
   .then((data) =>
     setHealthCases(data)
   );
+fetch(
+  "https://wern-villa-api.onrender.com/medicines"
+)
+  .then((res) => res.json())
+  .then((data) => setMedicines(data));
 fetch(
   `https://wern-villa-api.onrender.com/sheep/${sheep.id}/scheduled`
 )
@@ -378,11 +384,7 @@ function createMonitoring(caseId) {
 
         notes: `Health Case #${caseId}`,
 
-        repeatEvery: Number(
-          monitoringFrequency
-        ),
-
-        repeatUntilResolved: true,
+        numberOfEvents: 1,
 
         caseId,
       }),
@@ -651,7 +653,9 @@ function saveScheduledEvent() {
       body: JSON.stringify({
         dueDate: scheduledDate,
         eventType: scheduledType,
-        notes: scheduledNotes,
+        notes: scheduledMedicine
+          ? `Medicine: ${scheduledMedicine}${scheduledNotes ? `\n${scheduledNotes}` : ""}`
+          : scheduledNotes,
         repeatEvery:
           Number(repeatEvery),
         numberOfEvents:
@@ -671,6 +675,7 @@ function saveScheduledEvent() {
       setScheduledEvents(data);
       setShowScheduledForm(false);
       setScheduledNotes("");
+      setScheduledMedicine("");
       setRepeatEvery(0);
       setNumberOfEvents(1);
       setToast("✅ Schedule created");
@@ -1510,6 +1515,28 @@ function saveScheduledEvent() {
       </option>
     </select>
 
+    {scheduledType === "Injection" && (
+      <select
+        value={scheduledMedicine}
+        onChange={(e) =>
+          setScheduledMedicine(e.target.value)
+        }
+        style={inputStyle}
+      >
+        <option value="">
+          Select Medicine
+        </option>
+        {medicines.map((medicine) => (
+          <option
+            key={medicine.id}
+            value={medicine.name}
+          >
+            {medicine.name}
+          </option>
+        ))}
+      </select>
+    )}
+
     <label>
       First Due Date
     </label>
@@ -1895,26 +1922,6 @@ function saveScheduledEvent() {
 >
   📋 Actions
 </button>
-<select
-  value={monitoringFrequency}
-  onChange={(e) =>
-    setMonitoringFrequency(
-      Number(e.target.value)
-    )
-  }
-  style={{
-    marginRight: "10px",
-    padding: "8px",
-    borderRadius: "8px",
-  }}
->
-  <option value={1}>1 Day</option>
-  <option value={2}>2 Days</option>
-  <option value={3}>3 Days</option>
-  <option value={7}>7 Days</option>
-  <option value={14}>14 Days</option>
-</select>
-
 <button
   onClick={() => createMonitoring(item.id)}
   style={{
