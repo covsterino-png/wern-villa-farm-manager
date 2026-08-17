@@ -2797,31 +2797,78 @@ app.listen(3001, () => {
 cron.schedule("*/1 * * * *", async () => {
   try {
     const now = new Date();
-    const dateStr = now.toISOString().split("T")[0];
-    const timeStr = now.toTimeString().split(" ")[0].slice(0, 5); // HH:MM
 
     const result = await turso.execute({
-      sql: `SELECT * FROM calendarEvents WHERE reminderDate = ? AND reminderTime = ?`,
-      args: [dateStr, timeStr],
+      sql: `
+        SELECT *
+        FROM calendarEvents
+        WHERE reminderDate IS NOT NULL
+          AND reminderTime IS NOT NULL
+      `,
     });
 
     for (const ev of result.rows) {
+      const reminderAt = new Date(
+        `${ev.reminderDate}T${ev.reminderTime}:00`
+      );
+
+      if (
+        Number.isNaN(reminderAt.getTime()) ||
+        reminderAt > now ||
+        now.getTime() - reminderAt.getTime() > 2 * 60 * 1000
+      ) {
+        continue;
+      }
+
       const message = `${ev.title} is due on ${ev.eventDate}`;
+      const reminderData = JSON.stringify({
+        id: ev.id,
+        reminderDate: ev.reminderDate,
+        reminderTime: ev.reminderTime,
+      });
 
       if (ev.notifyDavid) {
-        await turso.execute({
-          sql: `INSERT INTO notifications (userName, title, message, data) VALUES (?, ?, ?, ?)`,
-          args: ["David", "Reminder", message, JSON.stringify({ id: ev.id })],
+        const existing = await turso.execute({
+          sql: `
+            SELECT id
+            FROM notifications
+            WHERE userName = ?
+              AND title = 'Calendar Reminder'
+              AND data = ?
+            LIMIT 1
+          `,
+          args: ["David", reminderData],
         });
+
+        if (existing.rows.length === 0) {
+          await turso.execute({
+            sql: `INSERT INTO notifications (userName, title, message, data) VALUES (?, ?, ?, ?)`,
+            args: ["David", "Calendar Reminder", message, reminderData],
+          });
+        }
 
         // email sending removed — in-app notification created instead
       }
 
       if (ev.notifyGemma) {
-        await turso.execute({
-          sql: `INSERT INTO notifications (userName, title, message, data) VALUES (?, ?, ?, ?)`,
-          args: ["Gemma", "Reminder", message, JSON.stringify({ id: ev.id })],
+        const existing = await turso.execute({
+          sql: `
+            SELECT id
+            FROM notifications
+            WHERE userName = ?
+              AND title = 'Calendar Reminder'
+              AND data = ?
+            LIMIT 1
+          `,
+          args: ["Gemma", reminderData],
         });
+
+        if (existing.rows.length === 0) {
+          await turso.execute({
+            sql: `INSERT INTO notifications (userName, title, message, data) VALUES (?, ?, ?, ?)`,
+            args: ["Gemma", "Calendar Reminder", message, reminderData],
+          });
+        }
 
         // email sending removed — in-app notification created instead
       }
