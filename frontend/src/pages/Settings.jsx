@@ -10,6 +10,7 @@ const [newMedicine, setNewMedicine] = useState("");
 const [doseRate, setDoseRate] =  useState("");
 const [withdrawalDays,  setWithdrawalDays,] = useState("");
 const [administrationMethod, setAdministrationMethod,] = useState("");
+const [costPerMl, setCostPerMl] = useState("");
 const [currentPassword, setCurrentPassword] = useState("");
 const [newPassword, setNewPassword] = useState("");
 const [confirmPassword, setConfirmPassword] = useState("");
@@ -71,12 +72,14 @@ body: JSON.stringify({
   doseRate,
   withdrawalDays,
   administrationMethod,
+  costPerMl: Number(costPerMl) || 0,
 })
 }).then(() => {
   setNewMedicine("");
   setDoseRate("");
   setWithdrawalDays("");
   setAdministrationMethod("");
+  setCostPerMl("");
   loadMedicines();
 });
 }
@@ -302,6 +305,17 @@ body: JSON.stringify({
   placeholder="Administration..."
 />
 
+<input
+  value={costPerMl}
+  onChange={(e) =>
+    setCostPerMl(e.target.value)
+  }
+  placeholder="Cost per ml (£)..."
+  type="number"
+  min="0"
+  step="0.0001"
+/>
+
   <button
     onClick={addMedicine}
     style={{
@@ -347,6 +361,9 @@ body: JSON.stringify({
     {" "}
     {medicine.administrationMethod}
   </div>
+  <div>
+    Cost per ml: £{medicine.costPerMl || 0}
+  </div>
   <button
   onClick={async () => {
     const newName = prompt(
@@ -377,6 +394,13 @@ body: JSON.stringify({
 
     if (newMethod === null) return;
 
+    const newCostPerMl = prompt(
+      "Cost per ml (£):",
+      medicine.costPerMl || ""
+    );
+
+    if (newCostPerMl === null) return;
+
     await fetch(`${API}/medicines/${medicine.id}`,
       {
         method: "PUT",
@@ -392,6 +416,7 @@ body: JSON.stringify({
           ),
           administrationMethod:
             newMethod,
+          costPerMl: Number(newCostPerMl) || 0,
         }),
       }
     );

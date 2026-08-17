@@ -21,6 +21,9 @@ const [expandedTask, setExpandedTask] =
 const [selectedMedicine, setSelectedMedicine] =
   useState({});
 
+const [injectionVolume, setInjectionVolume] =
+  useState({});
+
   const [repeatAfterCompletion, setRepeatAfterCompletion] =
     useState({});
 
@@ -188,6 +191,37 @@ function saveActionFromDashboard(
   taskId,
   task
 ) {
+  if (actionType[taskId] === "Injection") {
+    if (!selectedMedicine[taskId]) {
+      alert("Select a medicine before saving the injection.");
+      return;
+    }
+
+    if (!(Number(injectionVolume[taskId]) > 0)) {
+      alert("Enter the injected volume in ml.");
+      return;
+    }
+
+    const medicine = medicines.find(
+      (item) => item.name === selectedMedicine[taskId]
+    );
+
+    if (!(Number(medicine?.costPerMl) >= 0)) {
+      alert("Set the medicine cost per ml in Settings first.");
+      return;
+    }
+
+  }
+
+  const selectedMedicineRecord = medicines.find(
+    (item) => item.name === selectedMedicine[taskId]
+  );
+  const calculatedCost = Number(injectionVolume[taskId]) *
+    Number(selectedMedicineRecord?.costPerMl || 0);
+  const injectionDetails = actionType[taskId] === "Injection"
+    ? `Medicine: ${selectedMedicine[taskId]}\nVolume: ${injectionVolume[taskId]} ml\nCost: £${calculatedCost.toFixed(2)}`
+    : "";
+
   fetch(`${API}/health-cases/${caseId}/actions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -199,13 +233,7 @@ function saveActionFromDashboard(
   notes:
     actionType[taskId] ===
     "Injection"
-      ? `Medicine: ${
-          selectedMedicine[
-            taskId
-          ] || "Unknown"
-        }
-
-${actionNotes[taskId] || ""}`
+      ? `${injectionDetails}${actionNotes[taskId] ? `\n${actionNotes[taskId]}` : ""}`
       : actionNotes[
           taskId
         ] || "",
@@ -232,6 +260,9 @@ ${actionNotes[taskId] || ""}`
   treatment:
     selectedMedicine[taskId],
 
+  volumeMl:
+    Number(injectionVolume[taskId]),
+
   treatmentDate:
     new Date().toLocaleDateString(),
 
@@ -242,7 +273,7 @@ ${actionNotes[taskId] || ""}`
       selectedMedicine[taskId]
   )?.withdrawalDays || 0,
 
-  cost: 0,
+  cost: calculatedCost,
 
   notes:
     actionNotes[taskId] || "",
@@ -515,6 +546,35 @@ boxShadow:
     )}
   </select>
   
+)}
+{actionType[task.id] === "Injection" && (
+  <>
+    <input
+      type="number"
+      min="0.01"
+      step="0.01"
+      placeholder="Injected volume (ml)"
+      value={injectionVolume[task.id] || ""}
+      onChange={(e) =>
+        setInjectionVolume({
+          ...injectionVolume,
+          [task.id]: e.target.value,
+        })
+      }
+      style={{
+        width: "100%",
+        padding: "10px",
+        marginTop: "10px",
+        borderRadius: "8px",
+      }}
+    />
+    <div style={{ marginTop: "10px", color: "#aaa" }}>
+      Calculated cost: £{(
+        Number(injectionVolume[task.id]) *
+        Number(medicines.find((item) => item.name === selectedMedicine[task.id])?.costPerMl || 0)
+      ).toFixed(2)}
+    </div>
+  </>
 )}
 {selectedMedicine[task.id] && (
   <div

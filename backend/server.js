@@ -104,6 +104,30 @@ async function ensureTransactionsTable() {
   });
 }
 
+async function ensureTreatmentColumns() {
+  try {
+    await turso.execute(
+      "ALTER TABLE treatments ADD COLUMN volumeMl REAL"
+    );
+  } catch (error) {
+    if (!error.message.toLowerCase().includes("duplicate column")) {
+      throw error;
+    }
+  }
+}
+
+async function ensureMedicineColumns() {
+  try {
+    await turso.execute(
+      "ALTER TABLE medicines ADD COLUMN costPerMl REAL"
+    );
+  } catch (error) {
+    if (!error.message.toLowerCase().includes("duplicate column")) {
+      throw error;
+    }
+  }
+}
+
 async function ensurePasskeysTable() {
   await turso.execute(`
     CREATE TABLE IF NOT EXISTS passkeys (
@@ -405,6 +429,14 @@ app.post("/auth/passkey/register/verify", async (req, res) => {
 
 ensureTransactionsTable().catch((error) => {
   console.error("Failed to ensure transactions table:", error);
+});
+
+ensureTreatmentColumns().catch((error) => {
+  console.error("Failed to ensure treatment columns:", error);
+});
+
+ensureMedicineColumns().catch((error) => {
+  console.error("Failed to ensure medicine columns:", error);
 });
 
 ensureReceiptsTable().catch((error) => {
@@ -2003,6 +2035,7 @@ app.post("/treatments", async (req, res) => {
       treatment,
       treatmentDate,
       withdrawalDays,
+      volumeMl,
       cost,
       notes,
       administeredBy,
@@ -2026,7 +2059,9 @@ app.post("/treatments", async (req, res) => {
       }
 
       const flockCost = Number(cost) || 0;
+      const flockVolume = Number(volumeMl) || 0;
       const costPerSheep = flockCost / flock.rows.length;
+      const volumePerSheep = flockVolume / flock.rows.length;
 
       for (const sheep of flock.rows) {
         await turso.execute({
@@ -2039,11 +2074,12 @@ INSERT INTO treatments
   treatment,
   treatmentDate,
   withdrawalDays,
+  volumeMl,
   cost,
   notes,
   administeredBy
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
           args: [
             groupName,
@@ -2052,6 +2088,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             treatment,
             treatmentDate,
             withdrawalDays,
+            volumePerSheep,
             costPerSheep,
             notes,
             administeredBy,
@@ -2082,11 +2119,12 @@ INSERT INTO treatments
   treatment,
   treatmentDate,
   withdrawalDays,
+  volumeMl,
   cost,
   notes,
   administeredBy
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       args: [
         groupName,
@@ -2095,6 +2133,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         treatment,
         treatmentDate,
         withdrawalDays,
+        volumeMl,
         cost,
         notes,
         administeredBy,
@@ -2259,6 +2298,7 @@ app.put("/medicines/:id", async (req, res) => {
     doseRate,
     withdrawalDays,
     administrationMethod,
+    costPerMl,
   } = req.body;
 
   await turso.execute({
@@ -2268,7 +2308,8 @@ app.put("/medicines/:id", async (req, res) => {
         name = ?,
         doseRate = ?,
         withdrawalDays = ?,
-        administrationMethod = ?
+        administrationMethod = ?,
+        costPerMl = ?
       WHERE id = ?
     `,
     args: [
@@ -2276,6 +2317,7 @@ app.put("/medicines/:id", async (req, res) => {
       doseRate,
       withdrawalDays,
       administrationMethod,
+      costPerMl,
       req.params.id,
     ],
   });
@@ -2292,6 +2334,7 @@ app.post("/medicines", async (req, res) => {
       doseRate,
       withdrawalDays,
       administrationMethod,
+      costPerMl,
     } = req.body;
 
     const result = await turso.execute({
@@ -2300,15 +2343,17 @@ app.post("/medicines", async (req, res) => {
           name,
           doseRate,
           withdrawalDays,
-          administrationMethod
+          administrationMethod,
+          costPerMl
         )
-        VALUES (?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?)
       `,
       args: [
         name,
         doseRate,
         withdrawalDays,
         administrationMethod,
+        costPerMl,
       ],
     });
 

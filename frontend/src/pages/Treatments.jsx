@@ -4,18 +4,22 @@ export default function Treatments() {
   const [groupName, setGroupName] = useState("");
   const [careType, setCareType] = useState("Injection");
   const [medicine, setMedicine] = useState("");
+  const [volumeMl, setVolumeMl] = useState("");
   const [notes, setNotes] = useState("");
   const [treatments, setTreatments] = useState([]);
 
   const [withdrawalDays, setWithdrawalDays] =
     useState("");
 
-  const [cost, setCost] =
-    useState("");
-
   const [groups, setGroups] = useState([]);
 
   const [medicines, setMedicines] = useState([]);
+
+  const selectedMedicineRecord = medicines.find(
+    (item) => item.name === medicine
+  );
+  const calculatedCost = Number(volumeMl || 0) *
+    Number(selectedMedicineRecord?.costPerMl || 0);
 
   function loadTreatments() {
     fetch(
@@ -60,6 +64,16 @@ export default function Treatments() {
       return;
     }
 
+    if (careType === "Injection" && !(Number(volumeMl) > 0)) {
+      alert("Enter the total injected volume in ml.");
+      return;
+    }
+
+    if (careType === "Injection" && !(Number(selectedMedicineRecord?.costPerMl) >= 0)) {
+      alert("Set the medicine cost per ml in Settings first.");
+      return;
+    }
+
     const treatment = careType === "Footbath"
       ? careType
       : `${careType}: ${medicine}`;
@@ -78,7 +92,8 @@ export default function Treatments() {
           treatmentDate:
             new Date().toLocaleDateString(),
           withdrawalDays,
-          cost,
+          volumeMl: careType === "Injection" ? Number(volumeMl) : null,
+          cost: calculatedCost,
           notes,
           administeredBy:
             localStorage.getItem("user"),
@@ -86,8 +101,8 @@ export default function Treatments() {
       }
     ).then(() => {
       setNotes("");
-      setCost("");
       setWithdrawalDays("");
+      setVolumeMl("");
       loadTreatments();
     });
   }
@@ -198,14 +213,34 @@ export default function Treatments() {
           </>
         )}
 
-        <input
-          placeholder="Cost (£)"
-          type="number"
-          value={cost}
-          onChange={(e) =>
-            setCost(e.target.value)
-          }
-        />
+        {careType === "Injection" && (
+          <>
+            <label>Total injected volume for this flock (ml)</label>
+
+            <br />
+            <br />
+
+            <input
+              placeholder="Total volume (ml)"
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={volumeMl}
+              onChange={(e) =>
+                setVolumeMl(e.target.value)
+              }
+            />
+
+            <br />
+            <br />
+          </>
+        )}
+
+        {careType === "Injection" && (
+          <div style={{ color: "#aaa", marginBottom: "16px" }}>
+            Calculated flock cost: £{calculatedCost.toFixed(2)}
+          </div>
+        )}
 
         <br />
         <br />
@@ -289,6 +324,13 @@ export default function Treatments() {
 
           Withdrawal Days:{" "}
           {item.withdrawalDays}
+
+          {item.volumeMl != null && (
+            <>
+              <br />
+              Volume: {item.volumeMl} ml
+            </>
+          )}
 
           <br />
 
