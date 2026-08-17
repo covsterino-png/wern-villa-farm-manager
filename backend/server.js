@@ -2028,6 +2028,41 @@ app.get("/treatments", async (req, res) => {
   }
 });
 
+app.get("/sheep/:id/financial-analysis", async (req, res) => {
+  try {
+    const result = await turso.execute({
+      sql: `
+        SELECT
+          COUNT(*) AS treatmentCount,
+          COALESCE(SUM(cost), 0) AS totalTreatmentCost,
+          COALESCE(SUM(volumeMl), 0) AS totalVolumeMl,
+          COALESCE(AVG(cost), 0) AS averageTreatmentCost
+        FROM treatments
+        WHERE sheepId = ?
+      `,
+      args: [req.params.id],
+    });
+
+    const treatments = await turso.execute({
+      sql: `
+        SELECT id, treatment, treatmentDate, volumeMl, cost,
+               withdrawalDays, notes
+        FROM treatments
+        WHERE sheepId = ?
+        ORDER BY treatmentDate DESC, id DESC
+      `,
+      args: [req.params.id],
+    });
+
+    res.json({
+      summary: result.rows[0],
+      treatments: treatments.rows,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post("/treatments", async (req, res) => {
   try {
     const {

@@ -40,6 +40,17 @@ const [casePriority,
     
     const [history, setHistory] = useState([]);
 
+    const [financialAnalysis, setFinancialAnalysis] =
+      useState({
+        summary: {
+          treatmentCount: 0,
+          totalTreatmentCost: 0,
+          totalVolumeMl: 0,
+          averageTreatmentCost: 0,
+        },
+        treatments: [],
+      });
+
   const [scans, setScans] = useState([]);
 
   const [toast, setToast] = useState("");
@@ -226,6 +237,11 @@ fetch(
       : []
   )
 );
+    fetch(
+      `https://wern-villa-api.onrender.com/sheep/${sheep.id}/financial-analysis`
+    )
+      .then((res) => res.json())
+      .then((data) => setFinancialAnalysis(data));
     fetch(
       "https://wern-villa-api.onrender.com/fields"
     )
@@ -863,6 +879,11 @@ function saveEvent() {
   onClick={() =>
     setActiveTab("scheduled")
   }
+/>
+<TabButton
+  label="Financial"
+  active={activeTab === "financial"}
+  onClick={() => setActiveTab("financial")}
 />
 </div>
 <button
@@ -1817,6 +1838,95 @@ function saveEvent() {
     )}
   </div>
 )}
+{activeTab === "financial" && (
+  <div
+    style={{
+      background: "#2b2b2b",
+      padding: "20px",
+      borderRadius: "10px",
+    }}
+  >
+    <h2>💷 Financial Analysis</h2>
+    <p style={{ color: "#aaa" }}>
+      Recorded treatment costs for this sheep. Farm-wide purchases and sale income are not allocated to sheep yet.
+    </p>
+
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+        gap: "12px",
+        margin: "20px 0",
+      }}
+    >
+      <FinancialMetric
+        label="Total treatment cost"
+        value={`£${Number(financialAnalysis.summary?.totalTreatmentCost || 0).toFixed(2)}`}
+      />
+      <FinancialMetric
+        label="Treatments"
+        value={financialAnalysis.summary?.treatmentCount || 0}
+      />
+      <FinancialMetric
+        label="Total volume"
+        value={`${Number(financialAnalysis.summary?.totalVolumeMl || 0).toFixed(2)} ml`}
+      />
+      <FinancialMetric
+        label="Average treatment cost"
+        value={`£${Number(financialAnalysis.summary?.averageTreatmentCost || 0).toFixed(2)}`}
+      />
+    </div>
+
+    <h3>Cost breakdown</h3>
+    {financialAnalysis.treatments.length === 0 ? (
+      <p>No treatment costs recorded for this sheep.</p>
+    ) : (
+      financialAnalysis.treatments.map((treatment) => (
+        <div
+          key={treatment.id}
+          style={{
+            background: "#1f1f1f",
+            padding: "12px",
+            borderRadius: "8px",
+            marginBottom: "8px",
+          }}
+        >
+          <strong>{treatment.treatment}</strong>
+          <br />
+          <small>{treatment.treatmentDate}</small>
+          <br />
+          Cost: £{Number(treatment.cost || 0).toFixed(2)}
+          {treatment.volumeMl != null && (
+            <>
+              <br />
+              Volume: {Number(treatment.volumeMl).toFixed(2)} ml
+            </>
+          )}
+          {treatment.withdrawalDays > 0 && (
+            <>
+              <br />
+              Withdrawal: {treatment.withdrawalDays} days
+            </>
+          )}
+        </div>
+      ))
+    )}
+  </div>
+)}
+    </div>
+  );
+}
+function FinancialMetric({ label, value }) {
+  return (
+    <div
+      style={{
+        background: "#1f1f1f",
+        padding: "14px",
+        borderRadius: "8px",
+      }}
+    >
+      <div style={{ color: "#aaa", fontSize: "0.85rem" }}>{label}</div>
+      <strong style={{ fontSize: "1.25rem" }}>{value}</strong>
     </div>
   );
 }
