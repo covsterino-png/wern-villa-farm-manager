@@ -279,6 +279,12 @@ Receipts
           >
             Finances
           </button>
+          <button
+            style={buttonStyle("feed")}
+            onClick={() => navigate("feed")}
+          >
+            Flock Feed
+          </button>
           
           <button
             style={buttonStyle("notifications")}
