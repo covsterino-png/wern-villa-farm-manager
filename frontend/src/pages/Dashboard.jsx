@@ -785,10 +785,12 @@ boxShadow:
     display: "grid",
     gridTemplateColumns:
       window.innerWidth < 768
-        ? "repeat(3, 1fr)"
+        ? "repeat(3, minmax(0, 1fr))"
         : "repeat(auto-fit, minmax(220px, 1fr))",
     gap: "12px",
     marginBottom: "20px",
+    width: "100%",
+    boxSizing: "border-box",
   }}
 >
 <DashboardCard
@@ -965,6 +967,8 @@ function DashboardCard({
           ? "pointer"
           : "default",
         transition: "0.2s",
+        minWidth: 0,
+        boxSizing: "border-box",
       }}
     >
       <div
