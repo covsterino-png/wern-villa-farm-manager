@@ -38,6 +38,7 @@ export default function SheepRegister() {
     useState([]);
   const [eidSearch, setEidSearch] = useState("");
   const [eidMessage, setEidMessage] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
   const eidLookupTimer = useRef(null);
     const inputStyle = {
   width: "100%",
@@ -173,6 +174,16 @@ const cardStyle = {
     }
   }
 
+  const searchTerm = eidSearch.trim().toLowerCase();
+  const normalizedSearchTerm = normalizeEid(eidSearch);
+  const visibleSheep = searchTerm
+    ? sheep.filter(
+        (animal) =>
+          (animal.name || "").toLowerCase().includes(searchTerm) ||
+          normalizeEid(animal.eid).includes(normalizedSearchTerm)
+      )
+    : sheep;
+
 if (selectedSheep) {
   return (
     <SheepDetail
@@ -199,6 +210,40 @@ return (
     🐑 Sheep Register
   </h1>
 
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "10px",
+      maxWidth: "700px",
+      margin: "0 auto 15px auto",
+    }}
+  >
+    <button
+      type="button"
+      onClick={() => setShowSearch((prev) => !prev)}
+      aria-label={showSearch ? "Hide search" : "Show search"}
+      aria-expanded={showSearch}
+      style={{
+        background: showSearch ? "#03a9f4" : "#2b2b2b",
+        color: "white",
+        border: "1px solid #03a9f4",
+        borderRadius: "8px",
+        width: "44px",
+        height: "44px",
+        fontSize: "1.2rem",
+        cursor: "pointer",
+        flexShrink: 0,
+      }}
+    >
+      🔍
+    </button>
+    {!showSearch && (
+      <span style={{ color: "#999" }}>Tap to scan or search sheep</span>
+    )}
+  </div>
+
+  {showSearch && (
   <div style={{ ...cardStyle, border: "1px solid #03a9f4" }}>
     <h2 style={{ marginTop: 0, color: "#03a9f4" }}>Scan or search EID</h2>
     <form onSubmit={findByEid} style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
@@ -207,8 +252,7 @@ return (
         style={{ ...inputStyle, flex: "1 1 220px", marginBottom: 0 }}
         value={eidSearch}
         onChange={handleEidChange}
-        placeholder="Scan EID or type tag number"
-        inputMode="numeric"
+        placeholder="Scan EID or type name/tag number"
         aria-label="Scan or search EID"
       />
       <button
@@ -220,6 +264,7 @@ return (
     </form>
     {eidMessage && <p style={{ marginBottom: 0, color: eidMessage.startsWith("Found") ? "#8bc34a" : "#ffcc80" }}>{eidMessage}</p>}
   </div>
+  )}
 
   <div style={cardStyle}>
     <button
@@ -432,7 +477,12 @@ return (
           marginTop: "20px",
         }}
       >
-        {sheep.map((animal) => (
+        {searchTerm && (
+          <p style={{ color: "#999" }}>
+            {visibleSheep.length} of {sheep.length} sheep match "{eidSearch}"
+          </p>
+        )}
+        {visibleSheep.map((animal) => (
 <div
   key={animal.id}
   onClick={() =>
