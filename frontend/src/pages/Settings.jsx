@@ -16,6 +16,9 @@ const [currentPassword, setCurrentPassword] = useState("");
 const [newPassword, setNewPassword] = useState("");
 const [confirmPassword, setConfirmPassword] = useState("");
 const [passwordMessage, setPasswordMessage] = useState("");
+const [showPassword, setShowPassword] = useState(false);
+const [showFields, setShowFields] = useState(false);
+const [showMedicines, setShowMedicines] = useState(false);
 
 async function changePassword(event) {
   event.preventDefault();
@@ -127,18 +130,11 @@ body: JSON.stringify({
         ⚙️ Administration
       </h1>
 
-      <div
-        style={{
-          background: "#1f1f1f",
-          padding: "20px",
-          borderRadius: "12px",
-          marginBottom: "20px",
-        }}
+      <SettingsSection
+        title="🔐 Password"
+        open={showPassword}
+        onToggle={() => setShowPassword((open) => !open)}
       >
-      </div>
-
-      <div style={{ background: "#1f1f1f", padding: "20px", borderRadius: "12px", marginBottom: "20px" }}>
-        <h2 style={{ color: "#03a9f4" }}>🔐 Password</h2>
         <p style={{ color: "#aaa" }}>Change the password for {user || "your account"}.</p>
         <form onSubmit={changePassword} style={{ display: "grid", gap: "10px", maxWidth: "420px" }}>
           <input required type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="Current password" autoComplete="current-password" />
@@ -147,23 +143,13 @@ body: JSON.stringify({
           <button type="submit">Change password</button>
         </form>
         {passwordMessage && <p style={{ color: passwordMessage.includes("successfully") ? "#8bc34a" : "#ff8a80" }}>{passwordMessage}</p>}
-      </div>
+      </SettingsSection>
 
-      <div
-        style={{
-          background: "#1f1f1f",
-          padding: "20px",
-          borderRadius: "12px",
-        }}
+      <SettingsSection
+        title="🌱 Fields"
+        open={showFields}
+        onToggle={() => setShowFields((open) => !open)}
       >
-        <h2
-          style={{
-            color: "#03a9f4",
-          }}
-        >
-          🌱 Fields
-        </h2>
-
         <input
           value={newField}
           onChange={(e) =>
@@ -265,22 +251,14 @@ body: JSON.stringify({
 </button>
   </div>
 ))}
-          <div
-  style={{
-    background: "#1f1f1f",
-    padding: "20px",
-    borderRadius: "12px",
-    marginTop: "20px",
-  }}
->
-  <h2
-    style={{
-      color: "#03a9f4",
-    }}
-  >
-    💉 Medicines
-  </h2>
+        </div>
+      </SettingsSection>
 
+      <SettingsSection
+        title="💉 Medicines"
+        open={showMedicines}
+        onToggle={() => setShowMedicines((open) => !open)}
+      >
   <input
     value={newMedicine}
     onChange={(e) =>
@@ -464,9 +442,43 @@ body: JSON.stringify({
 </div>      </div>
     ))}
   </div>
-</div>
-        </div>
-      </div>
+      </SettingsSection>
+    </div>
+  );
+}
+
+function SettingsSection({ title, open, onToggle, children }) {
+  return (
+    <div
+      style={{
+        background: "#1f1f1f",
+        borderRadius: "12px",
+        marginBottom: "20px",
+        overflow: "hidden",
+      }}
+    >
+      <button
+        onClick={onToggle}
+        aria-expanded={open}
+        style={{
+          width: "100%",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          background: "transparent",
+          border: "none",
+          color: "#03a9f4",
+          padding: "20px",
+          fontSize: "1.1rem",
+          fontWeight: "bold",
+          cursor: "pointer",
+          textAlign: "left",
+        }}
+      >
+        <span>{title}</span>
+        <span style={{ color: "#aaa" }}>{open ? "▲" : "▼"}</span>
+      </button>
+      {open && <div style={{ padding: "0 20px 20px" }}>{children}</div>}
     </div>
   );
 }
