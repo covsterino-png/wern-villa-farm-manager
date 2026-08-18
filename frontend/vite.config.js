@@ -10,6 +10,12 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifestFilename: 'manifest.json',
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,svg,png}'],
+      },
       manifest: {
         name: 'Wern Villa Farm Manager',
         short_name: 'Farm Manager',
@@ -22,22 +28,6 @@ export default defineConfig({
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
           { src: 'pwa-maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-        ],
-      },
-      workbox: {
-        // Cache read-only API data so pages can still show last-known data offline.
-        runtimeCaching: [
-          {
-            urlPattern: ({ url, request }) =>
-              url.origin === 'https://wern-villa-api.onrender.com' && request.method === 'GET',
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'farm-api-cache',
-              networkTimeoutSeconds: 5,
-              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 7 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
         ],
       },
     }),

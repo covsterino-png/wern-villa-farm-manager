@@ -17,6 +17,14 @@ const turso = createClient({
     process.env.TURSO_AUTH_TOKEN,
 });
 const cron = require("node-cron");
+const webpush = require("web-push");
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    process.env.VAPID_CONTACT_EMAIL || "mailto:admin@example.com",
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
 // email sending removed (SendGrid) — using in-app notifications only
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -2569,6 +2577,80 @@ app.get("/manual-calendar-events", async (req, res) => {
   }
 });
 
+// Sends a real OS-level push notification to every device the user has
+// subscribed on. Removes subscriptions the browser reports as expired.
+async function sendPushToUser(userName, { title, message, data }) {
+  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) return;
+
+  const result = await turso.execute({
+    sql: `SELECT * FROM pushSubscriptions WHERE userName = ?`,
+    args: [userName],
+  });
+
+  const payload = JSON.stringify({ title, body: message, data });
+
+  for (const sub of result.rows) {
+    try {
+      await webpush.sendNotification(
+        {
+          endpoint: sub.endpoint,
+          keys: { p256dh: sub.p256dh, auth: sub.auth },
+        },
+        payload
+      );
+    } catch (error) {
+      if (error.statusCode === 404 || error.statusCode === 410) {
+        await turso.execute({
+          sql: `DELETE FROM pushSubscriptions WHERE id = ?`,
+          args: [sub.id],
+        });
+      } else {
+        console.error("Push send failed:", error.message);
+      }
+    }
+  }
+}
+
+// Push subscription APIs
+app.get("/push/vapid-public-key", (req, res) => {
+  res.json({ publicKey: process.env.VAPID_PUBLIC_KEY || null });
+});
+
+app.post("/push/subscribe", async (req, res) => {
+  try {
+    const { userName, subscription } = req.body;
+    if (!userName || !subscription?.endpoint) {
+      return res.status(400).json({ error: "userName and subscription are required" });
+    }
+
+    await turso.execute({
+      sql: `
+        INSERT INTO pushSubscriptions (userName, endpoint, p256dh, auth)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(endpoint) DO UPDATE SET userName = excluded.userName, p256dh = excluded.p256dh, auth = excluded.auth
+      `,
+      args: [userName, subscription.endpoint, subscription.keys.p256dh, subscription.keys.auth],
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+app.post("/push/unsubscribe", async (req, res) => {
+  try {
+    const { endpoint } = req.body;
+    await turso.execute({
+      sql: `DELETE FROM pushSubscriptions WHERE endpoint = ?`,
+      args: [endpoint],
+    });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
 // Notifications APIs
 app.get("/notifications", async (req, res) => {
   try {
@@ -3005,9 +3087,9 @@ cron.schedule("*/1 * * * *", async () => {
             sql: `INSERT INTO notifications (userName, title, message, data) VALUES (?, ?, ?, ?)`,
             args: ["David", "Calendar Reminder", message, reminderData],
           });
-        }
 
-        // email sending removed — in-app notification created instead
+          await sendPushToUser("David", { title: "Calendar Reminder", message, data: { eventId: ev.id } });
+        }
       }
 
       if (ev.notifyGemma) {
@@ -3028,9 +3110,9 @@ cron.schedule("*/1 * * * *", async () => {
             sql: `INSERT INTO notifications (userName, title, message, data) VALUES (?, ?, ?, ?)`,
             args: ["Gemma", "Calendar Reminder", message, reminderData],
           });
-        }
 
-        // email sending removed — in-app notification created instead
+          await sendPushToUser("Gemma", { title: "Calendar Reminder", message, data: { eventId: ev.id } });
+        }
       }
     }
   } catch (err) {

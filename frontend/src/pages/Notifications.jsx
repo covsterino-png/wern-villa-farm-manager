@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { API, fetchJson } from "../api";
+import { pushSupported, getPushSubscription, subscribeToPush } from "../push";
 
 export default function Notifications({ user }) {
   const [notifications, setNotifications] =
     useState([]);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushMessage, setPushMessage] = useState("");
 
   const load = async () => {
     const data = await fetchJson(`/notifications?user=${user}`);
@@ -12,7 +15,22 @@ export default function Notifications({ user }) {
 
   useEffect(() => {
     load();
+    getPushSubscription().then((sub) => setPushEnabled(!!sub));
   }, []);
+
+  const enablePush = async () => {
+    setPushMessage("");
+    const result = await subscribeToPush(user);
+    if (result.ok) {
+      setPushEnabled(true);
+    } else if (result.reason === "denied") {
+      setPushMessage("Notifications were blocked. Enable them in your browser/phone settings for this site.");
+    } else if (result.reason === "unsupported") {
+      setPushMessage("Push notifications aren't supported on this browser. On iPhone, add this app to your Home Screen first (Share → Add to Home Screen), then try again.");
+    } else {
+      setPushMessage("Couldn't enable push notifications right now.");
+    }
+  };
 
   const markRead = async (id) => {
     await fetch(`${API}/notifications/${id}/read`, { method: "PUT" });
@@ -23,6 +41,37 @@ export default function Notifications({ user }) {
   return (
     <div>
       <h1 style={{ color: "#03a9f4" }}>🔔 Notifications</h1>
+
+      <div
+        style={{
+          background: "#1f1f1f",
+          padding: 20,
+          borderRadius: 12,
+          marginBottom: 20,
+        }}
+      >
+        {pushEnabled ? (
+          <p style={{ color: "#8bc34a", margin: 0 }}>✅ Push notifications are on for this device.</p>
+        ) : (
+          <>
+            <button
+              onClick={enablePush}
+              style={{
+                background: "#03a9f4",
+                color: "white",
+                border: "none",
+                padding: "10px 16px",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
+            >
+              🔔 Enable push notifications on this device
+            </button>
+            {pushMessage && <p style={{ color: "#ffcc80" }}>{pushMessage}</p>}
+          </>
+        )}
+      </div>
 
       <div
         style={{
