@@ -447,7 +447,7 @@ Receipts
   <Notes />
 )}
 {page === "notifications" && (
-  <Notifications user={user} />
+  <Notifications user={user} setPage={setPage} />
 )}
 {page === "hero-points" && (
   <HeroPoints user={user} />

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { API, fetchJson } from "../api";
 import { pushSupported, getPushSubscription, subscribeToPush } from "../push";
 
-export default function Notifications({ user }) {
+export default function Notifications({ user, setPage }) {
   const [notifications, setNotifications] =
     useState([]);
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -38,6 +38,11 @@ export default function Notifications({ user }) {
     await fetch(`${API}/notifications/${id}/read`, { method: "PUT" });
 
     load();
+  };
+
+  const openNotification = async (n) => {
+    if (!n.read) await markRead(n.id);
+    if (setPage) setPage("calendar");
   };
 
   return (
@@ -123,12 +128,19 @@ export default function Notifications({ user }) {
                 </button>
               )}
 
-              <a
-                href="#"
-                style={{ color: "#03a9f4", textDecoration: "none" }}
+              <button
+                onClick={() => openNotification(n)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#03a9f4",
+                  cursor: "pointer",
+                  fontSize: "1rem",
+                  padding: 0,
+                }}
               >
                 Open
-              </a>
+              </button>
             </div>
           </div>
         ))}
