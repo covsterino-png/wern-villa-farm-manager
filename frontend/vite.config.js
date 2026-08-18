@@ -9,6 +9,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
+      manifestFilename: 'manifest.json',
       manifest: {
         name: 'Wern Villa Farm Manager',
         short_name: 'Farm Manager',
