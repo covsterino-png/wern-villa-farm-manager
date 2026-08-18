@@ -2701,6 +2701,19 @@ app.put("/notifications/:id/read", async (req, res) => {
   }
 });
 
+app.delete("/notifications/:id", async (req, res) => {
+  try {
+    await turso.execute({
+      sql: `DELETE FROM notifications WHERE id = ?`,
+      args: [req.params.id],
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
 app.post("/manual-calendar-events", async (req, res) => {
   try {
     const {

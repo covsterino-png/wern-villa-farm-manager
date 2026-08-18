@@ -45,6 +45,12 @@ export default function Notifications({ user, setPage }) {
     if (setPage) setPage("calendar");
   };
 
+  const deleteNotification = async (id) => {
+    await fetch(`${API}/notifications/${id}`, { method: "DELETE" });
+
+    load();
+  };
+
   return (
     <div>
       <h1 style={{ color: "#03a9f4" }}>🔔 Notifications</h1>
@@ -140,6 +146,21 @@ export default function Notifications({ user, setPage }) {
                 }}
               >
                 Open
+              </button>
+
+              <button
+                onClick={() => deleteNotification(n.id)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#ff8a80",
+                  cursor: "pointer",
+                  fontSize: "1rem",
+                  padding: 0,
+                  marginLeft: 12,
+                }}
+              >
+                Delete
               </button>
             </div>
           </div>
