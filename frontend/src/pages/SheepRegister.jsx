@@ -482,6 +482,13 @@ return (
             {visibleSheep.length} of {sheep.length} sheep match "{eidSearch}"
           </p>
         )}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+            gap: "8px",
+          }}
+        >
         {visibleSheep.map((animal) => (
 <div
   key={animal.id}
@@ -490,30 +497,23 @@ return (
   }
   style={{
     background: "#2b2b2b",
-    padding: "12px",
-    borderRadius: "10px",
-    marginBottom: "10px",
+    padding: "8px",
+    borderRadius: "8px",
     cursor: "pointer",
+    textAlign: "center",
   }}
->            <h3>
-              🐑 {animal.name}
-            </h3>
-
-            <div>
-              Sex: {animal.sex}
+>
+            <div style={{ fontWeight: "bold" }}>
+              🐑 {animal.eid || "No EID"}
             </div>
-
-            <div>
-              Group:{" "}
-              {animal.groupName}
-            </div>
-
-            <div>
-              Field:{" "}
-              {animal.currentField}
-            </div>
+            {animal.name && (
+              <div style={{ color: "#999", fontSize: "0.85rem" }}>
+                {animal.name}
+              </div>
+            )}
           </div>
         ))}
+        </div>
       </div>
     </div>
   );
