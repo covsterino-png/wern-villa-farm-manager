@@ -45,6 +45,24 @@ function App() {
   const [unreadCount, setUnreadCount] =
     useState(0);
 
+  const [installPrompt, setInstallPrompt] = useState(null);
+
+  useEffect(() => {
+    const handler = (event) => {
+      event.preventDefault();
+      setInstallPrompt(event);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  async function installApp() {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
+  }
+
   useEffect(() => {
     let mounted = true;
 
@@ -177,6 +195,22 @@ function App() {
   {user} • Farm Manager
 </span>
   <div>
+    {installPrompt && (
+      <button
+        onClick={installApp}
+        style={{
+          background: "transparent",
+          border: "none",
+          color: "#aaa",
+          cursor: "pointer",
+          fontSize: "1rem",
+          marginRight: "8px",
+        }}
+        title="Install App"
+      >
+        ⬇️
+      </button>
+    )}
     <button
       onClick={() =>
         setPage("settings")
