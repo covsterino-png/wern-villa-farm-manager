@@ -25,6 +25,27 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
     process.env.VAPID_PRIVATE_KEY
   );
 }
+turso.execute(`
+  CREATE TABLE IF NOT EXISTS pushSubscriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userName TEXT NOT NULL,
+    endpoint TEXT NOT NULL UNIQUE,
+    p256dh TEXT NOT NULL,
+    auth TEXT NOT NULL,
+    createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+  )
+`).catch((error) => console.error("Failed to ensure pushSubscriptions table:", error.message));
+turso.execute(`
+  CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userName TEXT NOT NULL,
+    title TEXT,
+    message TEXT,
+    data TEXT,
+    read INTEGER DEFAULT 0,
+    createdDate TEXT DEFAULT CURRENT_TIMESTAMP
+  )
+`).catch((error) => console.error("Failed to ensure notifications table:", error.message));
 // email sending removed (SendGrid) — using in-app notifications only
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,

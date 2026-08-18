@@ -39,11 +39,16 @@ export async function subscribeToPush(user) {
       applicationServerKey: urlBase64ToUint8Array(publicKey),
     });
 
-    await fetch(`${API}/push/subscribe`, {
+    const saveResponse = await fetch(`${API}/push/subscribe`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userName: user, subscription: subscription.toJSON() }),
     });
+
+    if (!saveResponse.ok) {
+      const errorBody = await saveResponse.json().catch(() => ({}));
+      return { ok: false, reason: "error", message: errorBody.error || `Server rejected subscription (${saveResponse.status})` };
+    }
 
     return { ok: true };
   } catch (error) {
