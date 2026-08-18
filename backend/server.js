@@ -3035,6 +3035,41 @@ app.listen(3001, () => {
   );
 });
 
+// Converts a wall-clock date/time entered in the farm's local timezone
+// (Europe/London) into the correct UTC instant, so reminders fire on time
+// regardless of the server's own timezone (Render runs in UTC) or BST/GMT.
+function londonLocalToUtc(dateStr, timeStr) {
+  const naiveUtc = new Date(`${dateStr}T${timeStr}:00Z`);
+  if (Number.isNaN(naiveUtc.getTime())) return naiveUtc;
+
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+    .formatToParts(naiveUtc)
+    .reduce((acc, part) => {
+      acc[part.type] = part.value;
+      return acc;
+    }, {});
+
+  const asIfLondonWereUtc = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second)
+  );
+
+  return new Date(naiveUtc.getTime() + (naiveUtc.getTime() - asIfLondonWereUtc));
+}
+
 // Scheduler: send reminder emails at the scheduled reminderDate/reminderTime
 cron.schedule("*/1 * * * *", async () => {
   try {
@@ -3050,9 +3085,7 @@ cron.schedule("*/1 * * * *", async () => {
     });
 
     for (const ev of result.rows) {
-      const reminderAt = new Date(
-        `${ev.reminderDate}T${ev.reminderTime}:00`
-      );
+      const reminderAt = londonLocalToUtc(ev.reminderDate, ev.reminderTime);
 
       if (
         Number.isNaN(reminderAt.getTime()) ||
