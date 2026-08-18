@@ -116,7 +116,7 @@ export default function Notifications({ user, setPage }) {
               <div style={{ color: "#777", fontSize: "0.8rem" }}>{n.createdDate}</div>
             </div>
 
-            <div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {!n.read && (
                 <button
                   onClick={() => markRead(n.id)}
@@ -127,7 +127,6 @@ export default function Notifications({ user, setPage }) {
                     padding: "8px 10px",
                     borderRadius: 8,
                     cursor: "pointer",
-                    marginRight: 8,
                   }}
                 >
                   Mark read
@@ -137,12 +136,12 @@ export default function Notifications({ user, setPage }) {
               <button
                 onClick={() => openNotification(n)}
                 style={{
-                  background: "transparent",
+                  background: "#03a9f4",
+                  color: "white",
                   border: "none",
-                  color: "#03a9f4",
+                  padding: "8px 10px",
+                  borderRadius: 8,
                   cursor: "pointer",
-                  fontSize: "1rem",
-                  padding: 0,
                 }}
               >
                 Open
@@ -151,16 +150,15 @@ export default function Notifications({ user, setPage }) {
               <button
                 onClick={() => deleteNotification(n.id)}
                 style={{
-                  background: "transparent",
+                  background: "#d32f2f",
+                  color: "white",
                   border: "none",
-                  color: "#ff8a80",
+                  padding: "8px 10px",
+                  borderRadius: 8,
                   cursor: "pointer",
-                  fontSize: "1rem",
-                  padding: 0,
-                  marginLeft: 12,
                 }}
               >
-                Delete
+                🗑 Delete
               </button>
             </div>
           </div>
