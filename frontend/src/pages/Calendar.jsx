@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { API, fetchJson } from "../api";
 
 export default function Calendar() {
@@ -33,6 +33,7 @@ const [newEvent, setNewEvent] =
     useState([]);
 const [editingEventId, setEditingEventId] =
   useState(null);
+const selectedDayRef = useRef(null);
 const loadEvents = () => {
   fetchJson("/calendar-events")
     .then((data) => {
@@ -60,6 +61,12 @@ const loadEvents = () => {
 useEffect(() => {
   loadEvents();
 }, [currentDate]);
+
+useEffect(() => {
+  if (selectedDay && selectedDayRef.current) {
+    selectedDayRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}, [selectedDay]);
   const actualToday = new Date();
 
   const month =
@@ -152,6 +159,7 @@ const editEvent = async (id) => {
   });
 
   setShowAddEvent(true);
+  window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
 const deleteEvent = async (id) => {
@@ -514,6 +522,7 @@ return (
 
 {selectedDay && (
   <div
+    ref={selectedDayRef}
     style={{
       marginTop: "20px",
       background: "#2b2b2b",
