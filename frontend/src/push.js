@@ -22,29 +22,34 @@ export async function subscribeToPush(user) {
     return { ok: false, reason: "unsupported" };
   }
 
-  const permission = await Notification.requestPermission();
-  if (permission !== "granted") {
-    return { ok: false, reason: "denied" };
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      return { ok: false, reason: "denied" };
+    }
+
+    const { publicKey } = await fetchJson("/push/vapid-public-key");
+    if (!publicKey) {
+      return { ok: false, reason: "not-configured" };
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    });
+
+    await fetch(`${API}/push/subscribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userName: user, subscription: subscription.toJSON() }),
+    });
+
+    return { ok: true };
+  } catch (error) {
+    console.error("Push subscription failed:", error);
+    return { ok: false, reason: "error", message: error.message };
   }
-
-  const { publicKey } = await fetchJson("/push/vapid-public-key");
-  if (!publicKey) {
-    return { ok: false, reason: "not-configured" };
-  }
-
-  const registration = await navigator.serviceWorker.ready;
-  const subscription = await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(publicKey),
-  });
-
-  await fetch(`${API}/push/subscribe`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userName: user, subscription: subscription.toJSON() }),
-  });
-
-  return { ok: true };
 }
 
 export async function unsubscribeFromPush() {

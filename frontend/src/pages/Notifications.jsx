@@ -27,8 +27,10 @@ export default function Notifications({ user }) {
       setPushMessage("Notifications were blocked. Enable them in your browser/phone settings for this site.");
     } else if (result.reason === "unsupported") {
       setPushMessage("Push notifications aren't supported on this browser. On iPhone, add this app to your Home Screen first (Share → Add to Home Screen), then try again.");
+    } else if (result.reason === "not-configured") {
+      setPushMessage("Push notifications aren't set up on the server yet (missing VAPID keys).");
     } else {
-      setPushMessage("Couldn't enable push notifications right now.");
+      setPushMessage(`Couldn't enable push notifications right now${result.message ? `: ${result.message}` : "."}`);
     }
   };
 
