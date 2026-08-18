@@ -504,11 +504,11 @@ return (
   }}
 >
             <div style={{ fontWeight: "bold" }}>
-              🐑 {animal.eid || "No EID"}
+              🐑 {animal.name || animal.eid || "Unnamed"}
             </div>
             {animal.name && (
               <div style={{ color: "#999", fontSize: "0.85rem" }}>
-                {animal.name}
+                {animal.eid}
               </div>
             )}
           </div>
