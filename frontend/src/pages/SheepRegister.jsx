@@ -142,25 +142,45 @@ const cardStyle = {
   }
 
   function lookupEid(value) {
-    const scannedEid = normalizeEid(value);
-    if (!scannedEid) {
-      setEidMessage("Enter or scan an EID first.");
+    const trimmed = String(value || "").trim();
+    if (!trimmed) {
+      setEidMessage("Enter or scan an EID or name first.");
       return;
     }
 
-    const match = allSheep.find(
-      (animal) => normalizeEid(animal.eid) === scannedEid
+    const scannedEid = normalizeEid(value);
+    const lowerName = trimmed.toLowerCase();
+
+    const eidMatch = allSheep.find(
+      (animal) => scannedEid && normalizeEid(animal.eid) === scannedEid
     );
+    const nameMatches = allSheep.filter(
+      (animal) => (animal.name || "").toLowerCase() === lowerName
+    );
+    const match = eidMatch || (nameMatches.length === 1 ? nameMatches[0] : null);
 
     if (match) {
-      setEidMessage(`Found ${match.name || "sheep"}.`);
+      setEidMessage(`Found ${match.name || match.eid}.`);
       setSelectedSheep(match);
       return;
     }
 
-    setEid(scannedEid);
-    setShowAddSheep(true);
-    setEidMessage("No sheep found. Complete the form to add this EID.");
+    const looksLikeEid = /^[0-9]+$/.test(scannedEid) && scannedEid.length >= 6;
+    if (looksLikeEid) {
+      setEid(scannedEid);
+      setShowAddSheep(true);
+      setEidMessage("No sheep found. Complete the form to add this EID.");
+      return;
+    }
+
+    const partialCount = allSheep.filter((animal) =>
+      (animal.name || "").toLowerCase().includes(lowerName)
+    ).length;
+    setEidMessage(
+      partialCount > 0
+        ? `${partialCount} sheep match "${trimmed}" below.`
+        : `No sheep found matching "${trimmed}".`
+    );
   }
 
   function handleEidChange(event) {
