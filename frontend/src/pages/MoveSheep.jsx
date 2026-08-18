@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API } from "../api";
+import { submitWrite } from "../offlineQueue";
 
 export default function MoveSheep({
   farmData,
@@ -59,7 +60,7 @@ export default function MoveSheep({
       },
     ]);
 
-    fetch(`${API}/movements`,
+    submitWrite(`${API}/movements`,
       {
         method: "POST",
         headers: {
@@ -74,16 +75,16 @@ export default function MoveSheep({
           movedBy:
             localStorage.getItem("user"),
         }),
-      }
+      },
+      `Move ${qty} sheep from ${fromLocation} to ${toLocation}`
     )
       .then((response) =>
         response.json()
       )
       .then((data) => {
-        console.log(
-          "Movement Saved",
-          data
-        );
+        if (data.queued) {
+          alert("Saved offline — move will sync automatically once you're back online.");
+        }
       })
       .catch((error) => {
         console.error(error);

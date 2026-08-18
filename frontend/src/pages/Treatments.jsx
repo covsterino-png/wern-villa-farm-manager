@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { submitWrite } from "../offlineQueue";
 
 export default function Treatments() {
   const [groupName, setGroupName] = useState("");
@@ -7,6 +8,7 @@ export default function Treatments() {
   const [volumeMl, setVolumeMl] = useState("");
   const [notes, setNotes] = useState("");
   const [treatments, setTreatments] = useState([]);
+  const [syncMessage, setSyncMessage] = useState("");
 
   const [withdrawalDays, setWithdrawalDays] =
     useState("");
@@ -78,7 +80,7 @@ export default function Treatments() {
       ? careType
       : `${careType}: ${medicine}`;
 
-    fetch(
+    submitWrite(
       "https://wern-villa-api.onrender.com/treatments",
       {
         method: "POST",
@@ -98,12 +100,19 @@ export default function Treatments() {
           administeredBy:
             localStorage.getItem("user"),
         }),
-      }
-    ).then(() => {
+      },
+      `Treatment: ${treatment} for ${groupName}`
+    ).then(async (res) => {
+      const data = await res.json().catch(() => ({}));
       setNotes("");
       setWithdrawalDays("");
       setVolumeMl("");
-      loadTreatments();
+      if (data.queued) {
+        setSyncMessage("Saved offline — will sync automatically once you're back online.");
+      } else {
+        setSyncMessage("");
+        loadTreatments();
+      }
     });
   }
 
@@ -273,6 +282,7 @@ export default function Treatments() {
         <button onClick={saveTreatment}>
           Record Flock Care
         </button>
+        {syncMessage && <p style={{ color: "#ffcc80" }}>{syncMessage}</p>}
       </div>
 
       <h2

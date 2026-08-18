@@ -18,6 +18,7 @@ import Notifications from "./pages/Notifications";
 import FinancialRegister from "./pages/FinancialRegister";
 import HeroPoints from "./pages/HeroPoints";
 import { API } from "./api";
+import { subscribeQueueCount } from "./offlineQueue";
 
 function App() {
   const [page, setPage] = useState("dashboard");
@@ -46,6 +47,9 @@ function App() {
     useState(0);
 
   const [installPrompt, setInstallPrompt] = useState(null);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+
+  useEffect(() => subscribeQueueCount(setPendingSyncCount), []);
 
   useEffect(() => {
     const handler = (event) => {
@@ -176,6 +180,24 @@ function App() {
             paddingBottom: "15px",
           }}
         >
+
+{pendingSyncCount > 0 && (
+  <div
+    style={{
+      background: "#ff9800",
+      color: "#1f1f1f",
+      fontSize: "0.75rem",
+      fontWeight: "bold",
+      padding: "6px 10px",
+      borderRadius: "8px",
+      marginBottom: "8px",
+      textAlign: "center",
+    }}
+    title="These changes will sync automatically once you're back online"
+  >
+    ⏳ {pendingSyncCount} change{pendingSyncCount === 1 ? "" : "s"} waiting to sync
+  </div>
+)}
 
 <div
   style={{

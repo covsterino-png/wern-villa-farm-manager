@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { submitWrite } from "../offlineQueue";
 
 export default function SheepDetail({
   sheep,
@@ -391,7 +392,7 @@ function resolveCase(caseId) {
 }
 
   function saveSheep() {
-    fetch(
+    submitWrite(
       `https://wern-villa-api.onrender.com/sheep/${sheep.id}`,
       {
         method: "PUT",
@@ -410,10 +411,16 @@ function resolveCase(caseId) {
           status,
           notes,
         }),
-      }
+      },
+      `Edit sheep ${name || eid}`
     )
       .then((res) => res.json())
-      .then(() => {
+      .then((data) => {
+        if (data.queued) {
+          alert("Saved offline — will sync automatically once you're back online.");
+          setEditing(false);
+          return;
+        }
         window.location.reload();
       });
   }

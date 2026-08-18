@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API } from "../api";
+import { submitWrite } from "../offlineQueue";
 
 export default function MoveGroup() {
   const [groups, setGroups] =
@@ -25,7 +26,7 @@ export default function MoveGroup() {
   }, []);
 
   function moveGroup() {
-    fetch(`${API}/move-group`,
+    submitWrite(`${API}/move-group`,
       {
         method: "POST",
         headers: {
@@ -36,12 +37,15 @@ export default function MoveGroup() {
           groupName,
           newField,
         }),
-      }
+      },
+      `Move group ${groupName} to ${newField}`
     )
       .then((res) => res.json())
-      .then(() => {
+      .then((data) => {
         alert(
-          "Group moved successfully"
+          data.queued
+            ? "Saved offline — move will sync automatically once you're back online."
+            : "Group moved successfully"
         );
       });
   }

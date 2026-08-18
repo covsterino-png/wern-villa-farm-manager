@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import SheepDetail from "./SheepDetail";
+import { submitWrite } from "../offlineQueue";
 
 function normalizeEid(value) {
   return String(value || "").replace(/[^a-z0-9]/gi, "").toUpperCase();
@@ -94,7 +95,7 @@ const cardStyle = {
   }, []);
 
   function addSheep() {
-    fetch(
+    submitWrite(
       "https://wern-villa-api.onrender.com/sheep",
       {
         method: "POST",
@@ -116,8 +117,10 @@ const cardStyle = {
           status,
           notes,
         }),
-      }
-    ).then(() => {
+      },
+      `Add sheep ${name || eid}`
+    ).then(async (res) => {
+      const data = await res.json().catch(() => ({}));
       setName("");
       setEid("");
       setSex("");
@@ -132,7 +135,11 @@ const cardStyle = {
       setNotes("");
       setShowAddSheep(false);
 
-      loadSheep();
+      if (data.queued) {
+        setEidMessage("Saved offline — will sync automatically once you're back online.");
+      } else {
+        loadSheep();
+      }
     });
   }
 
