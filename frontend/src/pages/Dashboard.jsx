@@ -456,7 +456,7 @@ function saveActionFromDashboard(
         background: "#121212",
         minHeight: "100vh",
         color: "white",
-        padding: "20px",
+        padding: window.innerWidth < 768 ? "12px" : "20px",
       }}
     >
 
@@ -1195,7 +1195,7 @@ boxShadow:
       window.innerWidth < 768
         ? "repeat(3, minmax(0, 1fr))"
         : "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: "12px",
+    gap: window.innerWidth < 768 ? "8px" : "12px",
     marginBottom: "20px",
     width: "100%",
     boxSizing: "border-box",
@@ -1362,13 +1362,15 @@ function DashboardCard({
   colour,
   onClick,
 }) {
+  const isMobile = window.innerWidth < 768;
+
   return (
     <div
       onClick={onClick}
       style={{
         background: "#1f1f1f",
         borderRadius: "16px",
-        padding: "16px",
+        padding: isMobile ? "12px 4px" : "16px",
         border: `2px solid ${colour}`,
         boxShadow: `0 0 15px ${colour}20`,
         cursor: onClick
@@ -1377,12 +1379,15 @@ function DashboardCard({
         transition: "0.2s",
         minWidth: 0,
         boxSizing: "border-box",
+        overflow: "hidden",
+        textAlign: "center",
+        overflowWrap: "break-word",
       }}
     >
       <div
         style={{
-          fontSize: "1.6rem",
-          marginBottom: "10px",
+          fontSize: isMobile ? "1.3rem" : "1.6rem",
+          marginBottom: isMobile ? "6px" : "10px",
         }}
       >
         {icon}
@@ -1391,7 +1396,8 @@ function DashboardCard({
       <div
         style={{
           color: "#aaa",
-          fontSize: "0.9rem",
+          fontSize: isMobile ? "0.72rem" : "0.9rem",
+          lineHeight: 1.2,
         }}
       >
         {title}
@@ -1399,10 +1405,10 @@ function DashboardCard({
 
       <div
         style={{
-          fontSize: "1.8rem",
+          fontSize: isMobile ? "1.4rem" : "1.8rem",
           fontWeight: "bold",
           color: colour,
-          marginTop: "10px",
+          marginTop: isMobile ? "6px" : "10px",
         }}
       >
         {value}
@@ -1410,9 +1416,10 @@ function DashboardCard({
       {subtitle && (
   <div
     style={{
-      fontSize: "0.9rem",
+      fontSize: isMobile ? "0.7rem" : "0.9rem",
       color: "#aaa",
       marginTop: "6px",
+      lineHeight: 1.2,
     }}
   >
     {subtitle}
