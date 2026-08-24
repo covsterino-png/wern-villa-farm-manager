@@ -479,6 +479,10 @@ function saveActionFromDashboard(
 });
 }
 
+  const farmBreakdown = Object.entries(summary.sheepByFarm || {}).filter(
+    ([farmName]) => farmName !== "Unassigned"
+  );
+
   const sheepQuery = taskSheepQuery.trim().toLowerCase();
   const sheepMatches =
     sheepQuery.length === 0
@@ -1247,47 +1251,22 @@ boxShadow:
 )}
 </div>
 
-{summary.sheepByFarm &&
-  Object.keys(summary.sheepByFarm).length > 0 && (
-    <div
-      style={{
-        display: "flex",
-        gap: "8px",
-        flexWrap: "wrap",
-        marginBottom: "12px",
-      }}
-    >
-      {Object.entries(summary.sheepByFarm).map(([farmName, count]) => (
-        <div
-          key={farmName}
-          onClick={() => {
-            if (farmName === "Unassigned") {
-              setShowUnassigned(!showUnassigned);
-              if (!showUnassigned) loadUnassigned();
-            } else {
-              setPage("farm-map");
-            }
-          }}
-          style={{
-            background: farmName === "Unassigned" ? "#4a3b1f" : "#2b2b2b",
-            borderRadius: "10px",
-            padding: "8px 12px",
-            cursor: "pointer",
-            flex: "1 1 auto",
-          }}
-        >
-          <span style={{ color: "#aaa" }}>{farmName}</span>{" "}
-          <strong
-            style={{
-              color: farmName === "Unassigned" ? "#ffcc80" : "#03a9f4",
-            }}
-          >
-            🐑 {count}
-          </strong>
-        </div>
-      ))}
-    </div>
-  )}
+{summary.sheepByFarm?.Unassigned > 0 && (
+  <div
+    onClick={() => {
+      setShowUnassigned(!showUnassigned);
+      if (!showUnassigned) loadUnassigned();
+    }}
+    style={{
+      color: "#ffcc80",
+      cursor: "pointer",
+      marginBottom: "12px",
+    }}
+  >
+    ⚠️ {summary.sheepByFarm.Unassigned} sheep not in a known field —{" "}
+    {showUnassigned ? "hide" : "show"}
+  </div>
+)}
 
 {showUnassigned && (
   <div
@@ -1354,6 +1333,15 @@ boxShadow:
   icon="🐑"
   title="Total Sheep"
   value={summary.totalSheep}
+  subtitle={
+    farmBreakdown.length > 0
+      ? farmBreakdown.map(([farmName, count]) => (
+          <div key={farmName}>
+            {farmName} {count}
+          </div>
+        ))
+      : null
+  }
   colour="#03a9f4"
   onClick={() => setPage("sheep-register")}
 />
