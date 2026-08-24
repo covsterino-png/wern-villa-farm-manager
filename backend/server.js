@@ -278,6 +278,31 @@ async function ensureReceiptsTable() {
   }
 }
 
+async function ensureNotesTables() {
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS notes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      body TEXT,
+      kind TEXT NOT NULL DEFAULT 'note',
+      createdBy TEXT,
+      createdDate TEXT DEFAULT CURRENT_TIMESTAMP,
+      updatedDate TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS noteItems (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      noteId INTEGER NOT NULL,
+      text TEXT NOT NULL,
+      done INTEGER NOT NULL DEFAULT 0,
+      position INTEGER NOT NULL DEFAULT 0,
+      createdDate TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
 app.use(
   cors({
     origin: "*"
@@ -3244,6 +3269,214 @@ ensureAuthUsersTable().catch((error) => {
 
 ensureHeroPointsTables().catch((error) => {
   console.error("Failed to ensure Hero Points tables:", error);
+});
+
+ensureNotesTables().catch((error) => {
+  console.error("Failed to ensure notes tables:", error);
+});
+
+// Notes are shared between users, so no per-user filtering here.
+app.get("/notes", async (req, res) => {
+  try {
+    const notes = await turso.execute(
+      "SELECT * FROM notes ORDER BY updatedDate DESC, id DESC"
+    );
+    const items = await turso.execute(
+      "SELECT * FROM noteItems ORDER BY position, id"
+    );
+
+    const itemsByNote = new Map();
+    for (const item of items.rows) {
+      const list = itemsByNote.get(item.noteId) || [];
+      list.push(item);
+      itemsByNote.set(item.noteId, list);
+    }
+
+    res.json(
+      notes.rows.map((note) => ({
+        ...note,
+        items: itemsByNote.get(note.id) || [],
+      }))
+    );
+  } catch (error) {
+    console.error("Load notes error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/notes", async (req, res) => {
+  try {
+    const { title, body, kind } = req.body || {};
+    if (!title || !String(title).trim()) {
+      return res.status(400).json({ error: "A title is required" });
+    }
+
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO notes (title, body, kind, createdBy)
+        VALUES (?, ?, ?, ?)
+      `,
+      args: [
+        String(title).trim(),
+        body ?? null,
+        kind === "list" ? "list" : "note",
+        req.user ?? null,
+      ],
+    });
+
+    res.json({ success: true, id: Number(result.lastInsertRowid) });
+  } catch (error) {
+    console.error("Create note error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put("/notes/:id", async (req, res) => {
+  try {
+    const { title, body } = req.body || {};
+    if (!title || !String(title).trim()) {
+      return res.status(400).json({ error: "A title is required" });
+    }
+
+    const result = await turso.execute({
+      sql: `
+        UPDATE notes
+        SET title = ?,
+            body = ?,
+            updatedDate = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `,
+      args: [String(title).trim(), body ?? null, req.params.id],
+    });
+
+    if (result.rowsAffected === 0) {
+      return res.status(404).json({ error: "Note not found" });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Update note error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/notes/:id", async (req, res) => {
+  try {
+    await turso.execute({
+      sql: "DELETE FROM noteItems WHERE noteId = ?",
+      args: [req.params.id],
+    });
+
+    const result = await turso.execute({
+      sql: "DELETE FROM notes WHERE id = ?",
+      args: [req.params.id],
+    });
+
+    if (result.rowsAffected === 0) {
+      return res.status(404).json({ error: "Note not found" });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete note error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/notes/:id/items", async (req, res) => {
+  try {
+    const { text } = req.body || {};
+    if (!text || !String(text).trim()) {
+      return res.status(400).json({ error: "Item text is required" });
+    }
+
+    const note = await turso.execute({
+      sql: "SELECT id FROM notes WHERE id = ?",
+      args: [req.params.id],
+    });
+    if (note.rows.length === 0) {
+      return res.status(404).json({ error: "Note not found" });
+    }
+
+    const position = await turso.execute({
+      sql: "SELECT COALESCE(MAX(position), 0) + 1 AS next FROM noteItems WHERE noteId = ?",
+      args: [req.params.id],
+    });
+
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO noteItems (noteId, text, position)
+        VALUES (?, ?, ?)
+      `,
+      args: [
+        req.params.id,
+        String(text).trim(),
+        Number(position.rows[0].next) || 1,
+      ],
+    });
+
+    await turso.execute({
+      sql: "UPDATE notes SET updatedDate = CURRENT_TIMESTAMP WHERE id = ?",
+      args: [req.params.id],
+    });
+
+    res.json({ success: true, id: Number(result.lastInsertRowid) });
+  } catch (error) {
+    console.error("Create note item error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put("/note-items/:itemId", async (req, res) => {
+  try {
+    const { text, done } = req.body || {};
+
+    const existing = await turso.execute({
+      sql: "SELECT * FROM noteItems WHERE id = ?",
+      args: [req.params.itemId],
+    });
+    const item = existing.rows[0];
+    if (!item) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+
+    await turso.execute({
+      sql: "UPDATE noteItems SET text = ?, done = ? WHERE id = ?",
+      args: [
+        text === undefined ? item.text : String(text).trim(),
+        done === undefined ? item.done : (done ? 1 : 0),
+        req.params.itemId,
+      ],
+    });
+
+    await turso.execute({
+      sql: "UPDATE notes SET updatedDate = CURRENT_TIMESTAMP WHERE id = ?",
+      args: [item.noteId],
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Update note item error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/note-items/:itemId", async (req, res) => {
+  try {
+    const result = await turso.execute({
+      sql: "DELETE FROM noteItems WHERE id = ?",
+      args: [req.params.itemId],
+    });
+
+    if (result.rowsAffected === 0) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete note item error:", error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.get("/feed-records", async (req, res) => {

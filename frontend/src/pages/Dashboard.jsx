@@ -44,6 +44,7 @@ const [actionNotes, setActionNotes] =
   const [transactionCount, setTransactionCount] =
     useState(0);
   const [heroPoints, setHeroPoints] = useState({ balance: 0, pending: 0 });
+  const [notesCount, setNotesCount] = useState(0);
     const [showTasks, setShowTasks] =
   useState(false);
   const [showActivity, setShowActivity] =
@@ -85,6 +86,13 @@ const [actionNotes, setActionNotes] =
         })
         .catch(() => {});
     }, []);
+
+  useEffect(() => {
+    fetch(`${API}/notes`)
+      .then((res) => res.json())
+      .then((data) => setNotesCount(Array.isArray(data) ? data.length : 0))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
   fetch(
@@ -1320,7 +1328,7 @@ boxShadow:
 <DashboardCard
   icon="📝"
   title="Notes"
-  value={0}
+  value={notesCount}
   subtitle="Lists"
   colour="#ff9800"
   onClick={() =>
