@@ -512,7 +512,7 @@ app.post("/sheep/:id/scheduled", async (req, res) => {
     numberOfEvents,
     repeatUntilResolved,
     caseId,
-  } = req.body;
+  } = req.body || {};
 if (repeatUntilResolved) {
   await turso.execute({
     sql: `
@@ -669,7 +669,7 @@ app.post("/transactions", upload.single("receipt"), async (req, res) => {
       payer,
       payee,
       shared,
-    } = req.body;
+    } = req.body || {};
 
     let receiptImageUrl = null;
 
@@ -892,7 +892,7 @@ app.get("/sheep/group/:groupName", async (req, res) => {
 });
 
 app.put("/scheduled/:id/complete", async (req, res) => {
-  const repeatEvery = Number(req.body.repeatEvery);
+  const repeatEvery = Number(req.body?.repeatEvery);
   const event = await turso.execute({
     sql: `
       SELECT *
@@ -904,6 +904,9 @@ app.put("/scheduled/:id/complete", async (req, res) => {
 
   const scheduledEvent =
     event.rows[0];
+  if (!scheduledEvent) {
+    return res.status(404).json({ error: "Scheduled event not found" });
+  }
     if (Number.isFinite(repeatEvery) && repeatEvery > 0) {
   const nextDate = new Date(
     scheduledEvent.dueDate
@@ -1049,7 +1052,7 @@ app.post("/sheep/:id/health-cases", async (req, res) => {
       title,
       description,
       priority,
-    } = req.body;
+    } = req.body || {};
 
     const result = await turso.execute({
       sql: `
@@ -1110,7 +1113,7 @@ app.post("/health-cases/:id/actions", async (req, res) => {
     const {
       actionType,
       notes,
-    } = req.body;
+    } = req.body || {};
 
     await turso.execute({
       sql: `
@@ -1216,7 +1219,7 @@ app.put(
 app.post("/sheep/:id/weights", async (req, res) => {
   try {
     const { weight, weightDate } =
-      req.body;
+      req.body || {};
 
     await turso.execute({
       sql: `
@@ -1289,7 +1292,7 @@ app.post("/sheep/:id/lambings", async (req, res) => {
       females,
       dead,
       notes,
-    } = req.body;
+    } = req.body || {};
 
     await turso.execute({
       sql: `
@@ -1371,7 +1374,7 @@ app.post("/sheep/:id/events", async (req, res) => {
     eventDate,
     eventType,
     notes,
-  } = req.body;
+  } = req.body || {};
 
   await turso.execute({
     sql: `
@@ -1544,7 +1547,7 @@ app.get("/sheep/:id/scans", async (req, res) => {
 });
 app.post("/sheep/:id/scans", async (req, res) => {
   try {
-    const { scanDate, result } = req.body;
+    const { scanDate, result } = req.body || {};
 
     await turso.execute({
       sql: `
@@ -1649,7 +1652,7 @@ app.get("/flock-register-summary", async (req, res) => {
 app.post("/move-group", async (req, res) => {
   try {
     const { groupName, newField } =
-      req.body;
+      req.body || {};
 
     await turso.execute({
       sql: `
@@ -1709,7 +1712,7 @@ app.put("/sheep/:id", async (req, res) => {
       currentField,
       status,
       notes,
-    } = req.body;
+    } = req.body || {};
 
     await turso.execute({
       sql: `
@@ -1755,7 +1758,7 @@ app.post("/flock-register", async (req, res) => {
       name,
       currentField,
       notes,
-    } = req.body;
+    } = req.body || {};
 
     const result = await turso.execute({
       sql: `
@@ -1794,7 +1797,7 @@ app.post("/sheep", async (req, res) => {
       currentField,
       status,
       notes,
-    } = req.body;
+    } = req.body || {};
 
     const result = await turso.execute({
       sql: `
@@ -1856,7 +1859,7 @@ res.json({
 
 app.post("/tasks", async (req, res) => {
   try {
-    const { task, createdBy } = req.body;
+    const { task, createdBy } = req.body || {};
 
     const result = await turso.execute({
       sql: `
@@ -1883,7 +1886,7 @@ app.post("/movements", async (req, res) => {
       toLocation,
       moveDate,
       movedBy,
-    } = req.body;
+    } = req.body || {};
 
     const result = await turso.execute({
       sql: `
@@ -1959,7 +1962,7 @@ const fieldsResult = await turso.execute(
 app.put("/tasks/:id/complete", async (req, res) => {
   try {
     const { id } = req.params;
-    const { completedBy } = req.body;
+    const { completedBy } = req.body || {};
 
     await turso.execute({
       sql: `
@@ -2018,7 +2021,7 @@ app.get("/fields", async (req, res) => {
 
 app.post("/fields", async (req, res) => {
   try {
-const { name, size } = req.body;
+const { name, size } = req.body || {};
     const result =
       await turso.execute({
         sql: `
@@ -2047,7 +2050,7 @@ app.put("/fields/:id", async (req, res) => {
       name,
       size,
       position,
-    } = req.body;
+    } = req.body || {};
 
     await turso.execute({
       sql: `
@@ -2167,7 +2170,7 @@ app.post("/treatments", async (req, res) => {
       cost,
       notes,
       administeredBy,
-    } = req.body;
+    } = req.body || {};
 
     if (!sheepId && groupName) {
       const flock = await turso.execute({
@@ -2306,7 +2309,7 @@ app.put("/manual-calendar-events/:id", async (req, res) => {
       notifyGemma,
       reminderDate,
       reminderTime
-    } = req.body;
+    } = req.body || {};
 
     await turso.execute({
       sql: `
@@ -2390,7 +2393,7 @@ app.delete(
 
 app.post("/flock-groups", async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name } = req.body || {};
 
     const result = await turso.execute({
       sql: `
@@ -2428,10 +2431,10 @@ app.put("/medicines/:id", async (req, res) => {
     administrationMethod,
     bottleVolumeMl,
     bottleCost,
-  } = req.body;
+  } = req.body || {};
   const calculatedCostPerMl = Number(bottleVolumeMl) > 0
     ? Number(bottleCost || 0) / Number(bottleVolumeMl)
-    : Number(req.body.costPerMl) || 0;
+    : Number(req.body?.costPerMl) || 0;
 
   await turso.execute({
     sql: `
@@ -2472,7 +2475,7 @@ app.post("/medicines", async (req, res) => {
       administrationMethod,
       bottleVolumeMl,
       bottleCost,
-    } = req.body;
+    } = req.body || {};
     const calculatedCostPerMl = Number(bottleVolumeMl) > 0
       ? Number(bottleCost || 0) / Number(bottleVolumeMl)
       : 0;
@@ -2639,7 +2642,7 @@ app.get("/push/vapid-public-key", (req, res) => {
 
 app.post("/push/subscribe", async (req, res) => {
   try {
-    const { userName, subscription } = req.body;
+    const { userName, subscription } = req.body || {};
     if (!userName || !subscription?.endpoint) {
       return res.status(400).json({ error: "userName and subscription are required" });
     }
@@ -2661,7 +2664,7 @@ app.post("/push/subscribe", async (req, res) => {
 
 app.post("/push/unsubscribe", async (req, res) => {
   try {
-    const { endpoint } = req.body;
+    const { endpoint } = req.body || {};
     await turso.execute({
       sql: `DELETE FROM pushSubscriptions WHERE endpoint = ?`,
       args: [endpoint],
@@ -2726,7 +2729,7 @@ app.post("/manual-calendar-events", async (req, res) => {
       notifyGemma,
       reminderDate,
       reminderTime,
-    } = req.body;
+    } = req.body || {};
 
     const result = await turso.execute({
       sql: `
@@ -3212,7 +3215,7 @@ app.get("/feed-records", async (req, res) => {
 
 app.post("/feed-records", async (req, res) => {
   try {
-    const { groupNames, feedType, feedDate, totalCost, notes, recordedBy } = req.body;
+    const { groupNames, feedType, feedDate, totalCost, notes, recordedBy } = req.body || {};
     const selectedGroups = Array.isArray(groupNames) ? groupNames.filter(Boolean) : [];
     if (!feedType || !feedDate || selectedGroups.length === 0) {
       return res.status(400).json({ error: "At least one flock, feed, and date are required" });

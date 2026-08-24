@@ -181,10 +181,17 @@ function loadCaseActions(caseId) {
         body,
       }),
     })
-    .then((res) => res.json())
+    .then((res) => {
+      if (!res.ok) throw new Error(`Complete failed (${res.status})`);
+      return res.json();
+    })
     .then(() => fetch(`${API}/tasks/today`))
     .then((res) => res.json())
-    .then((data) => setTodayTasks(data));
+    .then((data) => setTodayTasks(data))
+    .catch((error) => {
+      console.error(error);
+      alert("Could not complete this task. Please try again.");
+    });
 }
 function saveActionFromDashboard(
   caseId,
