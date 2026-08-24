@@ -3437,7 +3437,8 @@ app.post("/sales", async (req, res) => {
       return res.status(400).json({ error: "A sale date is required" });
     }
 
-    const qty = Number(quantity);
+    // A livestock sale is always one animal.
+    const qty = type === "livestock" ? 1 : Number(quantity);
     const price = Number(unitPrice);
     if (!Number.isFinite(qty) || qty <= 0) {
       return res.status(400).json({ error: "Quantity must be greater than zero" });

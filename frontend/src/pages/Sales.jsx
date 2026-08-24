@@ -121,7 +121,7 @@ export default function Sales() {
           saleType,
           saleDate,
           description,
-          quantity: Number(quantity) || 1,
+          quantity: saleType === "livestock" ? 1 : Number(quantity) || 1,
           unitPrice: Number(unitPrice),
           customer,
           sheepId: linkedSheep?.id || null,
@@ -170,6 +170,8 @@ export default function Sales() {
 
   const lineTotal = (Number(quantity) || 0) * (Number(unitPrice) || 0);
   const canLinkSheep = saleType === "livestock" || saleType === "meat";
+  // One animal per livestock sale, so quantity is always 1.
+  const isSingleItem = saleType === "livestock";
 
   return (
     <div>
@@ -205,6 +207,7 @@ export default function Sales() {
             value={saleType}
             onChange={(e) => {
               setSaleType(e.target.value);
+              setQuantity("1");
               if (e.target.value === "logs" || e.target.value === "other") {
                 setLinkedSheep(null);
                 setSheepQuery("");
@@ -306,23 +309,10 @@ export default function Sales() {
             style={inputStyle}
           />
 
-          <div style={{ display: "flex", gap: "10px" }}>
-            <div style={{ width: "50%" }}>
+          {isSingleItem ? (
+            <>
               <label style={{ display: "block", color: "#aaa", marginBottom: "4px" }}>
-                Quantity
-              </label>
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                style={inputStyle}
-              />
-            </div>
-            <div style={{ width: "50%" }}>
-              <label style={{ display: "block", color: "#aaa", marginBottom: "4px" }}>
-                Price each (£)
+                Sale price (£)
               </label>
               <input
                 type="number"
@@ -332,12 +322,43 @@ export default function Sales() {
                 onChange={(e) => setUnitPrice(e.target.value)}
                 style={inputStyle}
               />
-            </div>
-          </div>
+            </>
+          ) : (
+            <>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <div style={{ width: "50%" }}>
+                  <label style={{ display: "block", color: "#aaa", marginBottom: "4px" }}>
+                    Quantity
+                  </label>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+                <div style={{ width: "50%" }}>
+                  <label style={{ display: "block", color: "#aaa", marginBottom: "4px" }}>
+                    Price each (£)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={unitPrice}
+                    onChange={(e) => setUnitPrice(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
 
-          <div style={{ color: "#4caf50", fontWeight: "bold", marginBottom: "10px" }}>
-            Total: £{lineTotal.toFixed(2)}
-          </div>
+              <div style={{ color: "#4caf50", fontWeight: "bold", marginBottom: "10px" }}>
+                Total: £{lineTotal.toFixed(2)}
+              </div>
+            </>
+          )}
 
           <input
             value={customer}
