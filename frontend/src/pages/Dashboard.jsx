@@ -45,6 +45,15 @@ const [actionNotes, setActionNotes] =
     useState(0);
   const [heroPoints, setHeroPoints] = useState({ balance: 0, pending: 0 });
   const [notesCount, setNotesCount] = useState(0);
+  const [showUnassigned, setShowUnassigned] = useState(false);
+  const [unassignedSheep, setUnassignedSheep] = useState([]);
+
+  function loadUnassigned() {
+    fetch(`${API}/unassigned-sheep`)
+      .then((res) => res.json())
+      .then((data) => setUnassignedSheep(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }
     const [showTasks, setShowTasks] =
   useState(false);
   const [showActivity, setShowActivity] =
@@ -1251,9 +1260,16 @@ boxShadow:
       {Object.entries(summary.sheepByFarm).map(([farmName, count]) => (
         <div
           key={farmName}
-          onClick={() => setPage("farm-map")}
+          onClick={() => {
+            if (farmName === "Unassigned") {
+              setShowUnassigned(!showUnassigned);
+              if (!showUnassigned) loadUnassigned();
+            } else {
+              setPage("farm-map");
+            }
+          }}
           style={{
-            background: "#2b2b2b",
+            background: farmName === "Unassigned" ? "#4a3b1f" : "#2b2b2b",
             borderRadius: "10px",
             padding: "8px 12px",
             cursor: "pointer",
@@ -1261,11 +1277,58 @@ boxShadow:
           }}
         >
           <span style={{ color: "#aaa" }}>{farmName}</span>{" "}
-          <strong style={{ color: "#03a9f4" }}>🐑 {count}</strong>
+          <strong
+            style={{
+              color: farmName === "Unassigned" ? "#ffcc80" : "#03a9f4",
+            }}
+          >
+            🐑 {count}
+          </strong>
         </div>
       ))}
     </div>
   )}
+
+{showUnassigned && (
+  <div
+    style={{
+      background: "#1f1f1f",
+      padding: "16px",
+      borderRadius: "12px",
+      marginBottom: "12px",
+      textAlign: "left",
+    }}
+  >
+    <strong>Sheep not in a known field</strong>
+
+    {unassignedSheep.length === 0 ? (
+      <p style={{ color: "#aaa" }}>None.</p>
+    ) : (
+      unassignedSheep.map((sheep) => (
+        <div
+          key={sheep.id}
+          style={{
+            padding: "8px 0",
+            borderBottom: "1px solid #333",
+          }}
+        >
+          🐑 <strong>{sheep.name}</strong>
+          {sheep.eid && (
+            <small style={{ color: "#aaa" }}> · {sheep.eid}</small>
+          )}
+          <div style={{ color: "#ffcc80", fontSize: "0.85rem" }}>
+            Field: {sheep.currentField ? `"${sheep.currentField}"` : "(none set)"}
+          </div>
+        </div>
+      ))
+    )}
+
+    <small style={{ color: "#aaa", display: "block", marginTop: "8px" }}>
+      Either the field name doesn't match any field record, or none is set.
+      Fix it on the sheep's own page, or add the field on the Fields page.
+    </small>
+  </div>
+)}
 
 <div
   style={{

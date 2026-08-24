@@ -1544,6 +1544,25 @@ app.get("/sheep", async (req, res) => {
     res.status(500).json(error);
   }
 });
+
+// Sheep whose currentField is blank or does not match any field record.
+app.get("/unassigned-sheep", async (req, res) => {
+  try {
+    const result = await turso.execute(`
+      SELECT sheep.*
+      FROM sheep
+      LEFT JOIN fields
+        ON fields.name = sheep.currentField
+      WHERE fields.id IS NULL
+      ORDER BY sheep.name
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Unassigned sheep error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
 app.get(
   "/sheep/:id/history",
   async (req, res) => {
