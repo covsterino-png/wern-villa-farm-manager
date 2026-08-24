@@ -190,6 +190,29 @@ function loadCaseActions(caseId) {
     });
 }
 
+function cancelTask(task) {
+  const confirmed = window.confirm(
+    `Cancel "${task.eventType}" for ${task.sheepName}? It will be removed from the task list.`
+  );
+  if (!confirmed) return;
+
+  fetch(`${API}/scheduled/${task.id}/cancel`, { method: "PUT" })
+    .then(async (res) => {
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Cancel failed (${res.status})`);
+      }
+      return res.json();
+    })
+    .then(() => fetch(`${API}/tasks/today`))
+    .then((res) => res.json())
+    .then((data) => setTodayTasks(data))
+    .catch((error) => {
+      console.error(error);
+      alert(`Could not cancel this task. ${error.message}`);
+    });
+}
+
 function resetNewTask() {
   setShowAddTask(false);
   setTaskSheep(null);
@@ -1147,6 +1170,22 @@ boxShadow:
   }}
 >
   ✅ Complete
+</button>
+
+<button
+  onClick={() => cancelTask(task)}
+  style={{
+    background: "#555",
+    color: "white",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    cursor: "pointer",
+    marginTop: "10px",
+    marginLeft: "10px",
+  }}
+>
+  ✖ Cancel
 </button>
 <input
   type="number"

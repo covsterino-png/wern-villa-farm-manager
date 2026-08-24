@@ -1235,6 +1235,31 @@ app.put(
     });
   }
 );
+
+// Cancelled events are kept for audit; both task views filter on 'scheduled'.
+app.put("/scheduled/:id/cancel", async (req, res) => {
+  try {
+    const result = await turso.execute({
+      sql: `
+        UPDATE sheepEvents
+        SET status = 'cancelled',
+            autoRepeat = 0
+        WHERE id = ?
+          AND status = 'scheduled'
+      `,
+      args: [req.params.id],
+    });
+
+    if (result.rowsAffected === 0) {
+      return res.status(404).json({ error: "No scheduled task found to cancel" });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Cancel scheduled event error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
 app.post("/sheep/:id/weights", async (req, res) => {
   try {
     const { weight, weightDate } =
