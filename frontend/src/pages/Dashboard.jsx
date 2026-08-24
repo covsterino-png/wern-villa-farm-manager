@@ -58,12 +58,11 @@ const [actionNotes, setActionNotes] =
   const [taskSheepQuery, setTaskSheepQuery] = useState("");
   const [taskSheep, setTaskSheep] = useState(null);
   const [newTaskType, setNewTaskType] = useState("Foot Trim");
+  const [newTaskMedicine, setNewTaskMedicine] = useState("");
   const [newTaskDate, setNewTaskDate] = useState(
     () => new Date().toISOString().slice(0, 10)
   );
   const [newTaskNotes, setNewTaskNotes] = useState("");
-  const [newTaskRepeatEvery, setNewTaskRepeatEvery] = useState("");
-  const [newTaskCount, setNewTaskCount] = useState("1");
   const [savingTask, setSavingTask] = useState(false);
 
   useEffect(() => {
@@ -196,10 +195,9 @@ function resetNewTask() {
   setTaskSheep(null);
   setTaskSheepQuery("");
   setNewTaskType("Foot Trim");
+  setNewTaskMedicine("");
   setNewTaskDate(new Date().toISOString().slice(0, 10));
   setNewTaskNotes("");
-  setNewTaskRepeatEvery("");
-  setNewTaskCount("1");
 }
 
 function saveNewTask() {
@@ -208,8 +206,13 @@ function saveNewTask() {
     return;
   }
 
-  if (!newTaskType.trim()) {
-    alert("Enter what the task is.");
+  if (!newTaskType) {
+    alert("Choose what the task is.");
+    return;
+  }
+
+  if (newTaskType === "Injection" && !newTaskMedicine) {
+    alert("Choose which medicine the injection is for.");
     return;
   }
 
@@ -218,6 +221,11 @@ function saveNewTask() {
     return;
   }
 
+  const eventType =
+    newTaskType === "Injection"
+      ? `Injection - ${newTaskMedicine}`
+      : newTaskType;
+
   setSavingTask(true);
 
   fetch(`${API}/sheep/${taskSheep.id}/scheduled`, {
@@ -225,10 +233,8 @@ function saveNewTask() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       dueDate: newTaskDate,
-      eventType: newTaskType.trim(),
+      eventType,
       notes: newTaskNotes,
-      repeatEvery: Number(newTaskRepeatEvery) || 0,
-      numberOfEvents: Math.max(1, Number(newTaskCount) || 1),
       repeatUntilResolved: false,
     }),
   })
@@ -250,26 +256,78 @@ function saveNewTask() {
     .finally(() => setSavingTask(false));
 }
 
-  function completeTask(taskId) {
+  // Scheduled injection titles look like "Injection - Alamycin", plus a
+  // " #2" or " 2 of 3" suffix once repeats have generated follow-ups.
+  function injectionMedicineFor(task) {
+    const match = /^Injection\s*-\s*(.+)$/i.exec(task.eventType || "");
+    if (!match) return null;
+
+    return match[1]
+      .replace(/\s+#\d+$/, "")
+      .replace(/\s+\d+\s+of\s+\d+$/i, "")
+      .trim();
+  }
+
+  function completeTask(task) {
+    const taskId = task.id;
+    const medicine = injectionMedicineFor(task);
+    const needsVolume = Boolean(medicine) && !task.caseId;
+    const volume = Number(injectionVolume[taskId]);
+
+    if (needsVolume && !(volume > 0)) {
+      alert("Enter the injected volume in ml before completing.");
+      return;
+    }
+
+    const medicineRecord = medicines.find((item) => item.name === medicine);
+
+    const recordTreatment = needsVolume
+      ? fetch(`${API}/treatments`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            groupName: "Individual Sheep",
+            sheepId: task.sheepId,
+            sheepName: task.sheepName,
+            treatment: medicine,
+            volumeMl: volume,
+            treatmentDate: new Date().toLocaleDateString(),
+            withdrawalDays: medicineRecord?.withdrawalDays || 0,
+            cost: volume * Number(medicineRecord?.costPerMl || 0),
+            notes: task.notes || "",
+            administeredBy: localStorage.getItem("user"),
+          }),
+        }).then((res) => {
+          if (!res.ok) throw new Error(`Treatment save failed (${res.status})`);
+          return res.json();
+        })
+      : Promise.resolve();
+
     const repeatEvery = Number(repeatAfterCompletion[taskId]);
     const body = Number.isFinite(repeatEvery) && repeatEvery > 0
       ? JSON.stringify({ repeatEvery })
       : undefined;
 
-    fetch(`${API}/scheduled/${taskId}/complete`, {
-      method: "PUT",
-      ...(body && {
-        headers: { "Content-Type": "application/json" },
-        body,
-      }),
-    })
+    recordTreatment
+      .then(() =>
+        fetch(`${API}/scheduled/${taskId}/complete`, {
+          method: "PUT",
+          ...(body && {
+            headers: { "Content-Type": "application/json" },
+            body,
+          }),
+        })
+      )
     .then((res) => {
       if (!res.ok) throw new Error(`Complete failed (${res.status})`);
       return res.json();
     })
     .then(() => fetch(`${API}/tasks/today`))
     .then((res) => res.json())
-    .then((data) => setTodayTasks(data))
+    .then((data) => {
+      setTodayTasks(data);
+      setInjectionVolume((prev) => ({ ...prev, [taskId]: "" }));
+    })
     .catch((error) => {
       console.error(error);
       alert("Could not complete this task. Please try again.");
@@ -526,11 +584,12 @@ function saveActionFromDashboard(
       </div>
     )}
 
-    <input
-      list="dashboard-task-types"
+    <select
       value={newTaskType}
-      onChange={(e) => setNewTaskType(e.target.value)}
-      placeholder="Task (e.g. Foot Trim)"
+      onChange={(e) => {
+        setNewTaskType(e.target.value);
+        if (e.target.value !== "Injection") setNewTaskMedicine("");
+      }}
       style={{
         width: "100%",
         padding: "10px",
@@ -539,18 +598,39 @@ function saveActionFromDashboard(
         marginBottom: "10px",
         boxSizing: "border-box",
       }}
-    />
-    <datalist id="dashboard-task-types">
-      <option value="Foot Trim" />
-      <option value="Worming" />
-      <option value="Vaccination" />
-      <option value="Injection" />
-      <option value="Health Check" />
-      <option value="Re-check" />
-      <option value="Dagging" />
-      <option value="Shearing" />
-      <option value="Weigh" />
-    </datalist>
+    >
+      <option value="Foot Trim">Foot Trim</option>
+      <option value="Worming">Worming</option>
+      <option value="Vaccination">Vaccination</option>
+      <option value="Injection">Injection</option>
+      <option value="Health Check">Health Check</option>
+      <option value="Re-check">Re-check</option>
+      <option value="Dagging">Dagging</option>
+      <option value="Shearing">Shearing</option>
+      <option value="Weigh">Weigh</option>
+    </select>
+
+    {newTaskType === "Injection" && (
+      <select
+        value={newTaskMedicine}
+        onChange={(e) => setNewTaskMedicine(e.target.value)}
+        style={{
+          width: "100%",
+          padding: "10px",
+          borderRadius: "8px",
+          border: "1px solid #777",
+          marginBottom: "10px",
+          boxSizing: "border-box",
+        }}
+      >
+        <option value="">Select medicine</option>
+        {medicines.map((medicine) => (
+          <option key={medicine.id} value={medicine.name}>
+            {medicine.name}
+          </option>
+        ))}
+      </select>
+    )}
 
     <label style={{ display: "block", color: "#aaa", marginBottom: "4px" }}>
       Due date
@@ -583,37 +663,6 @@ function saveActionFromDashboard(
         boxSizing: "border-box",
       }}
     />
-
-    <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
-      <input
-        type="number"
-        min="1"
-        value={newTaskCount}
-        onChange={(e) => setNewTaskCount(e.target.value)}
-        placeholder="How many"
-        style={{
-          width: "50%",
-          padding: "10px",
-          borderRadius: "8px",
-          border: "1px solid #777",
-          boxSizing: "border-box",
-        }}
-      />
-      <input
-        type="number"
-        min="1"
-        value={newTaskRepeatEvery}
-        onChange={(e) => setNewTaskRepeatEvery(e.target.value)}
-        placeholder="Every N days"
-        style={{
-          width: "50%",
-          padding: "10px",
-          borderRadius: "8px",
-          border: "1px solid #777",
-          boxSizing: "border-box",
-        }}
-      />
-    </div>
 
     <button
       onClick={saveNewTask}
@@ -1033,9 +1082,56 @@ boxShadow:
 )}
   </div>
 )}
+{injectionMedicineFor(task) && !task.caseId && (
+  <div
+    style={{
+      background: "#1f1f1f",
+      padding: "12px",
+      borderRadius: "8px",
+      marginTop: "10px",
+      textAlign: "left",
+    }}
+  >
+    <div style={{ marginBottom: "6px" }}>
+      💉 {injectionMedicineFor(task)}
+    </div>
+
+    <input
+      type="number"
+      min="0.01"
+      step="0.01"
+      placeholder="Injected volume (ml)"
+      value={injectionVolume[task.id] || ""}
+      onChange={(e) =>
+        setInjectionVolume({
+          ...injectionVolume,
+          [task.id]: e.target.value,
+        })
+      }
+      style={{
+        width: "100%",
+        padding: "10px",
+        borderRadius: "8px",
+        border: "1px solid #777",
+        boxSizing: "border-box",
+      }}
+    />
+
+    <div style={{ marginTop: "8px", color: "#aaa" }}>
+      Calculated cost: £{(
+        Number(injectionVolume[task.id]) *
+        Number(
+          medicines.find(
+            (item) => item.name === injectionMedicineFor(task)
+          )?.costPerMl || 0
+        )
+      ).toFixed(2)}
+    </div>
+  </div>
+)}
 <button
   onClick={() =>
-    completeTask(task.id)
+    completeTask(task)
   }
   style={{
     background: "#4caf50",
