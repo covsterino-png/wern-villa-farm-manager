@@ -238,8 +238,11 @@ function saveNewTask() {
       repeatUntilResolved: false,
     }),
   })
-    .then((res) => {
-      if (!res.ok) throw new Error(`Save failed (${res.status})`);
+    .then(async (res) => {
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Save failed (${res.status})`);
+      }
       return res.json();
     })
     .then(() => fetch(`${API}/tasks/today`))
@@ -251,7 +254,7 @@ function saveNewTask() {
     })
     .catch((error) => {
       console.error(error);
-      alert("Could not save this task. Please try again.");
+      alert(`Could not save this task. ${error.message}`);
     })
     .finally(() => setSavingTask(false));
 }

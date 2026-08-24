@@ -519,6 +519,12 @@ app.post("/sheep/:id/scheduled", async (req, res) => {
   if (Number.isNaN(new Date(dueDate).getTime())) {
     return res.status(400).json({ error: "dueDate is not a valid date" });
   }
+
+  // libsql rejects undefined, so optional columns must be explicit nulls.
+  const eventNotes = notes ?? null;
+  const eventCaseId = caseId ?? null;
+
+  try {
 if (repeatUntilResolved) {
   await turso.execute({
     sql: `
@@ -540,10 +546,10 @@ if (repeatUntilResolved) {
     args: [
       req.params.id,
       `${eventType} #1`,
-      notes,
+      eventNotes,
       dueDate,
-      repeatEvery,
-      caseId,
+      Number(repeatEvery) || 0,
+      eventCaseId,
     ],
   });
 
@@ -593,9 +599,9 @@ if (repeatUntilResolved) {
       args: [
         req.params.id,
         title,
-        notes,
+        eventNotes,
         formattedDate,
-        caseId,
+        eventCaseId,
       ],
     });
   }
@@ -603,6 +609,10 @@ if (repeatUntilResolved) {
   res.json({
     success: true,
   });
+  } catch (error) {
+    console.error("Create scheduled event error:", error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.get("/receipts/:id", async (req, res) => {
