@@ -278,6 +278,26 @@ async function ensureReceiptsTable() {
   }
 }
 
+async function ensureFieldFarmColumn() {
+  try {
+    await turso.execute("ALTER TABLE fields ADD COLUMN farm TEXT");
+  } catch (error) {
+    if (!error.message.toLowerCase().includes("duplicate column")) {
+      throw error;
+    }
+  }
+
+  // Wern Villa's four fields are the only ones with a map position.
+  await turso.execute(`
+    UPDATE fields
+    SET farm = CASE
+      WHEN position IS NOT NULL THEN 'Wern Villa'
+      ELSE 'Gellidywyll'
+    END
+    WHERE farm IS NULL OR farm = ''
+  `);
+}
+
 async function ensureNotesTables() {
   await turso.execute(`
     CREATE TABLE IF NOT EXISTS notes (
@@ -2006,6 +2026,22 @@ const fieldsResult = await turso.execute(
       WHERE completed = 0
     `);
 
+    // A sheep's farm follows the field it stands in, so there is nothing to keep in sync.
+    const byFarmResult = await turso.execute(`
+      SELECT
+        COALESCE(fields.farm, 'Unassigned') AS farm,
+        COUNT(*) AS count
+      FROM sheep
+      LEFT JOIN fields
+        ON fields.name = sheep.currentField
+      GROUP BY COALESCE(fields.farm, 'Unassigned')
+    `);
+
+    const sheepByFarm = {};
+    for (const row of byFarmResult.rows) {
+      sheepByFarm[row.farm] = Number(row.count);
+    }
+
     res.json({
       totalSheep: Number(
         sheepResult.rows[0].count
@@ -2022,6 +2058,8 @@ const fieldsResult = await turso.execute(
       openTasks: Number(
         tasksResult.rows[0].openTasks
       ),
+
+      sheepByFarm,
     });
   } catch (error) {
     console.error(error);
@@ -2090,17 +2128,18 @@ app.get("/fields", async (req, res) => {
 
 app.post("/fields", async (req, res) => {
   try {
-const { name, size } = req.body || {};
+const { name, size, farm } = req.body || {};
     const result =
       await turso.execute({
         sql: `
 INSERT INTO fields (
   name,
-  size
+  size,
+  farm
 )
-VALUES (?, ?)
+VALUES (?, ?, ?)
         `,
-        args: [name, size],
+        args: [name ?? null, size ?? null, farm || "Gellidywyll"],
       });
 
     res.json({
@@ -2119,7 +2158,17 @@ app.put("/fields/:id", async (req, res) => {
       name,
       size,
       position,
+      farm,
     } = req.body || {};
+
+    const existing = await turso.execute({
+      sql: "SELECT * FROM fields WHERE id = ?",
+      args: [id],
+    });
+    const field = existing.rows[0];
+    if (!field) {
+      return res.status(404).json({ error: "Field not found" });
+    }
 
     await turso.execute({
       sql: `
@@ -2127,13 +2176,15 @@ app.put("/fields/:id", async (req, res) => {
         SET
           name = ?,
           size = ?,
-          position = ?
+          position = ?,
+          farm = ?
         WHERE id = ?
       `,
       args: [
-        name,
-        size,
-        position,
+        name ?? field.name,
+        size ?? field.size,
+        position ?? field.position,
+        farm ?? field.farm ?? "Gellidywyll",
         id,
       ],
     });
@@ -2989,6 +3040,7 @@ app.get("/field-status", async (req, res) => {
           name: field.name,
           size: field.size,
           position: field.position,
+          farm: field.farm || "Gellidywyll",
           sheepCount,
           occupied:
             groupsInField.length > 0,
@@ -3273,6 +3325,10 @@ ensureHeroPointsTables().catch((error) => {
 
 ensureNotesTables().catch((error) => {
   console.error("Failed to ensure notes tables:", error);
+});
+
+ensureFieldFarmColumn().catch((error) => {
+  console.error("Failed to ensure field farm column:", error);
 });
 
 // Notes are shared between users, so no per-user filtering here.

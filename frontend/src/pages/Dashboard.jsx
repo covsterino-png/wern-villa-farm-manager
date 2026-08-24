@@ -1238,6 +1238,35 @@ boxShadow:
 )}
 </div>
 
+{summary.sheepByFarm &&
+  Object.keys(summary.sheepByFarm).length > 0 && (
+    <div
+      style={{
+        display: "flex",
+        gap: "8px",
+        flexWrap: "wrap",
+        marginBottom: "12px",
+      }}
+    >
+      {Object.entries(summary.sheepByFarm).map(([farmName, count]) => (
+        <div
+          key={farmName}
+          onClick={() => setPage("farm-map")}
+          style={{
+            background: "#2b2b2b",
+            borderRadius: "10px",
+            padding: "8px 12px",
+            cursor: "pointer",
+            flex: "1 1 auto",
+          }}
+        >
+          <span style={{ color: "#aaa" }}>{farmName}</span>{" "}
+          <strong style={{ color: "#03a9f4" }}>🐑 {count}</strong>
+        </div>
+      ))}
+    </div>
+  )}
+
 <div
   style={{
     display: "grid",
@@ -1250,8 +1279,7 @@ boxShadow:
     width: "100%",
     boxSizing: "border-box",
   }}
->
-<DashboardCard
+><DashboardCard
   icon="👥"
   title="Groups"
   value={summary.groups ?? 0}

@@ -4,6 +4,7 @@ import { API } from "../api";
 export default function Fields() {
   const [fields, setFields] = useState([]);
   const [newField, setNewField] = useState("");
+  const [newFieldFarm, setNewFieldFarm] = useState("Gellidywyll");
 
   function loadFields() {
     fetch(`${API}/fields`)
@@ -29,6 +30,7 @@ export default function Fields() {
       },
       body: JSON.stringify({
         name: newField,
+        farm: newFieldFarm,
       }),
     }).then(() => {
       setNewField("");
@@ -60,6 +62,15 @@ export default function Fields() {
           placeholder="Field name..."
         />
 
+        <select
+          value={newFieldFarm}
+          onChange={(e) => setNewFieldFarm(e.target.value)}
+          style={{ marginLeft: "10px" }}
+        >
+          <option value="Gellidywyll">Gellidywyll</option>
+          <option value="Wern Villa">Wern Villa</option>
+        </select>
+
         <button
           onClick={addField}
           style={{
@@ -78,9 +89,15 @@ export default function Fields() {
             padding: "15px",
             borderRadius: "12px",
             marginBottom: "10px",
+            display: "flex",
+            justifyContent: "space-between",
+            gap: "10px",
           }}
         >
-          🌱 {field.name}
+          <span>🌱 {field.name}</span>
+          <small style={{ color: "#aaa" }}>
+            {field.farm || "Gellidywyll"}
+          </small>
         </div>
       ))}
     </div>

@@ -4,27 +4,32 @@ import { API } from "../api";
 export default function FarmMap() {
   const [fieldStatus, setFieldStatus] =
     useState([]);
+  const [farm, setFarm] = useState("Gellidywyll");
 
   useEffect(() => {
     fetch(`${API}/field-status`)
       .then((res) => res.json())
-      .then((data) => setFieldStatus(data))
+      .then((data) => setFieldStatus(Array.isArray(data) ? data : []))
       .catch(console.error);
   }, []);
 
-  const field1 = fieldStatus.find(
+  const fieldsForFarm = fieldStatus.filter(
+    (f) => (f.farm || "Gellidywyll") === farm
+  );
+
+  const field1 = fieldsForFarm.find(
     (f) => Number(f.position) === 1
   );
 
-  const field2 = fieldStatus.find(
+  const field2 = fieldsForFarm.find(
     (f) => Number(f.position) === 2
   );
 
-  const field3 = fieldStatus.find(
+  const field3 = fieldsForFarm.find(
     (f) => Number(f.position) === 3
   );
 
-  const field4 = fieldStatus.find(
+  const field4 = fieldsForFarm.find(
     (f) => Number(f.position) === 4
   );
 
@@ -46,17 +51,55 @@ export default function FarmMap() {
     return "#f44336";
   };
 
+  const totalSheepOnFarm = fieldsForFarm.reduce(
+    (total, field) => total + (Number(field.sheepCount) || 0),
+    0
+  );
+
   return (
     <div>
       <h1
         style={{
           color: "#03a9f4",
-          marginBottom: "20px",
+          marginBottom: "12px",
         }}
       >
-        🗺️ Wern Villa Farm
+        🗺️ {farm}
       </h1>
 
+      <div
+        style={{
+          display: "flex",
+          gap: "8px",
+          marginBottom: "8px",
+          justifyContent: "center",
+          flexWrap: "wrap",
+        }}
+      >
+        {["Gellidywyll", "Wern Villa"].map((option) => (
+          <button
+            key={option}
+            onClick={() => setFarm(option)}
+            style={{
+              background: farm === option ? "#03a9f4" : "#2b2b2b",
+              color: "white",
+              border: "none",
+              padding: "10px 16px",
+              borderRadius: "10px",
+              cursor: "pointer",
+              fontWeight: farm === option ? "bold" : "normal",
+            }}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ color: "#aaa", marginBottom: "16px" }}>
+        {fieldsForFarm.length} fields · 🐑 {totalSheepOnFarm} sheep
+      </div>
+
+      {farm === "Wern Villa" ? (
       <div
         style={{
           maxWidth: "550px",
@@ -144,6 +187,43 @@ export default function FarmMap() {
           <div />
         </div>
       </div>
+      ) : fieldsForFarm.length === 0 ? (
+        <div
+          style={{
+            background: "#1f1f1f",
+            padding: "20px",
+            borderRadius: "12px",
+            color: "#aaa",
+          }}
+        >
+          No fields recorded for {farm} yet. Add them on the Fields page.
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              window.innerWidth < 768
+                ? "repeat(2, minmax(0, 1fr))"
+                : "repeat(auto-fill, minmax(220px, 1fr))",
+            gap: "12px",
+          }}
+        >
+          {fieldsForFarm.map((field) => (
+            <FieldCard
+              key={field.name}
+              name={`🌱 ${field.name}`}
+              colour={getColour(field)}
+              sheep={field.sheepCount ?? 0}
+              groups={field.groups ?? []}
+              occupied={field.occupied}
+              daysEmpty={field.daysEmpty ?? 0}
+              size={field.size ?? 0}
+              height="auto"
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
