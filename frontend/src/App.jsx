@@ -16,6 +16,7 @@ import Receipts from "./pages/Receipts";
 import Notes from "./pages/Notes";
 import Notifications from "./pages/Notifications";
 import FinancialRegister from "./pages/FinancialRegister";
+import Sales from "./pages/Sales";
 import HeroPoints from "./pages/HeroPoints";
 import { API } from "./api";
 import { subscribeQueueCount } from "./offlineQueue";
@@ -139,6 +140,7 @@ function App() {
     ["history", "History"],
     ["receipts", "Receipts"],
     ["financial", "Finances"],
+    ["sales", "Sales & Income"],
     ["notifications", `Notifications${unreadCount > 0 ? ` (${unreadCount})` : ""}`],
     ["calendar", "Calendar"],
     ["notes", "Notes"],
@@ -440,6 +442,9 @@ Receipts
         {page === "financial" && (
           <FinancialRegister user={user} />
         )}
+{page === "sales" && (
+  <Sales />
+)}
 {page === "calendar" && (
   <Calendar />
 )}

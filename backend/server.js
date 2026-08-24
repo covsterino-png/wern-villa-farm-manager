@@ -298,6 +298,25 @@ async function ensureFieldFarmColumn() {
   `);
 }
 
+async function ensureSalesTable() {
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS sales (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      saleType TEXT NOT NULL DEFAULT 'livestock',
+      saleDate TEXT NOT NULL,
+      description TEXT,
+      quantity REAL NOT NULL DEFAULT 1,
+      unitPrice REAL NOT NULL DEFAULT 0,
+      total REAL NOT NULL DEFAULT 0,
+      customer TEXT,
+      sheepId INTEGER,
+      notes TEXT,
+      recordedBy TEXT,
+      createdDate TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
 async function ensureNotesTables() {
   await turso.execute(`
     CREATE TABLE IF NOT EXISTS notes (
@@ -2280,16 +2299,36 @@ app.get("/sheep/:id/financial-analysis", async (req, res) => {
       { feedCount: 0, totalFeedCost: 0 }
     );
 
+    const sales = await turso.execute({
+      sql: `
+        SELECT id, saleType, saleDate, description, quantity,
+               unitPrice, total, customer, notes
+        FROM sales
+        WHERE sheepId = ?
+        ORDER BY saleDate DESC, id DESC
+      `,
+      args: [req.params.id],
+    });
+
+    const totalIncome = sales.rows.reduce(
+      (total, sale) => total + (Number(sale.total) || 0),
+      0
+    );
+
+    const totalCost =
+      Number(result.rows[0].totalTreatmentCost || 0) + feedSummary.totalFeedCost;
+
     res.json({
       summary: {
         ...result.rows[0],
         ...feedSummary,
-        totalCost:
-          Number(result.rows[0].totalTreatmentCost || 0) +
-          feedSummary.totalFeedCost,
+        totalCost,
+        totalIncome,
+        netProfit: totalIncome - totalCost,
       },
       treatments: treatments.rows,
       feed: feed.rows,
+      sales: sales.rows,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -3348,6 +3387,137 @@ ensureNotesTables().catch((error) => {
 
 ensureFieldFarmColumn().catch((error) => {
   console.error("Failed to ensure field farm column:", error);
+});
+
+ensureSalesTable().catch((error) => {
+  console.error("Failed to ensure sales table:", error);
+});
+
+const SALE_TYPES = ["livestock", "meat", "logs", "other"];
+
+app.get("/sales", async (req, res) => {
+  try {
+    const result = await turso.execute(`
+      SELECT sales.*, sheep.name AS sheepName
+      FROM sales
+      LEFT JOIN sheep ON sheep.id = sales.sheepId
+      ORDER BY sales.saleDate DESC, sales.id DESC
+    `);
+
+    const totalsByType = {};
+    let total = 0;
+    for (const sale of result.rows) {
+      const amount = Number(sale.total) || 0;
+      totalsByType[sale.saleType] = (totalsByType[sale.saleType] || 0) + amount;
+      total += amount;
+    }
+
+    res.json({ sales: result.rows, totalsByType, total });
+  } catch (error) {
+    console.error("Load sales error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/sales", async (req, res) => {
+  try {
+    const {
+      saleType,
+      saleDate,
+      description,
+      quantity,
+      unitPrice,
+      customer,
+      sheepId,
+      notes,
+    } = req.body || {};
+
+    const type = SALE_TYPES.includes(saleType) ? saleType : "other";
+    if (!saleDate) {
+      return res.status(400).json({ error: "A sale date is required" });
+    }
+
+    const qty = Number(quantity);
+    const price = Number(unitPrice);
+    if (!Number.isFinite(qty) || qty <= 0) {
+      return res.status(400).json({ error: "Quantity must be greater than zero" });
+    }
+    if (!Number.isFinite(price) || price < 0) {
+      return res.status(400).json({ error: "Price must be zero or greater" });
+    }
+
+    const linkedSheepId = sheepId ? Number(sheepId) : null;
+    if (linkedSheepId) {
+      const sheep = await turso.execute({
+        sql: "SELECT id FROM sheep WHERE id = ?",
+        args: [linkedSheepId],
+      });
+      if (sheep.rows.length === 0) {
+        return res.status(404).json({ error: "Sheep not found" });
+      }
+    }
+
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO sales
+          (saleType, saleDate, description, quantity, unitPrice, total,
+           customer, sheepId, notes, recordedBy)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      args: [
+        type,
+        saleDate,
+        description ?? null,
+        qty,
+        price,
+        qty * price,
+        customer ?? null,
+        linkedSheepId,
+        notes ?? null,
+        req.user ?? null,
+      ],
+    });
+
+    // Selling the animal itself takes it out of the flock; a meat box does not.
+    if (linkedSheepId && type === "livestock") {
+      await turso.execute({
+        sql: "UPDATE sheep SET status = 'Sold' WHERE id = ?",
+        args: [linkedSheepId],
+      });
+    }
+
+    if (linkedSheepId) {
+      await addHistory(
+        linkedSheepId,
+        "💷 Sale",
+        `${description || type} - £${(qty * price).toFixed(2)}`,
+        saleDate
+      );
+    }
+
+    res.json({ success: true, id: Number(result.lastInsertRowid) });
+  } catch (error) {
+    console.error("Create sale error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/sales/:id", async (req, res) => {
+  try {
+    const result = await turso.execute({
+      sql: "DELETE FROM sales WHERE id = ?",
+      args: [req.params.id],
+    });
+
+    if (result.rowsAffected === 0) {
+      return res.status(404).json({ error: "Sale not found" });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete sale error:", error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Notes are shared between users, so no per-user filtering here.

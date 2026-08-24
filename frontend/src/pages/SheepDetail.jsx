@@ -1894,6 +1894,14 @@ function saveEvent() {
         label="Feed cost"
         value={`£${Number(financialAnalysis.summary?.totalFeedCost || 0).toFixed(2)}`}
       />
+      <FinancialMetric
+        label="Income"
+        value={`£${Number(financialAnalysis.summary?.totalIncome || 0).toFixed(2)}`}
+      />
+      <FinancialMetric
+        label="Net profit"
+        value={`£${Number(financialAnalysis.summary?.netProfit || 0).toFixed(2)}`}
+      />
     </div>
 
     <h3>Cost breakdown</h3>
@@ -1929,6 +1937,20 @@ function saveEvent() {
           )}
         </div>
       ))
+    )}
+
+    {financialAnalysis.sales?.length > 0 && (
+      <>
+        <h3>Income</h3>
+        {financialAnalysis.sales.map((sale) => (
+          <div key={`sale-${sale.id}`} style={{ background: "#1f1f1f", padding: "12px", borderRadius: "8px", marginBottom: "8px" }}>
+            <strong>{sale.description || sale.saleType}</strong><br />
+            <small>{sale.saleDate}</small><br />
+            £{Number(sale.total || 0).toFixed(2)}
+            {sale.customer && <><br />To: {sale.customer}</>}
+          </div>
+        ))}
+      </>
     )}
 
     {financialAnalysis.feed?.length > 0 && (

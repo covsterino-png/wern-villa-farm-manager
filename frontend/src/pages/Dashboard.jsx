@@ -45,6 +45,7 @@ const [actionNotes, setActionNotes] =
     useState(0);
   const [heroPoints, setHeroPoints] = useState({ balance: 0, pending: 0 });
   const [notesCount, setNotesCount] = useState(0);
+  const [salesTotal, setSalesTotal] = useState(0);
   const [showUnassigned, setShowUnassigned] = useState(false);
   const [unassignedSheep, setUnassignedSheep] = useState([]);
 
@@ -95,6 +96,13 @@ const [actionNotes, setActionNotes] =
         })
         .catch(() => {});
     }, []);
+
+  useEffect(() => {
+    fetch(`${API}/sales`)
+      .then((res) => res.json())
+      .then((data) => setSalesTotal(Number(data?.total) || 0))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch(`${API}/notes`)
@@ -1391,6 +1399,15 @@ boxShadow:
   onClick={() =>
     setPage("financial")
   }
+/>
+
+<DashboardCard
+  icon="💰"
+  title="Income"
+  value={`£${salesTotal.toFixed(0)}`}
+  subtitle="Sales"
+  colour="#4caf50"
+  onClick={() => setPage("sales")}
 />
 
 <DashboardCard
