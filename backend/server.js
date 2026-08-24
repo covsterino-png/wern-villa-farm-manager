@@ -503,7 +503,6 @@ ensureReceiptsTable().catch((error) => {
 });
 
 app.post("/sheep/:id/scheduled", async (req, res) => {
-  console.log(req.body);
   const {
     dueDate,
     eventType,
@@ -513,6 +512,13 @@ app.post("/sheep/:id/scheduled", async (req, res) => {
     repeatUntilResolved,
     caseId,
   } = req.body || {};
+
+  if (!dueDate || !eventType) {
+    return res.status(400).json({ error: "dueDate and eventType are required" });
+  }
+  if (Number.isNaN(new Date(dueDate).getTime())) {
+    return res.status(400).json({ error: "dueDate is not a valid date" });
+  }
 if (repeatUntilResolved) {
   await turso.execute({
     sql: `
@@ -544,16 +550,19 @@ if (repeatUntilResolved) {
   return res.json({
     success: true,
   });
-}  for (
+}  const totalEvents = Math.max(1, Number(numberOfEvents) || 1);
+  const repeatInterval = Number(repeatEvery) || 0;
+
+  for (
     let i = 0;
-    i < numberOfEvents;
+    i < totalEvents;
     i++
   ) {
     const date = new Date(dueDate);
 
     date.setDate(
       date.getDate() +
-        i * repeatEvery
+        i * repeatInterval
     );
 
     const formattedDate =
@@ -562,10 +571,10 @@ if (repeatUntilResolved) {
         .split("T")[0];
 
     const title =
-      numberOfEvents > 1
+      totalEvents > 1
         ? `${eventType} ${
             i + 1
-          } of ${numberOfEvents}`
+          } of ${totalEvents}`
         : eventType;
 
     await turso.execute({

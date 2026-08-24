@@ -53,6 +53,28 @@ const [actionNotes, setActionNotes] =
     const [todayTasks, setTodayTasks] =
   useState([]);
 
+  const [allSheep, setAllSheep] = useState([]);
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [taskSheepQuery, setTaskSheepQuery] = useState("");
+  const [taskSheep, setTaskSheep] = useState(null);
+  const [newTaskType, setNewTaskType] = useState("Foot Trim");
+  const [newTaskDate, setNewTaskDate] = useState(
+    () => new Date().toISOString().slice(0, 10)
+  );
+  const [newTaskNotes, setNewTaskNotes] = useState("");
+  const [newTaskRepeatEvery, setNewTaskRepeatEvery] = useState("");
+  const [newTaskCount, setNewTaskCount] = useState("1");
+  const [savingTask, setSavingTask] = useState(false);
+
+  useEffect(() => {
+    if (!showAddTask || allSheep.length > 0) return;
+
+    fetch(`${API}/sheep`)
+      .then((res) => res.json())
+      .then((data) => setAllSheep(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, [showAddTask]);
+
     useEffect(() => {
       fetch(`${API}/hero-points`)
         .then((res) => res.json())
@@ -168,6 +190,66 @@ function loadCaseActions(caseId) {
       setCaseActions((prev) => ({ ...prev, [caseId]: data }));
     });
 }
+
+function resetNewTask() {
+  setShowAddTask(false);
+  setTaskSheep(null);
+  setTaskSheepQuery("");
+  setNewTaskType("Foot Trim");
+  setNewTaskDate(new Date().toISOString().slice(0, 10));
+  setNewTaskNotes("");
+  setNewTaskRepeatEvery("");
+  setNewTaskCount("1");
+}
+
+function saveNewTask() {
+  if (!taskSheep) {
+    alert("Choose a sheep first.");
+    return;
+  }
+
+  if (!newTaskType.trim()) {
+    alert("Enter what the task is.");
+    return;
+  }
+
+  if (!newTaskDate) {
+    alert("Choose a due date.");
+    return;
+  }
+
+  setSavingTask(true);
+
+  fetch(`${API}/sheep/${taskSheep.id}/scheduled`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      dueDate: newTaskDate,
+      eventType: newTaskType.trim(),
+      notes: newTaskNotes,
+      repeatEvery: Number(newTaskRepeatEvery) || 0,
+      numberOfEvents: Math.max(1, Number(newTaskCount) || 1),
+      repeatUntilResolved: false,
+    }),
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error(`Save failed (${res.status})`);
+      return res.json();
+    })
+    .then(() => fetch(`${API}/tasks/today`))
+    .then((res) => res.json())
+    .then((data) => {
+      setTodayTasks(data);
+      setShowTasks(true);
+      resetNewTask();
+    })
+    .catch((error) => {
+      console.error(error);
+      alert("Could not save this task. Please try again.");
+    })
+    .finally(() => setSavingTask(false));
+}
+
   function completeTask(taskId) {
     const repeatEvery = Number(repeatAfterCompletion[taskId]);
     const body = Number.isFinite(repeatEvery) && repeatEvery > 0
@@ -296,6 +378,18 @@ function saveActionFromDashboard(
 });
 }
 
+  const sheepQuery = taskSheepQuery.trim().toLowerCase();
+  const sheepMatches =
+    sheepQuery.length === 0
+      ? []
+      : allSheep
+          .filter((item) =>
+            `${item.name ?? ""} ${item.eid ?? ""} ${item.groupName ?? ""}`
+              .toLowerCase()
+              .includes(sheepQuery)
+          )
+          .slice(0, 8);
+
   return (
     
     <div
@@ -332,6 +426,217 @@ function saveActionFromDashboard(
   {" "}
   {showTasks ? "▲" : "▼"}
 </h2>
+
+<button
+  onClick={() => (showAddTask ? resetNewTask() : setShowAddTask(true))}
+  style={{
+    background: showAddTask ? "#777" : "#4caf50",
+    color: "white",
+    border: "none",
+    padding: "10px 16px",
+    borderRadius: "10px",
+    cursor: "pointer",
+    fontWeight: "bold",
+    marginBottom: showAddTask ? "12px" : 0,
+  }}
+>
+  {showAddTask ? "✖ Cancel" : "➕ Add Task"}
+</button>
+
+{showAddTask && (
+  <div
+    style={{
+      background: "#1f1f1f",
+      padding: "16px",
+      borderRadius: "12px",
+      marginBottom: "16px",
+      textAlign: "left",
+    }}
+  >
+    {taskSheep ? (
+      <div style={{ marginBottom: "12px" }}>
+        <strong>🐑 {taskSheep.name}</strong>
+        {taskSheep.eid && (
+          <small style={{ color: "#aaa" }}> ({taskSheep.eid})</small>
+        )}
+        <button
+          onClick={() => {
+            setTaskSheep(null);
+            setTaskSheepQuery("");
+          }}
+          style={{
+            background: "#333",
+            color: "white",
+            border: "none",
+            padding: "4px 10px",
+            borderRadius: "8px",
+            cursor: "pointer",
+            marginLeft: "10px",
+          }}
+        >
+          Change
+        </button>
+      </div>
+    ) : (
+      <div style={{ marginBottom: "12px" }}>
+        <input
+          autoFocus
+          value={taskSheepQuery}
+          onChange={(e) => setTaskSheepQuery(e.target.value)}
+          placeholder="Search sheep by name, EID or flock"
+          style={{
+            width: "100%",
+            padding: "10px",
+            borderRadius: "8px",
+            border: "1px solid #777",
+            boxSizing: "border-box",
+          }}
+        />
+
+        {sheepMatches.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setTaskSheep(item)}
+            style={{
+              display: "block",
+              width: "100%",
+              textAlign: "left",
+              background: "#2b2b2b",
+              color: "white",
+              border: "none",
+              padding: "10px",
+              borderRadius: "8px",
+              cursor: "pointer",
+              marginTop: "6px",
+            }}
+          >
+            🐑 {item.name}
+            {item.eid && (
+              <small style={{ color: "#aaa" }}> · {item.eid}</small>
+            )}
+            {item.groupName && (
+              <small style={{ color: "#aaa" }}> · {item.groupName}</small>
+            )}
+          </button>
+        ))}
+
+        {sheepQuery.length > 0 && sheepMatches.length === 0 && (
+          <p style={{ color: "#aaa", marginBottom: 0 }}>No sheep found.</p>
+        )}
+      </div>
+    )}
+
+    <input
+      list="dashboard-task-types"
+      value={newTaskType}
+      onChange={(e) => setNewTaskType(e.target.value)}
+      placeholder="Task (e.g. Foot Trim)"
+      style={{
+        width: "100%",
+        padding: "10px",
+        borderRadius: "8px",
+        border: "1px solid #777",
+        marginBottom: "10px",
+        boxSizing: "border-box",
+      }}
+    />
+    <datalist id="dashboard-task-types">
+      <option value="Foot Trim" />
+      <option value="Worming" />
+      <option value="Vaccination" />
+      <option value="Injection" />
+      <option value="Health Check" />
+      <option value="Re-check" />
+      <option value="Dagging" />
+      <option value="Shearing" />
+      <option value="Weigh" />
+    </datalist>
+
+    <label style={{ display: "block", color: "#aaa", marginBottom: "4px" }}>
+      Due date
+    </label>
+    <input
+      type="date"
+      value={newTaskDate}
+      onChange={(e) => setNewTaskDate(e.target.value)}
+      style={{
+        width: "100%",
+        padding: "10px",
+        borderRadius: "8px",
+        border: "1px solid #777",
+        marginBottom: "10px",
+        boxSizing: "border-box",
+      }}
+    />
+
+    <textarea
+      value={newTaskNotes}
+      onChange={(e) => setNewTaskNotes(e.target.value)}
+      placeholder="Notes (optional)"
+      rows={2}
+      style={{
+        width: "100%",
+        padding: "10px",
+        borderRadius: "8px",
+        border: "1px solid #777",
+        marginBottom: "10px",
+        boxSizing: "border-box",
+      }}
+    />
+
+    <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+      <input
+        type="number"
+        min="1"
+        value={newTaskCount}
+        onChange={(e) => setNewTaskCount(e.target.value)}
+        placeholder="How many"
+        style={{
+          width: "50%",
+          padding: "10px",
+          borderRadius: "8px",
+          border: "1px solid #777",
+          boxSizing: "border-box",
+        }}
+      />
+      <input
+        type="number"
+        min="1"
+        value={newTaskRepeatEvery}
+        onChange={(e) => setNewTaskRepeatEvery(e.target.value)}
+        placeholder="Every N days"
+        style={{
+          width: "50%",
+          padding: "10px",
+          borderRadius: "8px",
+          border: "1px solid #777",
+          boxSizing: "border-box",
+        }}
+      />
+    </div>
+
+    <button
+      onClick={saveNewTask}
+      disabled={savingTask}
+      style={{
+        background: "#4caf50",
+        color: "white",
+        border: "none",
+        padding: "12px 18px",
+        borderRadius: "10px",
+        cursor: savingTask ? "default" : "pointer",
+        fontWeight: "bold",
+        width: "100%",
+      }}
+    >
+      {savingTask ? "Saving..." : "Save Task"}
+    </button>
+
+    <small style={{ color: "#aaa", display: "block", marginTop: "8px" }}>
+      Tasks dated in the future appear in this list on the day they fall due.
+    </small>
+  </div>
+)}
 
 {showTasks &&
 (
