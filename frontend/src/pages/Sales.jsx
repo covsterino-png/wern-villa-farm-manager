@@ -44,6 +44,7 @@ export default function Sales() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showPurchaseForm, setShowPurchaseForm] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const [saleType, setSaleType] = useState("livestock");
@@ -54,10 +55,22 @@ export default function Sales() {
   const [quantity, setQuantity] = useState("1");
   const [unitPrice, setUnitPrice] = useState("");
   const [customer, setCustomer] = useState("");
+  const [customerCph, setCustomerCph] = useState("");
   const [notes, setNotes] = useState("");
   const [allSheep, setAllSheep] = useState([]);
   const [sheepQuery, setSheepQuery] = useState("");
   const [linkedSheep, setLinkedSheep] = useState(null);
+  const [fields, setFields] = useState([]);
+  const [purchaseName, setPurchaseName] = useState("");
+  const [purchaseEid, setPurchaseEid] = useState("");
+  const [purchaseSex, setPurchaseSex] = useState("");
+  const [purchaseDob, setPurchaseDob] = useState("");
+  const [purchaseField, setPurchaseField] = useState("");
+  const [purchaseDate, setPurchaseDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [seller, setSeller] = useState("");
+  const [sellerCph, setSellerCph] = useState("");
+  const [purchasePrice, setPurchasePrice] = useState("");
+  const [purchaseNotes, setPurchaseNotes] = useState("");
 
   async function load() {
     try {
@@ -85,6 +98,17 @@ export default function Sales() {
       .catch(() => {});
   }, [showForm]);
 
+  useEffect(() => {
+    if (!showPurchaseForm || fields.length > 0) return;
+    fetch(`${API}/fields`)
+      .then((res) => res.json())
+      .then((data) => {
+        setFields(Array.isArray(data) ? data : []);
+        if (data.length > 0) setPurchaseField(data[0].name);
+      })
+      .catch(() => {});
+  }, [showPurchaseForm, fields.length]);
+
   function resetForm() {
     setShowForm(false);
     setSaleType("livestock");
@@ -93,9 +117,24 @@ export default function Sales() {
     setQuantity("1");
     setUnitPrice("");
     setCustomer("");
+    setCustomerCph("");
     setNotes("");
     setSheepQuery("");
     setLinkedSheep(null);
+  }
+
+  function resetPurchaseForm() {
+    setShowPurchaseForm(false);
+    setPurchaseName("");
+    setPurchaseEid("");
+    setPurchaseSex("");
+    setPurchaseDob("");
+    setPurchaseField(fields[0]?.name || "");
+    setPurchaseDate(new Date().toISOString().slice(0, 10));
+    setSeller("");
+    setSellerCph("");
+    setPurchasePrice("");
+    setPurchaseNotes("");
   }
 
   async function saveSale() {
@@ -111,6 +150,10 @@ export default function Sales() {
       alert("Choose which sheep was sold.");
       return;
     }
+    if (saleType === "livestock" && !customerCph.trim()) {
+      alert("Enter the buyer's CPH number for the EID Cymru movement report.");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -124,6 +167,7 @@ export default function Sales() {
           quantity: saleType === "livestock" ? 1 : Number(quantity) || 1,
           unitPrice: Number(unitPrice),
           customer,
+          customerCph,
           sheepId: linkedSheep?.id || null,
           notes,
         }),
@@ -134,10 +178,57 @@ export default function Sales() {
         throw new Error(body.error || `Save failed (${res.status})`);
       }
 
+      const data = await res.json();
+      if (data.eidCymru) {
+        alert(`Sale saved. EID Cymru movement is ${data.eidCymru.status} and ready to review in History.`);
+      }
       resetForm();
       await load();
     } catch (error) {
       alert(`Could not save this sale. ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function savePurchase() {
+    if (!purchaseEid.trim() || !purchaseField || !purchaseDate) {
+      alert("Enter the sheep EID, destination field, and purchase date.");
+      return;
+    }
+    if (!sellerCph.trim()) {
+      alert("Enter the seller's CPH number for the EID Cymru movement report.");
+      return;
+    }
+    if (!(Number(purchasePrice) >= 0) || purchasePrice === "") {
+      alert("Enter the purchase price.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch(`${API}/livestock-purchases`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: purchaseName,
+          eid: purchaseEid,
+          sex: purchaseSex,
+          dob: purchaseDob,
+          currentField: purchaseField,
+          purchaseDate,
+          seller,
+          sellerCph,
+          price: Number(purchasePrice),
+          notes: purchaseNotes,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not save purchase");
+      alert(`Purchase saved and sheep added to the register. EID Cymru movement is ${data.eidCymru.status} and ready to review in History.`);
+      resetPurchaseForm();
+    } catch (error) {
+      alert(error.message);
     } finally {
       setSaving(false);
     }
@@ -199,6 +290,13 @@ export default function Sales() {
         }}
       >
         {showForm ? "✖ Cancel" : "➕ Record a sale"}
+      </button>
+
+      <button
+        onClick={() => (showPurchaseForm ? resetPurchaseForm() : setShowPurchaseForm(true))}
+        style={{ ...buttonStyle, background: showPurchaseForm ? "#777" : "#03a9f4", marginBottom: "16px", marginLeft: "10px" }}
+      >
+        {showPurchaseForm ? "✖ Cancel" : "➕ Record a purchase"}
       </button>
 
       {showForm && (
@@ -367,6 +465,15 @@ export default function Sales() {
             style={inputStyle}
           />
 
+          {saleType === "livestock" && (
+            <input
+              value={customerCph}
+              onChange={(e) => setCustomerCph(e.target.value)}
+              placeholder="Buyer CPH number"
+              style={inputStyle}
+            />
+          )}
+
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -388,6 +495,34 @@ export default function Sales() {
               The sheep will be marked as Sold.
             </small>
           )}
+        </div>
+      )}
+
+      {showPurchaseForm && (
+        <div style={panelStyle}>
+          <h2 style={{ marginTop: 0, fontSize: "1.2rem" }}>🐑 Livestock purchase</h2>
+          <input value={purchaseName} onChange={(e) => setPurchaseName(e.target.value)} placeholder="Sheep name (optional)" style={inputStyle} />
+          <input value={purchaseEid} onChange={(e) => setPurchaseEid(e.target.value)} placeholder="EID" style={inputStyle} />
+          <select value={purchaseSex} onChange={(e) => setPurchaseSex(e.target.value)} style={inputStyle}>
+            <option value="">Sex (optional)</option>
+            <option value="Ewe">Ewe</option>
+            <option value="Ram">Ram</option>
+          </select>
+          <input type="date" value={purchaseDob} onChange={(e) => setPurchaseDob(e.target.value)} style={inputStyle} />
+          <label style={{ display: "block", color: "#aaa", marginBottom: "4px" }}>Move to field</label>
+          <select value={purchaseField} onChange={(e) => setPurchaseField(e.target.value)} style={inputStyle}>
+            <option value="">Select field</option>
+            {fields.map((field) => <option key={field.id} value={field.name}>{field.name}</option>)}
+          </select>
+          <label style={{ display: "block", color: "#aaa", marginBottom: "4px" }}>Purchase date</label>
+          <input type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} style={inputStyle} />
+          <input value={seller} onChange={(e) => setSeller(e.target.value)} placeholder="Seller / holding name" style={inputStyle} />
+          <input value={sellerCph} onChange={(e) => setSellerCph(e.target.value)} placeholder="Seller CPH number" style={inputStyle} />
+          <input type="number" min="0" step="0.01" value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} placeholder="Purchase price (£)" style={inputStyle} />
+          <textarea value={purchaseNotes} onChange={(e) => setPurchaseNotes(e.target.value)} placeholder="Notes (optional)" rows={2} style={inputStyle} />
+          <button onClick={savePurchase} disabled={saving} style={{ ...buttonStyle, width: "100%" }}>
+            {saving ? "Saving..." : "Save purchase"}
+          </button>
         </div>
       )}
 
