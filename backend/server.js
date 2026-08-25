@@ -3709,6 +3709,36 @@ ensureLivestockPurchasesTable().catch((error) => {
 
 const SALE_TYPES = ["livestock", "meat", "logs", "other"];
 
+function normaliseDateOnly(value) {
+  if (!value) return null;
+  const text = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(text)) {
+    const [day, month, year] = text.split("/");
+    return `${year}-${month}-${day}`;
+  }
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString().slice(0, 10);
+}
+
+function currentTaxYearRange(now = new Date()) {
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
+  const startYear = month > 4 || (month === 4 && day >= 6) ? year : year - 1;
+  return taxYearRange(startYear);
+}
+
+function taxYearRange(startYear) {
+  return {
+    startYear,
+    startDate: `${startYear}-04-06`,
+    endDate: `${startYear + 1}-04-05`,
+    label: `Tax year ${startYear}/${String(startYear + 1).slice(-2)}`,
+  };
+}
+
 app.get("/sales", async (req, res) => {
   try {
     const result = await turso.execute(`
@@ -3718,15 +3748,33 @@ app.get("/sales", async (req, res) => {
       ORDER BY sales.saleDate DESC, sales.id DESC
     `);
 
+    const requestedStartYear = Number.parseInt(req.query.taxYear, 10);
+    const taxYear = Number.isInteger(requestedStartYear) && requestedStartYear >= 2000 && requestedStartYear <= 2100
+      ? taxYearRange(requestedStartYear)
+      : currentTaxYearRange();
     const totalsByType = {};
     let total = 0;
     for (const sale of result.rows) {
+      const saleDate = normaliseDateOnly(sale.saleDate);
+      if (!saleDate || saleDate < taxYear.startDate || saleDate > taxYear.endDate) {
+        continue;
+      }
       const amount = Number(sale.total) || 0;
       totalsByType[sale.saleType] = (totalsByType[sale.saleType] || 0) + amount;
       total += amount;
     }
 
-    res.json({ sales: result.rows, totalsByType, total });
+    res.json({
+      sales: result.rows,
+      totalsByType,
+      total,
+      period: {
+        kind: "uk-tax-year",
+        startDate: taxYear.startDate,
+        endDate: taxYear.endDate,
+        label: taxYear.label,
+      },
+    });
   } catch (error) {
     console.error("Load sales error:", error);
     res.status(500).json({ error: error.message });

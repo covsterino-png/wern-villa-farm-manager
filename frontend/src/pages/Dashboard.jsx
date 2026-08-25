@@ -1392,7 +1392,7 @@ boxShadow:
   icon="💰"
   title="Income"
   value={`£${salesTotal.toFixed(0)}`}
-  subtitle="Sales"
+  subtitle="Tax year sales"
   colour="#4caf50"
   onClick={() => setPage("sales")}
 />

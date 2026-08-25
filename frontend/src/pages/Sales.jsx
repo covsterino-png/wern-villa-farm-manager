@@ -11,6 +11,24 @@ const SALE_TYPES = [
 const typeLabel = (value) =>
   SALE_TYPES.find((type) => type.value === value)?.label || value;
 
+function taxYearStartYear(value) {
+  const text = String(value || "");
+  const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/) || text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return null;
+  const year = Number(match[1].length === 4 ? match[1] : match[3]);
+  const month = Number(match[1].length === 4 ? match[2] : match[2]);
+  const day = Number(match[1].length === 4 ? match[3] : match[1]);
+  return month > 4 || (month === 4 && day >= 6) ? year : year - 1;
+}
+
+function currentTaxYearStartYear() {
+  const today = new Date();
+  const year = today.getFullYear();
+  return today.getMonth() > 3 || (today.getMonth() === 3 && today.getDate() >= 6)
+    ? year
+    : year - 1;
+}
+
 const panelStyle = {
   background: "#1f1f1f",
   padding: "16px",
@@ -42,6 +60,8 @@ export default function Sales() {
   const [sales, setSales] = useState([]);
   const [totalsByType, setTotalsByType] = useState({});
   const [total, setTotal] = useState(0);
+  const [periodLabel, setPeriodLabel] = useState("Tax year (6 Apr to 5 Apr)");
+  const [selectedTaxYear, setSelectedTaxYear] = useState(currentTaxYearStartYear);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
@@ -72,12 +92,13 @@ export default function Sales() {
   const [purchasePrice, setPurchasePrice] = useState("");
   const [purchaseNotes, setPurchaseNotes] = useState("");
 
-  async function load() {
+  async function load(taxYear = selectedTaxYear) {
     try {
-      const data = await fetchJson("/sales");
+      const data = await fetchJson(`/sales?taxYear=${taxYear}`);
       setSales(data.sales || []);
       setTotalsByType(data.totalsByType || {});
       setTotal(data.total || 0);
+      setPeriodLabel(data.period?.label || "Tax year (6 Apr to 5 Apr)");
     } catch (error) {
       console.error(error);
     } finally {
@@ -86,7 +107,7 @@ export default function Sales() {
   }
 
   useEffect(() => {
-    load();
+    load(selectedTaxYear);
   }, []);
 
   useEffect(() => {
@@ -263,16 +284,39 @@ export default function Sales() {
   const canLinkSheep = saleType === "livestock" || saleType === "meat";
   // One animal per livestock sale, so quantity is always 1.
   const isSingleItem = saleType === "livestock";
+  const taxYearOptions = [...new Set([
+    currentTaxYearStartYear(),
+    selectedTaxYear,
+    ...sales.map((sale) => taxYearStartYear(sale.saleDate)).filter(Boolean),
+  ])].sort((first, second) => second - first);
 
   return (
     <div>
       <h1 style={{ color: "#03a9f4" }}>💷 Sales &amp; Income</h1>
 
       <div style={panelStyle}>
+        <label style={{ display: "block", color: "#aaa", marginBottom: "4px" }}>
+          Tax year
+        </label>
+        <select
+          value={selectedTaxYear}
+          onChange={(event) => {
+            const taxYear = Number(event.target.value);
+            setSelectedTaxYear(taxYear);
+            load(taxYear);
+          }}
+          style={inputStyle}
+        >
+          {taxYearOptions.map((taxYear) => (
+            <option key={taxYear} value={taxYear}>
+              {taxYear}/{String(taxYear + 1).slice(-2)}
+            </option>
+          ))}
+        </select>
         <div style={{ fontSize: "1.6rem", fontWeight: "bold", color: "#4caf50" }}>
           £{total.toFixed(2)}
         </div>
-        <div style={{ color: "#aaa", marginBottom: "8px" }}>Total recorded income</div>
+        <div style={{ color: "#aaa", marginBottom: "8px" }}>{periodLabel} income</div>
 
         {SALE_TYPES.filter((type) => totalsByType[type.value]).map((type) => (
           <div key={type.value} style={{ color: "#ddd" }}>
