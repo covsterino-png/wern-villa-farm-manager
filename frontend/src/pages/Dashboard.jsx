@@ -41,6 +41,8 @@ const [actionNotes, setActionNotes] =
 
   const [treatmentCount, setTreatmentCount] =
     useState(0);
+  const [withdrawalCount, setWithdrawalCount] =
+    useState(0);
   const [transactionCount, setTransactionCount] =
     useState(0);
   const [heroPoints, setHeroPoints] = useState({ balance: 0, pending: 0 });
@@ -129,10 +131,6 @@ const [actionNotes, setActionNotes] =
       setTodayTasks(data)
     );
 }, []);
-
-
-  const [withdrawalCount, setWithdrawalCount] =
-    useState(0);
 
   useEffect(() => {
     fetch(
@@ -1372,24 +1370,13 @@ boxShadow:
 <DashboardCard
   icon="💉"
   title="Treatments"
-  subtitle="This Month"
+  subtitle={`This month • ${withdrawalCount} active withdrawals`}
   value={treatmentCount}
   colour="#9c27b0"
   onClick={() =>
     setPage("treatments")
   }
 />
-
-        <DashboardCard
-          icon="⚠️"
-          title="Withdrawals"
-          value={withdrawalCount}
-          colour="#f44336"
-          onClick={() =>
-            setPage("treatments")
-          }
-        />
-
 <DashboardCard
   icon="💷"
   title="Finances"
