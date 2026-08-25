@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./App.css";
 import Calendar from "./pages/Calendar";
 import Login from "./pages/Login";
@@ -24,6 +24,8 @@ import { subscribeQueueCount } from "./offlineQueue";
 function App() {
   const [page, setPage] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sheepEggOpen, setSheepEggOpen] = useState(false);
+  const sheepHoldTimer = useRef(null);
 
   const [user] = useState(
     localStorage.getItem("authToken")
@@ -120,6 +122,20 @@ function App() {
   const navigate = (nextPage) => {
     setPage(nextPage);
     if (isMobile) setMobileMenuOpen(false);
+  };
+
+  const startSheepHold = () => {
+    sheepHoldTimer.current = window.setTimeout(() => {
+      setSheepEggOpen(true);
+      sheepHoldTimer.current = null;
+    }, 700);
+  };
+
+  const cancelSheepHold = () => {
+    if (sheepHoldTimer.current) {
+      window.clearTimeout(sheepHoldTimer.current);
+      sheepHoldTimer.current = null;
+    }
   };
 
   const navItems = [
@@ -259,6 +275,27 @@ function App() {
 
         {isMobile ? (
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <button
+              onPointerDown={startSheepHold}
+              onPointerUp={cancelSheepHold}
+              onPointerLeave={cancelSheepHold}
+              onPointerCancel={cancelSheepHold}
+              aria-label="Hold for a sheep surprise"
+              title="Hold for a sheep surprise"
+              style={{
+                background: "#f5d06f",
+                border: "none",
+                borderRadius: "10px",
+                cursor: "pointer",
+                width: "48px",
+                height: "44px",
+                fontSize: "1.45rem",
+                lineHeight: 1,
+                touchAction: "none",
+              }}
+            >
+              🐑
+            </button>
             <button
               onClick={() => navigate("dashboard")}
               style={{ ...buttonStyle("dashboard"), flex: 1, textAlign: "center", padding: "12px" }}
@@ -445,6 +482,21 @@ Receipts
   <HeroPoints user={user} />
 )}
       </div>
+
+      {isMobile && sheepEggOpen && (
+        <div className="sheep-egg" role="dialog" aria-label="Sheep surprise">
+          <button
+            className="sheep-egg-close"
+            onClick={() => setSheepEggOpen(false)}
+            aria-label="Close sheep surprise"
+          >
+            ✕
+          </button>
+          <div className="sheep-egg-sheep" aria-hidden="true">🐑</div>
+          <strong>Baa-rilliant work!</strong>
+          <span>Your flock is in good hands.</span>
+        </div>
+      )}
     </div>
   );
 }
