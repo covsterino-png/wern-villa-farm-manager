@@ -42,10 +42,15 @@ export default function MoveGroup() {
     )
       .then((res) => res.json())
       .then((data) => {
+        const eidMessage = data.eidCymru
+          ? data.eidCymru.status === "submitted"
+            ? " EID Cymru was updated."
+            : ` EID Cymru submission is ready for review${data.eidCymru.error ? `: ${data.eidCymru.error}` : "."}`
+          : "";
         alert(
           data.queued
             ? "Saved offline — move will sync automatically once you're back online."
-            : "Group moved successfully"
+            : `Group moved successfully.${eidMessage}`
         );
       });
   }
@@ -114,6 +119,7 @@ export default function MoveGroup() {
 
       <button
         onClick={moveGroup}
+        disabled={!groupName || !newField}
         style={{
           background: "#03a9f4",
           color: "white",

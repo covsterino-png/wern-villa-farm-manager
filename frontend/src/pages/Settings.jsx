@@ -19,6 +19,9 @@ const [passwordMessage, setPasswordMessage] = useState("");
 const [showPassword, setShowPassword] = useState(false);
 const [showFields, setShowFields] = useState(false);
 const [showMedicines, setShowMedicines] = useState(false);
+const [holdings, setHoldings] = useState([]);
+const [showEidCymru, setShowEidCymru] = useState(false);
+const [holdingMessage, setHoldingMessage] = useState("");
 
 async function changePassword(event) {
   event.preventDefault();
@@ -58,9 +61,33 @@ async function changePassword(event) {
       });
   }
 
+  function loadHoldings() {
+    fetch(`${API}/eid-cymru/holdings`)
+      .then((response) => response.json())
+      .then((data) => setHoldings(data));
+  }
+
+  async function saveHolding(farm, cph) {
+    setHoldingMessage("");
+    try {
+      const response = await fetch(`${API}/eid-cymru/holdings/${encodeURIComponent(farm)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cph }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to save CPH number");
+      setHoldingMessage(`${farm} CPH saved.`);
+      loadHoldings();
+    } catch (error) {
+      setHoldingMessage(error.message);
+    }
+  }
+
 useEffect(() => {
   loadFields();
   loadMedicines();
+  loadHoldings();
 }, []);
 function addMedicine() {
   if (!newMedicine.trim()) return;
@@ -143,6 +170,34 @@ body: JSON.stringify({
           <button type="submit">Change password</button>
         </form>
         {passwordMessage && <p style={{ color: passwordMessage.includes("successfully") ? "#8bc34a" : "#ff8a80" }}>{passwordMessage}</p>}
+      </SettingsSection>
+
+      <SettingsSection
+        title="EID Cymru Holdings"
+        open={showEidCymru}
+        onToggle={() => setShowEidCymru((open) => !open)}
+      >
+        {holdings.map((holding) => (
+          <form
+            key={holding.farm}
+            onSubmit={(event) => {
+              event.preventDefault();
+              saveHolding(holding.farm, event.currentTarget.cph.value);
+            }}
+            style={{ display: "flex", gap: "10px", marginBottom: "10px", maxWidth: "520px" }}
+          >
+            <label style={{ minWidth: "110px", alignSelf: "center" }}>{holding.farm}</label>
+            <input
+              name="cph"
+              required
+              defaultValue={holding.cph}
+              placeholder="CPH number"
+              style={{ flex: 1 }}
+            />
+            <button type="submit">Save</button>
+          </form>
+        ))}
+        {holdingMessage && <p style={{ color: holdingMessage.includes("saved") ? "#8bc34a" : "#ff8a80" }}>{holdingMessage}</p>}
       </SettingsSection>
 
       <SettingsSection

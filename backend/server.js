@@ -298,6 +298,119 @@ async function ensureFieldFarmColumn() {
   `);
 }
 
+async function ensureEidCymruMovementSubmissionsTable() {
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS eidCymruMovementSubmissions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      movementId INTEGER,
+      sourceFarm TEXT NOT NULL,
+      destinationFarm TEXT NOT NULL,
+      movementDate TEXT NOT NULL,
+      animalEids TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      externalReference TEXT,
+      lastError TEXT,
+      submittedAt TEXT,
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
+async function ensureFarmHoldingsTable() {
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS farmHoldings (
+      farm TEXT PRIMARY KEY,
+      cph TEXT NOT NULL DEFAULT '',
+      updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  for (const farm of ["Wern Villa", "Gellidywyll"]) {
+    await turso.execute({
+      sql: "INSERT OR IGNORE INTO farmHoldings (farm) VALUES (?)",
+      args: [farm],
+    });
+  }
+}
+
+function eidCymruConfigurationError() {
+  const required = [
+    "EID_CYMRU_API_URL",
+    "EID_CYMRU_API_TOKEN",
+  ];
+  const missing = required.filter((name) => !process.env[name]);
+  return missing.length ? `Missing EID Cymru configuration: ${missing.join(", ")}` : null;
+}
+
+async function eidCymruHoldingForFarm(farm) {
+  const result = await turso.execute({
+    sql: "SELECT cph FROM farmHoldings WHERE farm = ?",
+    args: [farm],
+  });
+  const cph = String(result.rows[0]?.cph || "").trim();
+  if (!cph) throw new Error(`Missing CPH number for ${farm}`);
+  return cph;
+}
+
+async function submitEidCymruMovement(submission) {
+  const configurationError = eidCymruConfigurationError();
+  if (configurationError) throw new Error(configurationError);
+
+  const response = await axios.post(
+    process.env.EID_CYMRU_API_URL,
+    {
+      fromHolding: await eidCymruHoldingForFarm(submission.sourceFarm),
+      toHolding: await eidCymruHoldingForFarm(submission.destinationFarm),
+      movementDate: submission.movementDate,
+      animalEids: JSON.parse(submission.animalEids),
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.EID_CYMRU_API_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      timeout: 15000,
+    }
+  );
+
+  return response.data?.reference || response.data?.id || null;
+}
+
+async function deliverEidCymruMovement(submissionId) {
+  const result = await turso.execute({
+    sql: "SELECT * FROM eidCymruMovementSubmissions WHERE id = ?",
+    args: [submissionId],
+  });
+  const submission = result.rows[0];
+  if (!submission || submission.status !== "review") return submission;
+
+  try {
+    await turso.execute({
+      sql: "UPDATE eidCymruMovementSubmissions SET status = 'submitting', lastError = NULL WHERE id = ?",
+      args: [submissionId],
+    });
+    const externalReference = await submitEidCymruMovement(submission);
+    await turso.execute({
+      sql: `
+        UPDATE eidCymruMovementSubmissions
+        SET status = 'submitted', externalReference = ?, lastError = NULL, submittedAt = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `,
+      args: [externalReference, submissionId],
+    });
+  } catch (error) {
+    await turso.execute({
+      sql: "UPDATE eidCymruMovementSubmissions SET status = 'review', lastError = ? WHERE id = ?",
+      args: [error.response?.data?.message || error.message, submissionId],
+    });
+  }
+
+  const updated = await turso.execute({
+    sql: "SELECT * FROM eidCymruMovementSubmissions WHERE id = ?",
+    args: [submissionId],
+  });
+  return updated.rows[0];
+}
+
 async function ensureSalesTable() {
   await turso.execute(`
     CREATE TABLE IF NOT EXISTS sales (
@@ -1727,13 +1840,60 @@ app.post("/sheep/:id/scans", async (req, res) => {
 
 app.get("/movements", async (req, res) => {
   try {
-    const result = await turso.execute(
-      "SELECT * FROM movements ORDER BY id DESC"
-    );
+    const result = await turso.execute(`
+      SELECT movements.*, eidCymruMovementSubmissions.id AS eidCymruSubmissionId,
+        eidCymruMovementSubmissions.status AS eidCymruStatus,
+        eidCymruMovementSubmissions.animalEids AS eidCymruAnimalEids,
+        eidCymruMovementSubmissions.lastError AS eidCymruError
+      FROM movements
+      LEFT JOIN eidCymruMovementSubmissions
+        ON eidCymruMovementSubmissions.movementId = movements.id
+      ORDER BY movements.id DESC
+    `);
 
     res.json(result.rows);
   } catch (error) {
     res.status(500).json(error);
+  }
+});
+app.get("/eid-cymru/holdings", async (req, res) => {
+  try {
+    const result = await turso.execute("SELECT farm, cph FROM farmHoldings ORDER BY farm");
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+app.put("/eid-cymru/holdings/:farm", async (req, res) => {
+  try {
+    const farm = decodeURIComponent(req.params.farm);
+    const cph = String(req.body?.cph || "").trim();
+    if (!["Wern Villa", "Gellidywyll"].includes(farm)) {
+      return res.status(400).json({ error: "Unknown farm holding" });
+    }
+    if (!cph) return res.status(400).json({ error: "A CPH number is required" });
+    await turso.execute({
+      sql: "UPDATE farmHoldings SET cph = ?, updatedAt = CURRENT_TIMESTAMP WHERE farm = ?",
+      args: [cph, farm],
+    });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+app.post("/eid-cymru/submissions/:id/submit", async (req, res) => {
+  try {
+    const submission = await deliverEidCymruMovement(Number(req.params.id));
+    if (!submission) return res.status(404).json({ error: "EID Cymru submission not found" });
+    if (submission.status === "blocked") {
+      return res.status(409).json({ error: submission.lastError || "This submission is blocked" });
+    }
+    if (submission.status === "submitting") {
+      return res.status(409).json({ error: "This submission is already being sent" });
+    }
+    res.json({ status: submission.status, error: submission.lastError });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 app.get("/tasks", async (req, res) => {
@@ -1781,6 +1941,27 @@ app.post("/move-group", async (req, res) => {
     const { groupName, newField } =
       req.body || {};
 
+    if (!groupName || !newField) {
+      return res.status(400).json({ error: "A group and destination field are required" });
+    }
+
+    const groupResult = await turso.execute({
+      sql: "SELECT currentField FROM flockRegister WHERE name = ?",
+      args: [groupName],
+    });
+    const sourceField = groupResult.rows[0]?.currentField;
+    const fieldsResult = await turso.execute({
+      sql: "SELECT name, farm FROM fields WHERE name IN (?, ?)",
+      args: [sourceField, newField],
+    });
+    const fieldsByName = Object.fromEntries(fieldsResult.rows.map((field) => [field.name, field]));
+    const sourceFarm = fieldsByName[sourceField]?.farm || "Gellidywyll";
+    const destinationFarm = fieldsByName[newField]?.farm || "Gellidywyll";
+
+    if (!fieldsByName[newField]) {
+      return res.status(400).json({ error: "The destination field does not exist" });
+    }
+
     await turso.execute({
       sql: `
         UPDATE flockRegister
@@ -1801,7 +1982,7 @@ app.post("/move-group", async (req, res) => {
 const sheepResult =
   await turso.execute({
     sql: `
-      SELECT id
+      SELECT id, eid
       FROM sheep
       WHERE groupName = ?
     `,
@@ -1819,8 +2000,52 @@ for (const sheep of sheepResult.rows) {
   );
 }
 
+let eidCymruSubmission = null;
+if (sourceField && sourceFarm !== destinationFarm) {
+  const animalEids = sheepResult.rows
+    .map((sheep) => String(sheep.eid || "").trim())
+    .filter(Boolean);
+  const missingEidError = animalEids.length !== sheepResult.rows.length
+    ? "Every sheep must have an EID before this move can be submitted to EID Cymru."
+    : null;
+
+  const movementDate = new Date().toISOString().split("T")[0];
+  const movementResult = await turso.execute({
+    sql: `
+      INSERT INTO movements (number, fromLocation, toLocation, moveDate, movedBy)
+      VALUES (?, ?, ?, ?, ?)
+    `,
+    args: [sheepResult.rows.length, sourceField, newField, movementDate, "Group move"],
+  });
+  const submissionResult = await turso.execute({
+    sql: `
+      INSERT INTO eidCymruMovementSubmissions
+        (movementId, sourceFarm, destinationFarm, movementDate, animalEids, status, lastError)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+    args: [
+      Number(movementResult.lastInsertRowid),
+      sourceFarm,
+      destinationFarm,
+      movementDate,
+      JSON.stringify(animalEids),
+      missingEidError ? "blocked" : "pending",
+      missingEidError,
+    ],
+  });
+  const queuedSubmission = await turso.execute({
+    sql: "SELECT * FROM eidCymruMovementSubmissions WHERE id = ?",
+    args: [Number(submissionResult.lastInsertRowid)],
+  });
+  eidCymruSubmission = queuedSubmission.rows[0];
+}
+
 res.json({
   success: true,
+  eidCymru: eidCymruSubmission && {
+    status: eidCymruSubmission.status,
+    error: eidCymruSubmission.lastError,
+  },
 });  } catch (error) {
     res.status(500).json(error);
   }
@@ -3387,6 +3612,14 @@ ensureNotesTables().catch((error) => {
 
 ensureFieldFarmColumn().catch((error) => {
   console.error("Failed to ensure field farm column:", error);
+});
+
+ensureEidCymruMovementSubmissionsTable().catch((error) => {
+  console.error("Failed to ensure EID Cymru movement submissions table:", error);
+});
+
+ensureFarmHoldingsTable().catch((error) => {
+  console.error("Failed to ensure farm holdings table:", error);
 });
 
 ensureSalesTable().catch((error) => {
