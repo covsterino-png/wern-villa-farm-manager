@@ -25,19 +25,6 @@ function App() {
   const [page, setPage] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const [farmData, setFarmData] = useState({
-    totalSheep: 150,
-    locations: {
-      wernVilla: 0,
-      gellidywyll: 150,
-    },
-    flock: {
-      breedingEwes: 106,
-      eweLambs: 33,
-      rams: 11,
-    },
-  });
-
   const [user] = useState(
     localStorage.getItem("authToken")
       ? localStorage.getItem("user")

@@ -2,12 +2,7 @@ import { useEffect, useState } from "react";
 import { API } from "../api";
 import { submitWrite } from "../offlineQueue";
 
-export default function MoveSheep({
-  farmData,
-  setFarmData,
-  movements,
-  setMovements,
-}) {
+export default function MoveSheep({ movements, setMovements }) {
   const [number, setNumber] = useState("");
   const [fields, setFields] = useState([]);
 
