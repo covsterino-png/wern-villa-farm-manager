@@ -43,8 +43,12 @@ function App() {
 
   useEffect(() => {
     if (!user) return;
-    apiFetch("/app-open-events", { method: "POST" }).catch(() => {});
-  }, [user]);
+    apiFetch("/app-open-events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ screen: page }),
+    }).catch(() => {});
+  }, [page, user]);
 
   useEffect(() => {
     const handler = (event) => {

@@ -216,9 +216,15 @@ async function ensureAppOpenEventsTable() {
       userName TEXT NOT NULL,
       openedAt TEXT DEFAULT CURRENT_TIMESTAMP,
       userAgent TEXT,
-      ipAddress TEXT
+      ipAddress TEXT,
+      lastScreen TEXT
     )
   `);
+  try {
+    await turso.execute("ALTER TABLE appOpenEvents ADD COLUMN lastScreen TEXT");
+  } catch (error) {
+    if (!String(error.message || "").includes("duplicate column")) throw error;
+  }
 }
 
 async function ensureHeroPointsTables() {
@@ -666,9 +672,10 @@ app.post("/auth/admin-reset-password", async (req, res) => {
 
 app.post("/app-open-events", async (req, res) => {
   try {
+    const screen = String(req.body?.screen || "").trim().slice(0, 80) || null;
     await turso.execute({
-      sql: "INSERT INTO appOpenEvents (userName, userAgent, ipAddress) VALUES (?, ?, ?)",
-      args: [req.user, req.get("user-agent") || null, req.get("x-forwarded-for") || req.ip || null],
+      sql: "INSERT INTO appOpenEvents (userName, userAgent, ipAddress, lastScreen) VALUES (?, ?, ?, ?)",
+      args: [req.user, req.get("user-agent") || null, req.get("x-forwarded-for") || req.ip || null, screen],
     });
     return res.json({ success: true });
   } catch (error) {
@@ -681,7 +688,7 @@ app.get("/app-open-events", async (req, res) => {
   try {
     const result = await turso.execute({
       sql: `
-        SELECT e.id, e.userName, e.openedAt, e.userAgent
+        SELECT e.id, e.userName, e.openedAt, e.userAgent, e.lastScreen
         FROM appOpenEvents e
         INNER JOIN (
           SELECT userName, MAX(id) AS id

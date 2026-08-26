@@ -251,6 +251,8 @@ body: JSON.stringify({
                 <strong>{event.userName}</strong>
                 <span style={{ color: "#aaa", textAlign: "right" }}>
                   {new Date(`${event.openedAt}Z`).toLocaleString()}
+                  <br />
+                  {event.lastScreen || "Unknown screen"}
                 </span>
               </div>
             ))}
