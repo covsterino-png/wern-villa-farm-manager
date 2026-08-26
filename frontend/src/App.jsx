@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 import Calendar from "./pages/Calendar";
 import Login from "./pages/Login";
@@ -39,8 +39,6 @@ function App() {
   const [user] = useState(getStoredUser);
   const [page, setPage] = useState(() => getStoredPage(user));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sheepEggOpen, setSheepEggOpen] = useState(false);
-  const sheepHoldTimer = useRef(null);
 
   const [unreadCount, setUnreadCount] =
     useState(0);
@@ -141,20 +139,6 @@ function App() {
     if (isMobile) setMobileMenuOpen(false);
   };
 
-  const startSheepHold = () => {
-    sheepHoldTimer.current = window.setTimeout(() => {
-      setSheepEggOpen(true);
-      sheepHoldTimer.current = null;
-    }, 700);
-  };
-
-  const cancelSheepHold = () => {
-    if (sheepHoldTimer.current) {
-      window.clearTimeout(sheepHoldTimer.current);
-      sheepHoldTimer.current = null;
-    }
-  };
-
   const navItems = [
     ["move", "Move"],
     ["history", "History"],
@@ -194,15 +178,6 @@ function App() {
           boxSizing: "border-box",
         }}
       >
-        <div
-          style={{
-            marginBottom: "25px",
-            borderBottom:
-              "1px solid #333",
-            paddingBottom: "15px",
-          }}
-        >
-
 {pendingSyncCount > 0 && (
   <div
     style={{
@@ -221,104 +196,8 @@ function App() {
   </div>
 )}
 
-<div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: "8px",
-  }}
->
-<span
-  style={{
-    color: "#aaa",
-    fontSize: "0.8rem",
-    whiteSpace: "nowrap",
-  }}
->
-  {user} • Farm Manager
-</span>
-  <div>
-    {installPrompt && (
-      <button
-        onClick={installApp}
-        style={{
-          background: "transparent",
-          border: "none",
-          color: "#aaa",
-          cursor: "pointer",
-          fontSize: "1rem",
-          marginRight: "8px",
-        }}
-        title="Install App"
-      >
-        ⬇️
-      </button>
-    )}
-    <button
-      onClick={() =>
-        setPage("settings")
-      }
-      style={{
-        background: "transparent",
-        border: "none",
-        color: "#aaa",
-        cursor: "pointer",
-        fontSize: "1rem",
-        marginRight: "8px",
-      }}
-      title="Settings"
-    >
-      ⚙️
-    </button>
-
-    <button
-      onClick={logout}
-      style={{
-        background: "transparent",
-        border: "none",
-        color: "#aaa",
-        cursor: "pointer",
-        fontSize: "1rem",
-      }}
-      title="Logout"
-    >
-      🚪
-    </button>
-  </div>
-</div>
-
-        </div>
-
         {isMobile ? (
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <button
-              onPointerDown={startSheepHold}
-              onPointerUp={cancelSheepHold}
-              onPointerLeave={cancelSheepHold}
-              onPointerCancel={cancelSheepHold}
-              aria-label="Hold for a sheep surprise"
-              title="Hold for a sheep surprise"
-              style={{
-                background: "#f5d06f",
-                border: "none",
-                borderRadius: "10px",
-                cursor: "pointer",
-                width: "48px",
-                height: "44px",
-                fontSize: "1.45rem",
-                lineHeight: 1,
-                touchAction: "none",
-              }}
-            >
-              🐑
-            </button>
-            <button
-              onClick={() => navigate("dashboard")}
-              style={{ ...buttonStyle("dashboard"), flex: 1, textAlign: "center", padding: "12px" }}
-            >
-              Home
-            </button>
             <button
               onClick={() => setMobileMenuOpen((open) => !open)}
               aria-expanded={mobileMenuOpen}
@@ -337,9 +216,57 @@ function App() {
             >
               {mobileMenuOpen ? "✕" : "☰"}
             </button>
+            <button
+              onClick={() => navigate("dashboard")}
+              aria-label="Home"
+              title="Home"
+              style={{ ...buttonStyle("dashboard"), flex: 1, textAlign: "center", padding: "12px", fontSize: "1.2rem" }}
+            >
+              🏠
+            </button>
+            {user === "David" && (
+              <button
+                onClick={() => navigate("settings")}
+                aria-label="Settings"
+                title="Settings"
+                style={{ ...buttonStyle("settings"), width: "44px", textAlign: "center", fontSize: "1.2rem" }}
+              >
+                ⚙️
+              </button>
+            )}
+            <button
+              onClick={logout}
+              aria-label="Logout"
+              title="Logout"
+              style={{ ...buttonStyle("logout"), width: "44px", textAlign: "center", fontSize: "1.2rem" }}
+            >
+              🚪
+            </button>
           </div>
         ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          {installPrompt && (
+            <button
+              style={buttonStyle("install")}
+              onClick={installApp}
+            >
+              Install App
+            </button>
+          )}
+          {user === "David" && (
+            <button
+              style={buttonStyle("settings")}
+              onClick={() => navigate("settings")}
+            >
+              Settings
+            </button>
+          )}
+          <button
+            style={buttonStyle("logout")}
+            onClick={logout}
+          >
+            Logout
+          </button>
           <button
             style={buttonStyle(
               "dashboard"
@@ -499,21 +426,6 @@ Receipts
   <HeroPoints user={user} />
 )}
       </div>
-
-      {isMobile && sheepEggOpen && (
-        <div className="sheep-egg" role="dialog" aria-label="Sheep surprise">
-          <button
-            className="sheep-egg-close"
-            onClick={() => setSheepEggOpen(false)}
-            aria-label="Close sheep surprise"
-          >
-            ✕
-          </button>
-          <div className="sheep-egg-sheep" aria-hidden="true">🐑</div>
-          <strong>Baa-rilliant work!</strong>
-          <span>Your flock is in good hands.</span>
-        </div>
-      )}
     </div>
   );
 }
