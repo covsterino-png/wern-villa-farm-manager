@@ -4551,19 +4551,25 @@ app.post("/ai/customizer", async (req, res) => {
     let aiResponseText = "";
     let parsedActions = [];
 
+    const devNotesResult = await turso.execute("SELECT * FROM devNotes ORDER BY id DESC");
+    const currentDevNotes = devNotesResult.rows || [];
+
     if (apiKey) {
       try {
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-        const systemInstruction = `You are an AI App Customizer for Wern Villa Farm Manager PWA.
-You help David configure and expand his farm manager app (smart lights, switches, water pumps, field sensors, custom drop-downs, app settings, task templates).
+        const systemInstruction = `You are an AI App Customizer & Assistant for Wern Villa Farm Manager PWA.
+You help David configure and expand his farm manager app (smart lights, switches, water pumps, field sensors, custom drop-downs, app settings, task templates, and reviewing field bug reports).
+Current Open Field Bug Reports / Ideas in Database:
+${JSON.stringify(currentDevNotes, null, 2)}
+
 Return ONLY a valid JSON object matching this schema:
 {
-  "reply": "Friendly response to David explaining what was added or changed.",
+  "reply": "Friendly response to David explaining what was found, added, resolved or changed.",
   "actions": [
     {
       "type": "add_smart_device",
       "name": "Device name",
-      "icon": "💡 or 🔌 or 🚪 or 💧 or ⚙️ or 📹",
+      "icon": "💡 or 🔌 or 🚪 or 💧 or 🌾 or 📹",
       "deviceType": "toggle or button or sensor",
       "location": "Location string",
       "endpointUrl": "Optional webhook url"
@@ -4573,6 +4579,10 @@ Return ONLY a valid JSON object matching this schema:
       "key": "unique_config_key",
       "value": "string value",
       "category": "theme or task or custom_fields or features"
+    },
+    {
+      "type": "resolve_dev_note",
+      "id": 1
     }
   ]
 }`;
@@ -4607,7 +4617,18 @@ Return ONLY a valid JSON object matching this schema:
 
     if (parsedActions.length === 0) {
       const lower = userPrompt.toLowerCase();
-      if (lower.includes("light") || lower.includes("switch") || lower.includes("lamp") || lower.includes("pump") || lower.includes("gate") || lower.includes("silo") || lower.includes("camera") || lower.includes("device") || lower.includes("button")) {
+      if (lower.includes("bug") || lower.includes("report") || lower.includes("issue") || lower.includes("fix") || lower.includes("check")) {
+        if (currentDevNotes.length === 0) {
+          aiResponseText = aiResponseText || "No open field bugs or feature requests found in the database!";
+        } else {
+          const notesSummary = currentDevNotes
+            .map((n) => `• [${n.kind.toUpperCase()}] #${n.id}: "${n.title}" (${n.details || "no details"}) on ${n.screen} screen`)
+            .join("\n");
+          if (!aiResponseText) {
+            aiResponseText = `Found ${currentDevNotes.length} reported note(s):\n${notesSummary}`;
+          }
+        }
+      } else if (lower.includes("light") || lower.includes("switch") || lower.includes("lamp") || lower.includes("pump") || lower.includes("gate") || lower.includes("silo") || lower.includes("camera") || lower.includes("device") || lower.includes("button")) {
         let icon = "💡";
         if (lower.includes("pump") || lower.includes("water") || lower.includes("trough")) icon = "💧";
         if (lower.includes("gate") || lower.includes("door")) icon = "🚪";
@@ -4663,11 +4684,17 @@ Return ONLY a valid JSON object matching this schema:
           `,
           args: [action.key, String(action.value), action.category || "general", "David"],
         });
+      } else if (action.type === "resolve_dev_note" && action.id) {
+        await turso.execute({
+          sql: "DELETE FROM devNotes WHERE id = ?",
+          args: [action.id],
+        });
       }
     }
 
     const configResult = await turso.execute("SELECT * FROM appConfig ORDER BY category, key");
     const devicesResult = await turso.execute("SELECT * FROM smartDevices ORDER BY id DESC");
+    const updatedDevNotes = await turso.execute("SELECT * FROM devNotes ORDER BY id DESC");
 
     res.json({
       success: true,
@@ -4675,6 +4702,7 @@ Return ONLY a valid JSON object matching this schema:
       actionsExecuted: parsedActions.length,
       config: configResult.rows,
       devices: devicesResult.rows,
+      devNotes: updatedDevNotes.rows,
     });
   } catch (error) {
     console.error("AI customizer error:", error);

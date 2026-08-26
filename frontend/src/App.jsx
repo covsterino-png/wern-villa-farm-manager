@@ -267,27 +267,7 @@ function App() {
             </button>
             {user === "David" && (
               <button
-                onClick={() => setShowBugModal(true)}
-                aria-label="Report Bug"
-                title="Report Bug / Feature Idea"
-                style={{
-                  background: "#dc2626",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "10px",
-                  cursor: "pointer",
-                  width: "44px",
-                  height: "44px",
-                  fontSize: "1.2rem",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                🐛
-              </button>
-            )}
-            {user === "David" && (
+                onClick={() => navigate("settings")}
               <button
                 onClick={() => navigate("settings")}
                 aria-label="Settings"
