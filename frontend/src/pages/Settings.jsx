@@ -44,6 +44,24 @@ const [manualIcon, setManualIcon] = useState("💡");
 const [manualEndpoint, setManualEndpoint] = useState("");
 const [manualLocation, setManualLocation] = useState("");
 
+const [devNotes, setDevNotes] = useState([]);
+const [showDevNotes, setShowDevNotes] = useState(false);
+
+function loadDevNotes() {
+  fetchJson("/dev-notes")
+    .then((data) => setDevNotes(Array.isArray(data) ? data : []))
+    .catch((err) => console.error("Error loading dev notes:", err));
+}
+
+async function deleteDevNote(id) {
+  try {
+    await fetchJson(`/dev-notes/${id}`, { method: "DELETE" });
+    setDevNotes((prev) => prev.filter((n) => n.id !== id));
+  } catch (err) {
+    alert("Could not delete note: " + err.message);
+  }
+}
+
 function loadAiConfig() {
   fetchJson("/ai/config")
     .then((data) => {
@@ -475,6 +493,72 @@ body: JSON.stringify({
                     </button>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+
+          {/* Reported Bugs & Feature Ideas */}
+          <div style={{ marginTop: "24px", paddingTop: "16px", borderTop: "1px solid #334155" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+              <h3 style={{ margin: 0, color: "#ef4444" }}>🐛 Field Bug Reports & Ideas ({devNotes.length})</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !showDevNotes;
+                  setShowDevNotes(next);
+                  if (next) loadDevNotes();
+                }}
+                style={{ background: "#334155", color: "#e2e8f0", border: "1px solid #475569", padding: "6px 12px", borderRadius: "8px", cursor: "pointer" }}
+              >
+                {showDevNotes ? "▲ Hide Reports" : "▼ View Field Reports"}
+              </button>
+            </div>
+
+            {showDevNotes && (
+              <div>
+                {devNotes.length === 0 ? (
+                  <p style={{ color: "#94a3b8" }}>No field reports submitted yet. Use the red 🐛 button in the top navigation bar to log bug reports from your phone.</p>
+                ) : (
+                  <div style={{ display: "grid", gap: "10px" }}>
+                    {devNotes.map((note) => (
+                      <div
+                        key={note.id}
+                        style={{
+                          background: "#0f172a",
+                          border: "1px solid #334155",
+                          borderRadius: "10px",
+                          padding: "12px",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          gap: "12px",
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "4px" }}>
+                            <span style={{ background: note.kind === "bug" ? "#dc2626" : "#0284c7", color: "white", padding: "2px 6px", borderRadius: "4px", fontSize: "0.75rem", fontWeight: "bold" }}>
+                              {note.kind === "bug" ? "BUG" : note.kind === "feature" ? "IDEA" : "TWEAK"}
+                            </span>
+                            <strong style={{ color: "#f8fafc" }}>{note.title}</strong>
+                            {note.screen && <span style={{ color: "#64748b", fontSize: "0.8rem" }}>({note.screen})</span>}
+                          </div>
+                          {note.details && <p style={{ color: "#cbd5e1", fontSize: "0.9rem", margin: "4px 0" }}>{note.details}</p>}
+                          <span style={{ color: "#64748b", fontSize: "0.75rem" }}>
+                            Reported by {note.reportedBy || "David"} on {new Date(note.createdDate).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => deleteDevNote(note.id)}
+                          style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", fontSize: "1.1rem" }}
+                          title="Mark Resolved & Delete"
+                        >
+                          ✔ Delete
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

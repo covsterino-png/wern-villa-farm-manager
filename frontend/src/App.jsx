@@ -47,6 +47,43 @@ function App() {
   const [installPrompt, setInstallPrompt] = useState(null);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
 
+  const [showBugModal, setShowBugModal] = useState(false);
+  const [bugTitle, setBugTitle] = useState("");
+  const [bugDetails, setBugDetails] = useState("");
+  const [bugKind, setBugKind] = useState("bug");
+  const [bugMessage, setBugMessage] = useState("");
+  const [submittingBug, setSubmittingBug] = useState(false);
+
+  async function submitBugReport(e) {
+    e.preventDefault();
+    if (!bugTitle.trim()) return;
+    setSubmittingBug(true);
+    setBugMessage("");
+    try {
+      await apiFetch("/dev-notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: bugKind,
+          title: bugTitle,
+          details: bugDetails,
+          screen: page,
+        }),
+      });
+      setBugTitle("");
+      setBugDetails("");
+      setBugMessage("Report sent! Copilot will read it when you ask.");
+      setTimeout(() => {
+        setShowBugModal(false);
+        setBugMessage("");
+      }, 1800);
+    } catch (err) {
+      setBugMessage(`Error: ${err.message}`);
+    } finally {
+      setSubmittingBug(false);
+    }
+  }
+
   useEffect(() => subscribeQueueCount(setPendingSyncCount), []);
 
   useEffect(() => {
@@ -230,6 +267,28 @@ function App() {
             </button>
             {user === "David" && (
               <button
+                onClick={() => setShowBugModal(true)}
+                aria-label="Report Bug"
+                title="Report Bug / Feature Idea"
+                style={{
+                  background: "#dc2626",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  width: "44px",
+                  height: "44px",
+                  fontSize: "1.2rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                🐛
+              </button>
+            )}
+            {user === "David" && (
+              <button
                 onClick={() => navigate("settings")}
                 aria-label="Settings"
                 title="Settings"
@@ -255,6 +314,17 @@ function App() {
               onClick={installApp}
             >
               Install App
+            </button>
+          )}
+          {user === "David" && (
+            <button
+              style={{ ...buttonStyle("install"), background: "#dc2626", color: "white" }}
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setShowBugModal(true);
+              }}
+            >
+              🐛 Report Bug / Idea
             </button>
           )}
           {user === "David" && (
@@ -388,6 +458,103 @@ Receipts
           user === "David" && (
             <Settings user={user} />
           )}
+
+      {showBugModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.75)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "16px",
+          }}
+          onClick={() => setShowBugModal(false)}
+        >
+          <div
+            style={{
+              background: "#1e293b",
+              color: "white",
+              padding: "20px",
+              borderRadius: "14px",
+              width: "100%",
+              maxWidth: "460px",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
+              border: "1px solid #334155",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+              <h2 style={{ margin: 0, color: "#f8fafc", fontSize: "1.25rem" }}>🐛 Log Bug / Feature Request</h2>
+              <button
+                type="button"
+                onClick={() => setShowBugModal(false)}
+                style={{ background: "transparent", border: "none", color: "#94a3b8", fontSize: "1.4rem", cursor: "pointer" }}
+              >
+                ✖
+              </button>
+            </div>
+            <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 0, marginBottom: "14px" }}>
+              Spot a bug in a field or have a feature idea? Save it here and Copilot will read and fix it when you're back at your desk!
+            </p>
+            <form onSubmit={submitBugReport} style={{ display: "grid", gap: "12px" }}>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <select
+                  value={bugKind}
+                  onChange={(e) => setBugKind(e.target.value)}
+                  style={{ padding: "10px", borderRadius: "8px", background: "#0f172a", color: "white", border: "1px solid #475569" }}
+                >
+                  <option value="bug">🐛 Bug</option>
+                  <option value="feature">💡 Feature Idea</option>
+                  <option value="tweak">✏️ UI Tweak</option>
+                </select>
+                <input
+                  required
+                  type="text"
+                  value={bugTitle}
+                  onChange={(e) => setBugTitle(e.target.value)}
+                  placeholder="Short summary (e.g. Move button failed)"
+                  style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "#0f172a", color: "white", border: "1px solid #475569" }}
+                />
+              </div>
+              <textarea
+                rows={4}
+                value={bugDetails}
+                onChange={(e) => setBugDetails(e.target.value)}
+                placeholder="Details of what happened or what you want changed..."
+                style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "#0f172a", color: "white", border: "1px solid #475569", resize: "vertical" }}
+              />
+              <div style={{ fontSize: "0.8rem", color: "#64748b" }}>Screen context: <code>{page}</code></div>
+              {bugMessage && (
+                <p style={{ margin: 0, color: bugMessage.includes("Error") ? "#ef4444" : "#10b981", fontSize: "0.9rem" }}>
+                  {bugMessage}
+                </p>
+              )}
+              <button
+                type="submit"
+                disabled={submittingBug || !bugTitle.trim()}
+                style={{
+                  background: "#dc2626",
+                  color: "white",
+                  border: "none",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  fontSize: "1rem",
+                }}
+              >
+                {submittingBug ? "Saving..." : "Submit Report"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
 {page === "move" && (
   <MoveGroup />

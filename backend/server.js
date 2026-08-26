@@ -575,6 +575,19 @@ async function ensureAppConfigTables() {
       updatedDate TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS devNotes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kind TEXT DEFAULT 'bug',
+      title TEXT NOT NULL,
+      details TEXT,
+      screen TEXT,
+      reportedBy TEXT,
+      status TEXT DEFAULT 'open',
+      createdDate TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 }
 
 app.use(
@@ -4468,6 +4481,57 @@ app.delete("/ai/devices/:id", async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Delete smart device error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/dev-notes", async (req, res) => {
+  try {
+    const result = await turso.execute(
+      "SELECT * FROM devNotes ORDER BY id DESC"
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get dev notes error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/dev-notes", async (req, res) => {
+  try {
+    const { kind, title, details, screen } = req.body || {};
+    if (!title || !String(title).trim()) {
+      return res.status(400).json({ error: "Title is required" });
+    }
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO devNotes (kind, title, details, screen, reportedBy)
+        VALUES (?, ?, ?, ?, ?)
+      `,
+      args: [
+        kind || "bug",
+        String(title).trim(),
+        details || null,
+        screen || null,
+        req.user || "David",
+      ],
+    });
+    res.json({ success: true, id: Number(result.lastInsertRowid) });
+  } catch (error) {
+    console.error("Create dev note error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/dev-notes/:id", async (req, res) => {
+  try {
+    await turso.execute({
+      sql: "DELETE FROM devNotes WHERE id = ?",
+      args: [req.params.id],
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete dev note error:", error);
     res.status(500).json({ error: error.message });
   }
 });
