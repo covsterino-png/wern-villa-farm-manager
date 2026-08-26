@@ -550,6 +550,33 @@ async function ensureNotesTables() {
   `);
 }
 
+async function ensureAppConfigTables() {
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS appConfig (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key TEXT UNIQUE NOT NULL,
+      value TEXT,
+      category TEXT DEFAULT 'general',
+      updatedBy TEXT,
+      updatedDate TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS smartDevices (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      type TEXT DEFAULT 'toggle',
+      icon TEXT DEFAULT '💡',
+      endpointUrl TEXT,
+      state TEXT DEFAULT 'off',
+      location TEXT,
+      createdBy TEXT,
+      updatedDate TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
 app.use(
   cors({
     origin: "*"
@@ -3789,6 +3816,10 @@ ensureNotesTables().catch((error) => {
   console.error("Failed to ensure notes tables:", error);
 });
 
+ensureAppConfigTables().catch((error) => {
+  console.error("Failed to ensure app config tables:", error);
+});
+
 ensureFieldFarmColumn().catch((error) => {
   console.error("Failed to ensure field farm column:", error);
 });
@@ -4346,6 +4377,243 @@ app.post("/feed-records", async (req, res) => {
     }
     res.json({ success: true, id: Number(result.lastInsertRowid), sheepCount, costPerSheep: cost / sheepCount });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/ai/config", async (req, res) => {
+  try {
+    const configResult = await turso.execute("SELECT * FROM appConfig ORDER BY category, key");
+    const devicesResult = await turso.execute("SELECT * FROM smartDevices ORDER BY id DESC");
+    res.json({
+      config: configResult.rows,
+      devices: devicesResult.rows,
+    });
+  } catch (error) {
+    console.error("Get AI config error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/ai/devices", async (req, res) => {
+  try {
+    if (req.user !== "David") {
+      return res.status(403).json({ error: "Access denied. Only David can modify smart devices." });
+    }
+    const { name, type, icon, endpointUrl, location } = req.body || {};
+    if (!name || !String(name).trim()) {
+      return res.status(400).json({ error: "Device name is required" });
+    }
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO smartDevices (name, type, icon, endpointUrl, location, createdBy)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `,
+      args: [
+        String(name).trim(),
+        type || "toggle",
+        icon || "💡",
+        endpointUrl || null,
+        location || null,
+        req.user || "David",
+      ],
+    });
+    res.json({ success: true, id: Number(result.lastInsertRowid) });
+  } catch (error) {
+    console.error("Create smart device error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/ai/devices/:id/toggle", async (req, res) => {
+  try {
+    const deviceResult = await turso.execute({
+      sql: "SELECT * FROM smartDevices WHERE id = ?",
+      args: [req.params.id],
+    });
+    const device = deviceResult.rows[0];
+    if (!device) return res.status(404).json({ error: "Device not found" });
+
+    const newState = device.state === "on" ? "off" : "on";
+    
+    if (device.endpointUrl) {
+      try {
+        await axios.post(device.endpointUrl, { state: newState, deviceId: device.id }, { timeout: 4000 });
+      } catch (err) {
+        console.warn(`Device webhook trigger warning for ${device.name}:`, err.message);
+      }
+    }
+
+    await turso.execute({
+      sql: "UPDATE smartDevices SET state = ?, updatedDate = CURRENT_TIMESTAMP WHERE id = ?",
+      args: [newState, req.params.id],
+    });
+
+    res.json({ success: true, state: newState });
+  } catch (error) {
+    console.error("Toggle smart device error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/ai/devices/:id", async (req, res) => {
+  try {
+    if (req.user !== "David") {
+      return res.status(403).json({ error: "Access denied. Only David can delete smart devices." });
+    }
+    await turso.execute({
+      sql: "DELETE FROM smartDevices WHERE id = ?",
+      args: [req.params.id],
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete smart device error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/ai/customizer", async (req, res) => {
+  try {
+    if (req.user !== "David") {
+      return res.status(403).json({ error: "Access denied. AI Customizer is restricted to David." });
+    }
+    const { prompt } = req.body || {};
+    if (!prompt || !String(prompt).trim()) {
+      return res.status(400).json({ error: "Prompt text is required" });
+    }
+
+    const userPrompt = String(prompt).trim();
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GEMINI_API_KEY;
+    let aiResponseText = "";
+    let parsedActions = [];
+
+    if (apiKey) {
+      try {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const systemInstruction = `You are an AI App Customizer for Wern Villa Farm Manager PWA.
+You help David configure and expand his farm manager app (smart lights, switches, water pumps, field sensors, custom drop-downs, app settings, task templates).
+Return ONLY a valid JSON object matching this schema:
+{
+  "reply": "Friendly response to David explaining what was added or changed.",
+  "actions": [
+    {
+      "type": "add_smart_device",
+      "name": "Device name",
+      "icon": "💡 or 🔌 or 🚪 or 💧 or ⚙️ or 📹",
+      "deviceType": "toggle or button or sensor",
+      "location": "Location string",
+      "endpointUrl": "Optional webhook url"
+    },
+    {
+      "type": "set_config",
+      "key": "unique_config_key",
+      "value": "string value",
+      "category": "theme or task or custom_fields or features"
+    }
+  ]
+}`;
+        const geminiRes = await axios.post(
+          geminiUrl,
+          {
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  { text: `${systemInstruction}\n\nUser Prompt: ${userPrompt}` }
+                ]
+              }
+            ]
+          },
+          { headers: { "Content-Type": "application/json" }, timeout: 15000 }
+        );
+
+        const rawText = geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          aiResponseText = parsed.reply || "Done!";
+          parsedActions = Array.isArray(parsed.actions) ? parsed.actions : [];
+        } else {
+          aiResponseText = rawText || "Processed your request.";
+        }
+      } catch (geminiError) {
+        console.error("Gemini API call error:", geminiError?.response?.data || geminiError.message);
+      }
+    }
+
+    if (parsedActions.length === 0) {
+      const lower = userPrompt.toLowerCase();
+      if (lower.includes("light") || lower.includes("switch") || lower.includes("lamp") || lower.includes("pump") || lower.includes("gate") || lower.includes("silo") || lower.includes("camera") || lower.includes("device") || lower.includes("button")) {
+        let icon = "💡";
+        if (lower.includes("pump") || lower.includes("water") || lower.includes("trough")) icon = "💧";
+        if (lower.includes("gate") || lower.includes("door")) icon = "🚪";
+        if (lower.includes("silo") || lower.includes("feed")) icon = "🌾";
+        if (lower.includes("camera")) icon = "📹";
+
+        let deviceName = userPrompt;
+        if (deviceName.length > 30) {
+          deviceName = userPrompt.replace(/^(add|create|make|set up|turn on)\s+(a|an|the)?\s*/i, "").slice(0, 30);
+        }
+
+        parsedActions.push({
+          type: "add_smart_device",
+          name: deviceName,
+          icon,
+          deviceType: "toggle",
+          location: "Farm",
+          endpointUrl: "",
+        });
+
+        if (!aiResponseText) {
+          aiResponseText = `Added smart device "${deviceName}" to your farm controls!`;
+        }
+      } else {
+        const configKey = "custom_setting_" + Date.now();
+        parsedActions.push({
+          type: "set_config",
+          key: configKey,
+          value: userPrompt,
+          category: "user_customizations",
+        });
+        if (!aiResponseText) {
+          aiResponseText = `Saved custom app setting: "${userPrompt}"`;
+        }
+      }
+    }
+
+    for (const action of parsedActions) {
+      if (action.type === "add_smart_device") {
+        await turso.execute({
+          sql: `
+            INSERT INTO smartDevices (name, type, icon, endpointUrl, location, createdBy)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `,
+          args: [action.name, action.deviceType || "toggle", action.icon || "💡", action.endpointUrl || null, action.location || null, "David"],
+        });
+      } else if (action.type === "set_config") {
+        await turso.execute({
+          sql: `
+            INSERT INTO appConfig (key, value, category, updatedBy)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value, updatedDate = CURRENT_TIMESTAMP
+          `,
+          args: [action.key, String(action.value), action.category || "general", "David"],
+        });
+      }
+    }
+
+    const configResult = await turso.execute("SELECT * FROM appConfig ORDER BY category, key");
+    const devicesResult = await turso.execute("SELECT * FROM smartDevices ORDER BY id DESC");
+
+    res.json({
+      success: true,
+      reply: aiResponseText,
+      actionsExecuted: parsedActions.length,
+      config: configResult.rows,
+      devices: devicesResult.rows,
+    });
+  } catch (error) {
+    console.error("AI customizer error:", error);
     res.status(500).json({ error: error.message });
   }
 });

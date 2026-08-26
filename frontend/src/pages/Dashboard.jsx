@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { API } from "../api";
+import { API, fetchJson } from "../api";
 
 export default function Dashboard({ setPage }) {
   const [summary, setSummary] = useState({
@@ -50,6 +50,29 @@ const [actionNotes, setActionNotes] =
   const [salesTotal, setSalesTotal] = useState(0);
   const [showUnassigned, setShowUnassigned] = useState(false);
   const [unassignedSheep, setUnassignedSheep] = useState([]);
+  const [smartDevices, setSmartDevices] = useState([]);
+
+  useEffect(() => {
+    fetch(`${API}/ai/config`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.devices)) {
+          setSmartDevices(data.devices);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  async function toggleDashboardDevice(id) {
+    try {
+      const res = await fetchJson(`/ai/devices/${id}/toggle`, { method: "POST" });
+      setSmartDevices((prev) =>
+        prev.map((d) => (d.id === id ? { ...d, state: res.state } : d))
+      );
+    } catch (err) {
+      alert("Could not toggle device: " + err.message);
+    }
+  }
 
   function loadUnassigned() {
     fetch(`${API}/unassigned-sheep`)
@@ -512,6 +535,55 @@ function saveActionFromDashboard(
         padding: window.innerWidth < 768 ? "12px" : "20px",
       }}
     >
+
+      {smartDevices.length > 0 && (
+        <div
+          style={{
+            background: "#1e293b",
+            padding: "14px",
+            borderRadius: "12px",
+            marginBottom: "12px",
+            border: "1px solid #334155",
+          }}
+        >
+          <h3 style={{ margin: "0 0 10px 0", color: "#38bdf8", fontSize: "1.05rem" }}>
+            ⚡ Smart Farm Controls
+          </h3>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
+              gap: "10px",
+            }}
+          >
+            {smartDevices.map((dev) => (
+              <button
+                key={dev.id}
+                onClick={() => toggleDashboardDevice(dev.id)}
+                style={{
+                  background: dev.state === "on" ? "#0284c7" : "#0f172a",
+                  color: "white",
+                  border: dev.state === "on" ? "2px solid #38bdf8" : "1px solid #334155",
+                  padding: "10px 8px",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  textAlign: "center",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                <span style={{ fontSize: "1.4rem" }}>{dev.icon || "💡"}</span>
+                <strong style={{ fontSize: "0.85rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{dev.name}</strong>
+                <span style={{ fontSize: "0.75rem", opacity: 0.8 }}>
+                  {dev.state === "on" ? "🟢 ON" : "⚪ OFF"}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
 
         <div

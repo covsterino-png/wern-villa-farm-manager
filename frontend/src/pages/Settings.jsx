@@ -30,6 +30,109 @@ const [lastAccessEvents, setLastAccessEvents] = useState([]);
 const [showLastAccess, setShowLastAccess] = useState(false);
 const [lastAccessMessage, setLastAccessMessage] = useState("");
 
+const [showAiCustomizer, setShowAiCustomizer] = useState(user === "David");
+const [aiPrompt, setAiPrompt] = useState("");
+const [aiLoading, setAiLoading] = useState(false);
+const [aiMessage, setAiMessage] = useState("");
+const [aiChatHistory, setAiChatHistory] = useState([]);
+const [smartDevices, setSmartDevices] = useState([]);
+const [appConfigs, setAppConfigs] = useState([]);
+
+const [showManualDeviceForm, setShowManualDeviceForm] = useState(false);
+const [manualName, setManualName] = useState("");
+const [manualIcon, setManualIcon] = useState("💡");
+const [manualEndpoint, setManualEndpoint] = useState("");
+const [manualLocation, setManualLocation] = useState("");
+
+function loadAiConfig() {
+  fetchJson("/ai/config")
+    .then((data) => {
+      setSmartDevices(data.devices || []);
+      setAppConfigs(data.config || []);
+    })
+    .catch((err) => console.error("Error loading AI config:", err));
+}
+
+useEffect(() => {
+  loadAiConfig();
+}, []);
+
+async function sendAiCustomizerPrompt(promptText) {
+  const textToSend = promptText || aiPrompt;
+  if (!textToSend.trim()) return;
+
+  setAiLoading(true);
+  setAiMessage("");
+  const userMsg = { role: "user", text: textToSend };
+  setAiChatHistory((prev) => [...prev, userMsg]);
+  if (!promptText) setAiPrompt("");
+
+  try {
+    const res = await fetchJson("/ai/customizer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: textToSend }),
+    });
+
+    const aiMsg = { role: "ai", text: res.reply || "Request processed successfully." };
+    setAiChatHistory((prev) => [...prev, aiMsg]);
+    if (res.devices) setSmartDevices(res.devices);
+    if (res.config) setAppConfigs(res.config);
+  } catch (error) {
+    setAiChatHistory((prev) => [
+      ...prev,
+      { role: "ai", text: `Error: ${error.message}` },
+    ]);
+  } finally {
+    setAiLoading(false);
+  }
+}
+
+async function toggleSmartDevice(id) {
+  try {
+    const res = await fetchJson(`/ai/devices/${id}/toggle`, { method: "POST" });
+    setSmartDevices((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, state: res.state } : d))
+    );
+  } catch (err) {
+    alert("Could not toggle device: " + err.message);
+  }
+}
+
+async function deleteSmartDevice(id) {
+  if (!confirm("Are you sure you want to remove this device?")) return;
+  try {
+    await fetchJson(`/ai/devices/${id}`, { method: "DELETE" });
+    setSmartDevices((prev) => prev.filter((d) => d.id !== id));
+  } catch (err) {
+    alert("Could not delete device: " + err.message);
+  }
+}
+
+async function addManualDevice(e) {
+  e.preventDefault();
+  if (!manualName.trim()) return;
+  try {
+    await fetchJson("/ai/devices", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: manualName,
+        icon: manualIcon,
+        endpointUrl: manualEndpoint,
+        location: manualLocation,
+      }),
+    });
+    setManualName("");
+    setManualEndpoint("");
+    setManualLocation("");
+    setShowManualDeviceForm(false);
+    loadAiConfig();
+  } catch (err) {
+    alert("Could not add device: " + err.message);
+  }
+}
+
 async function changePassword(event) {
   event.preventDefault();
   setPasswordMessage("");
@@ -193,6 +296,190 @@ body: JSON.stringify({
       >
         ⚙️ Administration
       </h1>
+
+      {user === "David" && (
+        <SettingsSection
+          title="🤖 AI App Customizer & Smart Farm Controls (David Only)"
+          open={showAiCustomizer}
+          onToggle={() => setShowAiCustomizer((open) => !open)}
+        >
+          <div style={{ background: "#1e293b", padding: "16px", borderRadius: "12px", marginBottom: "20px" }}>
+            <h3 style={{ margin: "0 0 8px 0", color: "#38bdf8" }}>✨ Describe any change or feature in plain English</h3>
+            <p style={{ color: "#94a3b8", fontSize: "0.9rem", margin: "0 0 12px 0" }}>
+              Powered by Google Gemini (Free tier). Ask to add smart light switches, water pumps, gate controls, custom forms, or app settings!
+            </p>
+
+            {/* Quick Suggestions */}
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "12px" }}>
+              <button
+                type="button"
+                onClick={() => sendAiCustomizerPrompt("Add a smart switch to turn on the Lambing Shed Lights")}
+                style={{ background: "#334155", color: "#e2e8f0", border: "1px solid #475569", padding: "6px 12px", borderRadius: "20px", fontSize: "0.85rem", cursor: "pointer" }}
+              >
+                💡 Add Lambing Shed Lights
+              </button>
+              <button
+                type="button"
+                onClick={() => sendAiCustomizerPrompt("Add a smart switch for Field 3 Water Pump")}
+                style={{ background: "#334155", color: "#e2e8f0", border: "1px solid #475569", padding: "6px 12px", borderRadius: "20px", fontSize: "0.85rem", cursor: "pointer" }}
+              >
+                💧 Add Field 3 Water Pump
+              </button>
+              <button
+                type="button"
+                onClick={() => sendAiCustomizerPrompt("Add a smart control button for Yard Entrance Gate")}
+                style={{ background: "#334155", color: "#e2e8f0", border: "1px solid #475569", padding: "6px 12px", borderRadius: "20px", fontSize: "0.85rem", cursor: "pointer" }}
+              >
+                🚪 Add Yard Gate
+              </button>
+              <button
+                type="button"
+                onClick={() => sendAiCustomizerPrompt("Add a tracker for Feed Silo Level")}
+                style={{ background: "#334155", color: "#e2e8f0", border: "1px solid #475569", padding: "6px 12px", borderRadius: "20px", fontSize: "0.85rem", cursor: "pointer" }}
+              >
+                🌾 Track Feed Silo Level
+              </button>
+            </div>
+
+            {/* Chat History */}
+            {aiChatHistory.length > 0 && (
+              <div style={{ background: "#0f172a", borderRadius: "8px", padding: "12px", maxHeight: "220px", overflowY: "auto", marginBottom: "12px", display: "grid", gap: "8px" }}>
+                {aiChatHistory.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
+                      background: msg.role === "user" ? "#0284c7" : "#334155",
+                      color: "white",
+                      padding: "8px 12px",
+                      borderRadius: "10px",
+                      fontSize: "0.9rem",
+                      maxWidth: "85%",
+                    }}
+                  >
+                    <strong>{msg.role === "user" ? "You" : "🤖 Gemini"}:</strong> {msg.text}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Input box */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                sendAiCustomizerPrompt();
+              }}
+              style={{ display: "flex", gap: "8px" }}
+            >
+              <input
+                type="text"
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="e.g. Turn on shed lights, add custom field label..."
+                style={{ flex: 1, padding: "10px 14px", borderRadius: "8px", border: "1px solid #475569", background: "#0f172a", color: "white" }}
+                disabled={aiLoading}
+              />
+              <button
+                type="submit"
+                disabled={aiLoading || !aiPrompt.trim()}
+                style={{ background: "#0284c7", color: "white", border: "none", padding: "10px 18px", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
+              >
+                {aiLoading ? "Thinking..." : "Send AI"}
+              </button>
+            </form>
+          </div>
+
+          {/* Smart Farm Devices Section */}
+          <div style={{ marginTop: "20px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+              <h3 style={{ margin: 0, color: "#f8fafc" }}>⚡ Smart Farm Controls & Switches ({smartDevices.length})</h3>
+              <button
+                type="button"
+                onClick={() => setShowManualDeviceForm((prev) => !prev)}
+                style={{ background: "#334155", color: "#38bdf8", border: "1px solid #475569", padding: "6px 12px", borderRadius: "8px", cursor: "pointer" }}
+              >
+                {showManualDeviceForm ? "✖ Close" : "➕ Add Switch Manually"}
+              </button>
+            </div>
+
+            {showManualDeviceForm && (
+              <form onSubmit={addManualDevice} style={{ background: "#1e293b", padding: "12px", borderRadius: "8px", marginBottom: "16px", display: "grid", gap: "10px", maxWidth: "450px" }}>
+                <input required type="text" value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="Device Name (e.g. Barn Lights)" />
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <select value={manualIcon} onChange={(e) => setManualIcon(e.target.value)} style={{ padding: "8px" }}>
+                    <option value="💡">💡 Light</option>
+                    <option value="🔌">🔌 Plug / Switch</option>
+                    <option value="💧">💧 Water / Pump</option>
+                    <option value="🚪">🚪 Gate / Door</option>
+                    <option value="🌾">🌾 Silo / Feed</option>
+                    <option value="📹">📹 Camera</option>
+                  </select>
+                  <input type="text" value={manualLocation} onChange={(e) => setManualLocation(e.target.value)} placeholder="Location (e.g. Yard)" style={{ flex: 1 }} />
+                </div>
+                <input type="url" value={manualEndpoint} onChange={(e) => setManualEndpoint(e.target.value)} placeholder="Optional Webhook / Device URL (HTTP endpoint)" />
+                <button type="submit" style={{ background: "#10b981", color: "white", border: "none", padding: "8px", borderRadius: "6px", fontWeight: "bold" }}>
+                  Save Smart Switch
+                </button>
+              </form>
+            )}
+
+            {smartDevices.length === 0 ? (
+              <p style={{ color: "#94a3b8" }}>No smart devices added yet. Use the AI Chat above to add your first smart switch!</p>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "12px" }}>
+                {smartDevices.map((dev) => (
+                  <div
+                    key={dev.id}
+                    style={{
+                      background: dev.state === "on" ? "linear-gradient(135deg, #1e3a8a 0%, #1e293b 100%)" : "#1e293b",
+                      border: dev.state === "on" ? "2px solid #38bdf8" : "1px solid #334155",
+                      borderRadius: "12px",
+                      padding: "14px",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      gap: "10px",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div>
+                        <span style={{ fontSize: "1.8rem" }}>{dev.icon || "💡"}</span>
+                        <h4 style={{ margin: "4px 0 2px 0", color: "#f8fafc" }}>{dev.name}</h4>
+                        {dev.location && <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>📍 {dev.location}</span>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => deleteSmartDevice(dev.id)}
+                        style={{ background: "transparent", color: "#ef4444", border: "none", cursor: "pointer", fontSize: "1rem" }}
+                        title="Remove Device"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleSmartDevice(dev.id)}
+                      style={{
+                        background: dev.state === "on" ? "#10b981" : "#475569",
+                        color: "white",
+                        border: "none",
+                        padding: "10px",
+                        borderRadius: "8px",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                        width: "100%",
+                      }}
+                    >
+                      {dev.state === "on" ? "🟢 ON (Tap to Turn Off)" : "⚪ OFF (Tap to Turn On)"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </SettingsSection>
+      )}
 
       <SettingsSection
         title="🔐 Password"
