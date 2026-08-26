@@ -639,6 +639,31 @@ app.post("/auth/change-password", async (req, res) => {
   }
 });
 
+app.post("/auth/admin-reset-password", async (req, res) => {
+  try {
+    if (req.user !== "David") return res.status(403).json({ error: "Only David can reset passwords" });
+    const { username, newPassword } = req.body || {};
+    if (!isValidUserName(username)) return res.status(400).json({ error: "Unknown user" });
+    if (typeof newPassword !== "string" || newPassword.length < 8) return res.status(400).json({ error: "Password must be at least 8 characters" });
+    const { hash, salt } = hashPassword(newPassword);
+    await turso.execute({
+      sql: `
+        INSERT INTO authUsers (userName, passwordHash, passwordSalt)
+        VALUES (?, ?, ?)
+        ON CONFLICT(userName) DO UPDATE SET
+          passwordHash = excluded.passwordHash,
+          passwordSalt = excluded.passwordSalt,
+          updatedDate = CURRENT_TIMESTAMP
+      `,
+      args: [username, hash, salt],
+    });
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("Admin password reset error:", error);
+    return res.status(500).json({ error: "Could not reset password" });
+  }
+});
+
 app.post("/app-open-events", async (req, res) => {
   try {
     await turso.execute({

@@ -16,6 +16,10 @@ const [currentPassword, setCurrentPassword] = useState("");
 const [newPassword, setNewPassword] = useState("");
 const [confirmPassword, setConfirmPassword] = useState("");
 const [passwordMessage, setPasswordMessage] = useState("");
+const [resetUser, setResetUser] = useState("Gemma");
+const [resetPassword, setResetPassword] = useState("");
+const [confirmResetPassword, setConfirmResetPassword] = useState("");
+const [resetMessage, setResetMessage] = useState("");
 const [showPassword, setShowPassword] = useState(false);
 const [showFields, setShowFields] = useState(false);
 const [showMedicines, setShowMedicines] = useState(false);
@@ -45,6 +49,27 @@ async function changePassword(event) {
     setPasswordMessage("Password changed successfully");
   } catch (error) {
     setPasswordMessage(error.message);
+  }
+}
+
+async function resetAccountPassword(event) {
+  event.preventDefault();
+  setResetMessage("");
+  if (resetPassword !== confirmResetPassword) {
+    setResetMessage("New passwords do not match");
+    return;
+  }
+  try {
+    await fetchJson("/auth/admin-reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: resetUser, newPassword: resetPassword }),
+    });
+    setResetPassword("");
+    setConfirmResetPassword("");
+    setResetMessage(`${resetUser}'s password was reset`);
+  } catch (error) {
+    setResetMessage(error.message);
   }
 }
 
@@ -182,6 +207,19 @@ body: JSON.stringify({
           <button type="submit">Change password</button>
         </form>
         {passwordMessage && <p style={{ color: passwordMessage.includes("successfully") ? "#8bc34a" : "#ff8a80" }}>{passwordMessage}</p>}
+        {user === "David" && (
+          <form onSubmit={resetAccountPassword} style={{ display: "grid", gap: "10px", maxWidth: "420px", marginTop: "24px" }}>
+            <h3 style={{ margin: 0 }}>Reset another password</h3>
+            <select value={resetUser} onChange={(event) => setResetUser(event.target.value)}>
+              <option value="Gemma">Gemma</option>
+              <option value="David">David</option>
+            </select>
+            <input required minLength={8} type="password" value={resetPassword} onChange={(event) => setResetPassword(event.target.value)} placeholder="New password" autoComplete="new-password" />
+            <input required minLength={8} type="password" value={confirmResetPassword} onChange={(event) => setConfirmResetPassword(event.target.value)} placeholder="Confirm new password" autoComplete="new-password" />
+            <button type="submit">Reset password</button>
+          </form>
+        )}
+        {resetMessage && <p style={{ color: resetMessage.includes("reset") ? "#8bc34a" : "#ff8a80" }}>{resetMessage}</p>}
       </SettingsSection>
 
       <SettingsSection
