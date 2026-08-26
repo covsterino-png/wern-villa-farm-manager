@@ -21,17 +21,26 @@ import HeroPoints from "./pages/HeroPoints";
 import { API, apiFetch } from "./api";
 import { subscribeQueueCount } from "./offlineQueue";
 
+const getStoredUser = () =>
+  localStorage.getItem("authToken")
+    ? localStorage.getItem("user")
+    : null;
+
+const lastScreenKey = (username) => `lastScreen:${username}`;
+
+function getStoredPage(username) {
+  if (!username) return "dashboard";
+  const storedPage = localStorage.getItem(lastScreenKey(username));
+  if (storedPage === "settings" && username !== "David") return "dashboard";
+  return storedPage || "dashboard";
+}
+
 function App() {
-  const [page, setPage] = useState("dashboard");
+  const [user] = useState(getStoredUser);
+  const [page, setPage] = useState(() => getStoredPage(user));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sheepEggOpen, setSheepEggOpen] = useState(false);
   const sheepHoldTimer = useRef(null);
-
-  const [user] = useState(
-    localStorage.getItem("authToken")
-      ? localStorage.getItem("user")
-      : null
-  );
 
   const [unreadCount, setUnreadCount] =
     useState(0);
@@ -43,6 +52,7 @@ function App() {
 
   useEffect(() => {
     if (!user) return;
+    localStorage.setItem(lastScreenKey(user), page);
     apiFetch("/app-open-events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
