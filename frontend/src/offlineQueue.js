@@ -34,9 +34,9 @@ async function withStore(mode, callback) {
   });
 }
 
-function getAllEntries() {
-  return new Promise(async (resolve, reject) => {
-    const db = await openDb();
+async function getAllEntries() {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readonly");
     const store = tx.objectStore(STORE_NAME);
     const request = store.getAll();

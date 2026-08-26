@@ -50,10 +50,16 @@ const [casePriority,
           averageTreatmentCost: 0,
           feedCount: 0,
           totalFeedCost: 0,
+          purchaseCount: 0,
+          totalPurchaseCost: 0,
           totalCost: 0,
+          totalIncome: 0,
+          netProfit: 0,
         },
         treatments: [],
         feed: [],
+        purchases: [],
+        sales: [],
       });
 
   const [scans, setScans] = useState([]);
@@ -136,8 +142,6 @@ const [scanResult, setScanResult] = useState("Single");
 
   const [groups, setGroups] = useState([]);
 
-  const [fields, setFields] = useState([]);
-
   const [allSheep, setAllSheep] = useState([]);
 
   const [name, setName] = useState( sheep.name || ""
@@ -159,10 +163,7 @@ const [scanResult, setScanResult] = useState("Single");
   const [groupName, setGroupName] =
     useState(sheep.groupName || "");
 
-  const [
-    currentField,
-    setCurrentField,
-  ] = useState(
+  const [currentField] = useState(
     sheep.currentField || ""
   );
 
@@ -247,12 +248,6 @@ fetch(
     )
       .then((res) => res.json())
       .then((data) => setFinancialAnalysis(data));
-    fetch(
-      "https://wern-villa-api.onrender.com/fields"
-    )
-      .then((res) => res.json())
-      .then((data) => setFields(data));
-
     fetch(
       "https://wern-villa-api.onrender.com/sheep"
     )
@@ -1290,7 +1285,56 @@ function saveEvent() {
           marginBottom: "20px",
         }}
       >
-        {/* Your existing lambing form stays here */}
+        <label>Date</label>
+        <input
+          type="date"
+          value={lambingDate}
+          onChange={(e) => setLambingDate(e.target.value)}
+          style={inputStyle}
+        />
+        <label>Male lambs</label>
+        <input
+          type="number"
+          min="0"
+          value={maleLambs}
+          onChange={(e) => setMaleLambs(e.target.value)}
+          style={inputStyle}
+        />
+        <label>Female lambs</label>
+        <input
+          type="number"
+          min="0"
+          value={femaleLambs}
+          onChange={(e) => setFemaleLambs(e.target.value)}
+          style={inputStyle}
+        />
+        <label>Dead lambs</label>
+        <input
+          type="number"
+          min="0"
+          value={deadLambs}
+          onChange={(e) => setDeadLambs(e.target.value)}
+          style={inputStyle}
+        />
+        <label>Notes</label>
+        <textarea
+          value={lambingNotes}
+          onChange={(e) => setLambingNotes(e.target.value)}
+          style={{ ...inputStyle, minHeight: "80px" }}
+        />
+        <button
+          onClick={saveLambing}
+          style={{
+            background: "#03a9f4",
+            color: "white",
+            border: "none",
+            padding: "10px 16px",
+            borderRadius: "10px",
+            cursor: "pointer",
+          }}
+        >
+          Save Lambing
+        </button>
       </div>
     )}
 
@@ -1895,6 +1939,10 @@ function saveEvent() {
         value={`£${Number(financialAnalysis.summary?.totalFeedCost || 0).toFixed(2)}`}
       />
       <FinancialMetric
+        label="Purchase cost"
+        value={`£${Number(financialAnalysis.summary?.totalPurchaseCost || 0).toFixed(2)}`}
+      />
+      <FinancialMetric
         label="Income"
         value={`£${Number(financialAnalysis.summary?.totalIncome || 0).toFixed(2)}`}
       />
@@ -1939,9 +1987,24 @@ function saveEvent() {
       ))
     )}
 
+    {financialAnalysis.purchases?.length > 0 && (
+      <>
+        <h3>Purchase cost</h3>
+        {financialAnalysis.purchases.map((purchase) => (
+          <div key={`purchase-${purchase.id}`} style={{ background: "#1f1f1f", padding: "12px", borderRadius: "8px", marginBottom: "8px" }}>
+            <strong>Purchased sheep</strong><br />
+            <small>{purchase.purchaseDate}</small><br />
+            £{Number(purchase.price || 0).toFixed(2)}
+            {purchase.seller && <><br />From: {purchase.seller}</>}
+            {purchase.notes && <><br />{purchase.notes}</>}
+          </div>
+        ))}
+      </>
+    )}
+
     {financialAnalysis.sales?.length > 0 && (
       <>
-        <h3>Income</h3>
+        <h3>Sale income</h3>
         {financialAnalysis.sales.map((sale) => (
           <div key={`sale-${sale.id}`} style={{ background: "#1f1f1f", padding: "12px", borderRadius: "8px", marginBottom: "8px" }}>
             <strong>{sale.description || sale.saleType}</strong><br />

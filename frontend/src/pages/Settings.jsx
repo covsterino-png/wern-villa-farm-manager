@@ -22,6 +22,9 @@ const [showMedicines, setShowMedicines] = useState(false);
 const [holdings, setHoldings] = useState([]);
 const [showEidCymru, setShowEidCymru] = useState(false);
 const [holdingMessage, setHoldingMessage] = useState("");
+const [lastAccessEvents, setLastAccessEvents] = useState([]);
+const [showLastAccess, setShowLastAccess] = useState(false);
+const [lastAccessMessage, setLastAccessMessage] = useState("");
 
 async function changePassword(event) {
   event.preventDefault();
@@ -65,6 +68,15 @@ async function changePassword(event) {
     fetch(`${API}/eid-cymru/holdings`)
       .then((response) => response.json())
       .then((data) => setHoldings(data));
+  }
+
+  async function loadLastAccessEvents() {
+    setLastAccessMessage("");
+    try {
+      setLastAccessEvents(await fetchJson("/app-open-events"));
+    } catch (error) {
+      setLastAccessMessage(error.message);
+    }
   }
 
   async function saveHolding(farm, cph) {
@@ -170,6 +182,42 @@ body: JSON.stringify({
           <button type="submit">Change password</button>
         </form>
         {passwordMessage && <p style={{ color: passwordMessage.includes("successfully") ? "#8bc34a" : "#ff8a80" }}>{passwordMessage}</p>}
+      </SettingsSection>
+
+      <SettingsSection
+        title="Last App Access"
+        open={showLastAccess}
+        onToggle={() => {
+          const nextOpen = !showLastAccess;
+          setShowLastAccess(nextOpen);
+          if (nextOpen) loadLastAccessEvents();
+        }}
+      >
+        {lastAccessMessage && <p style={{ color: "#ff8a80" }}>{lastAccessMessage}</p>}
+        {lastAccessEvents.length === 0 ? (
+          <p style={{ color: "#aaa" }}>No app access has been logged yet.</p>
+        ) : (
+          <div style={{ display: "grid", gap: "10px", maxWidth: "560px" }}>
+            {lastAccessEvents.map((event) => (
+              <div
+                key={event.userName}
+                style={{
+                  background: "#2b2b2b",
+                  borderRadius: "8px",
+                  padding: "12px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: "12px",
+                }}
+              >
+                <strong>{event.userName}</strong>
+                <span style={{ color: "#aaa", textAlign: "right" }}>
+                  {new Date(`${event.openedAt}Z`).toLocaleString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </SettingsSection>
 
       <SettingsSection

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { API, fetchJson } from "../api";
-import { pushSupported, getPushSubscription, subscribeToPush } from "../push";
+import { getPushSubscription, subscribeToPush } from "../push";
 
 export default function Notifications({ user, setPage }) {
   const [notifications, setNotifications] =

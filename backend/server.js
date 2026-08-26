@@ -209,6 +209,18 @@ async function ensureAuthUsersTable() {
   `);
 }
 
+async function ensureAppOpenEventsTable() {
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS appOpenEvents (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userName TEXT NOT NULL,
+      openedAt TEXT DEFAULT CURRENT_TIMESTAMP,
+      userAgent TEXT,
+      ipAddress TEXT
+    )
+  `);
+}
+
 async function ensureHeroPointsTables() {
   await turso.execute(`
     CREATE TABLE IF NOT EXISTS heroPoints (
@@ -624,6 +636,40 @@ app.post("/auth/change-password", async (req, res) => {
   } catch (error) {
     console.error("Password change error:", error);
     return res.status(500).json({ error: "Could not change password" });
+  }
+});
+
+app.post("/app-open-events", async (req, res) => {
+  try {
+    await turso.execute({
+      sql: "INSERT INTO appOpenEvents (userName, userAgent, ipAddress) VALUES (?, ?, ?)",
+      args: [req.user, req.get("user-agent") || null, req.get("x-forwarded-for") || req.ip || null],
+    });
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("App open log error:", error);
+    return res.status(500).json({ error: "Could not log app open" });
+  }
+});
+
+app.get("/app-open-events", async (req, res) => {
+  try {
+    const result = await turso.execute({
+      sql: `
+        SELECT e.id, e.userName, e.openedAt, e.userAgent
+        FROM appOpenEvents e
+        INNER JOIN (
+          SELECT userName, MAX(id) AS id
+          FROM appOpenEvents
+          GROUP BY userName
+        ) latest ON latest.id = e.id
+        ORDER BY e.openedAt DESC, e.id DESC
+      `,
+    });
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("App open log fetch error:", error);
+    return res.status(500).json({ error: "Could not load app open log" });
   }
 });
 
@@ -2612,24 +2658,44 @@ app.get("/sheep/:id/financial-analysis", async (req, res) => {
       args: [req.params.id],
     });
 
+    const purchases = await turso.execute({
+      sql: `
+        SELECT id, purchaseDate, seller, price, notes
+        FROM livestockPurchases
+        WHERE sheepId = ?
+        ORDER BY purchaseDate DESC, id DESC
+      `,
+      args: [req.params.id],
+    });
+
     const totalIncome = sales.rows.reduce(
       (total, sale) => total + (Number(sale.total) || 0),
       0
     );
 
+    const totalPurchaseCost = purchases.rows.reduce(
+      (total, purchase) => total + (Number(purchase.price) || 0),
+      0
+    );
+
     const totalCost =
-      Number(result.rows[0].totalTreatmentCost || 0) + feedSummary.totalFeedCost;
+      Number(result.rows[0].totalTreatmentCost || 0) +
+      feedSummary.totalFeedCost +
+      totalPurchaseCost;
 
     res.json({
       summary: {
         ...result.rows[0],
         ...feedSummary,
+        purchaseCount: purchases.rows.length,
+        totalPurchaseCost,
         totalCost,
         totalIncome,
         netProfit: totalIncome - totalCost,
       },
       treatments: treatments.rows,
       feed: feed.rows,
+      purchases: purchases.rows,
       sales: sales.rows,
     });
   } catch (error) {
@@ -3677,6 +3743,10 @@ ensurePasskeysTable().catch((error) => {
 
 ensureAuthUsersTable().catch((error) => {
   console.error("Failed to ensure auth users table:", error);
+});
+
+ensureAppOpenEventsTable().catch((error) => {
+  console.error("Failed to ensure app open events table:", error);
 });
 
 ensureHeroPointsTables().catch((error) => {

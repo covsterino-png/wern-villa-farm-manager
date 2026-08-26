@@ -18,7 +18,7 @@ import Notifications from "./pages/Notifications";
 import FinancialRegister from "./pages/FinancialRegister";
 import Sales from "./pages/Sales";
 import HeroPoints from "./pages/HeroPoints";
-import { API } from "./api";
+import { API, apiFetch } from "./api";
 import { subscribeQueueCount } from "./offlineQueue";
 
 function App() {
@@ -40,6 +40,11 @@ function App() {
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
 
   useEffect(() => subscribeQueueCount(setPendingSyncCount), []);
+
+  useEffect(() => {
+    if (!user) return;
+    apiFetch("/app-open-events", { method: "POST" }).catch(() => {});
+  }, [user]);
 
   useEffect(() => {
     const handler = (event) => {
@@ -66,7 +71,7 @@ function App() {
         const data = await res.json();
         if (!mounted) return;
         setUnreadCount(data.filter((d) => d.read === 0).length);
-      } catch (e) {
+      } catch {
         // ignore
       }
     };
@@ -79,8 +84,6 @@ function App() {
     };
   }, [user]);
 
-  const [movements, setMovements] =
-    useState([]);
     function logout() {
   localStorage.removeItem("user");
     localStorage.removeItem("authToken");
