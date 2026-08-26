@@ -268,8 +268,6 @@ function App() {
             {user === "David" && (
               <button
                 onClick={() => navigate("settings")}
-              <button
-                onClick={() => navigate("settings")}
                 aria-label="Settings"
                 title="Settings"
                 style={{ ...buttonStyle("settings"), width: "44px", textAlign: "center", fontSize: "1.2rem" }}
