@@ -38,6 +38,7 @@ function getStoredPage(username) {
 function App() {
   const [user] = useState(getStoredUser);
   const [page, setPage] = useState(() => getStoredPage(user));
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [unreadCount, setUnreadCount] =
@@ -47,6 +48,12 @@ function App() {
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
 
   useEffect(() => subscribeQueueCount(setPendingSyncCount), []);
+
+  useEffect(() => {
+    const updateLayout = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", updateLayout);
+    return () => window.removeEventListener("resize", updateLayout);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -112,9 +119,6 @@ function App() {
       />
     );
   }
-
-  const isMobile =
-    window.innerWidth < 768;
 
   const buttonStyle = (buttonPage) => ({
     background:
