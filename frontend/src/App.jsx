@@ -296,7 +296,7 @@ function App() {
           )}
           {user === "David" && (
             <button
-              style={{ ...buttonStyle("install"), background: "#dc2626", color: "white" }}
+              style={buttonStyle("bug-report")}
               onClick={() => {
                 setMobileMenuOpen(false);
                 setShowBugModal(true);
@@ -390,6 +390,17 @@ Receipts
               borderTop: "1px solid #333",
             }}
           >
+            {user === "David" && (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setShowBugModal(true);
+                }}
+                style={{ ...buttonStyle("bug-report"), padding: "10px", minHeight: "42px", gridColumn: "span 2", background: "#334155" }}
+              >
+                🐛 Report Bug / Idea
+              </button>
+            )}
             {navItems.map(([nextPage, label]) => (
               <button
                 key={nextPage}
