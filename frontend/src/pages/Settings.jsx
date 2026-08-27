@@ -26,9 +26,9 @@ const [showMedicines, setShowMedicines] = useState(false);
 const [holdings, setHoldings] = useState([]);
 const [showEidCymru, setShowEidCymru] = useState(false);
 const [holdingMessage, setHoldingMessage] = useState("");
-const [lastAccessEvents, setLastAccessEvents] = useState([]);
-const [showLastAccess, setShowLastAccess] = useState(false);
-const [lastAccessMessage, setLastAccessMessage] = useState("");
+const [clickEvents, setClickEvents] = useState([]);
+const [showClickLog, setShowClickLog] = useState(false);
+const [clickLogMessage, setClickLogMessage] = useState("");
 
 const [showAiCustomizer, setShowAiCustomizer] = useState(user === "David");
 const [aiPrompt, setAiPrompt] = useState("");
@@ -216,12 +216,12 @@ async function resetAccountPassword(event) {
       .then((data) => setHoldings(data));
   }
 
-  async function loadLastAccessEvents() {
-    setLastAccessMessage("");
+  async function loadClickEvents() {
+    setClickLogMessage("");
     try {
-      setLastAccessEvents(await fetchJson("/app-open-events"));
+      setClickEvents(await fetchJson("/click-log"));
     } catch (error) {
-      setLastAccessMessage(error.message);
+      setClickLogMessage(error.message);
     }
   }
 
@@ -594,22 +594,22 @@ body: JSON.stringify({
       </SettingsSection>
 
       <SettingsSection
-        title="Last App Access"
-        open={showLastAccess}
+        title="Full Click Log"
+        open={showClickLog}
         onToggle={() => {
-          const nextOpen = !showLastAccess;
-          setShowLastAccess(nextOpen);
-          if (nextOpen) loadLastAccessEvents();
+          const nextOpen = !showClickLog;
+          setShowClickLog(nextOpen);
+          if (nextOpen) loadClickEvents();
         }}
       >
-        {lastAccessMessage && <p style={{ color: "#ff8a80" }}>{lastAccessMessage}</p>}
-        {lastAccessEvents.length === 0 ? (
-          <p style={{ color: "#aaa" }}>No app access has been logged yet.</p>
+        {clickLogMessage && <p style={{ color: "#ff8a80" }}>{clickLogMessage}</p>}
+        {clickEvents.length === 0 ? (
+          <p style={{ color: "#aaa" }}>No clicks have been logged yet.</p>
         ) : (
-          <div style={{ display: "grid", gap: "10px", maxWidth: "560px" }}>
-            {lastAccessEvents.map((event) => (
+          <div style={{ display: "grid", gap: "10px", maxWidth: "760px" }}>
+            {clickEvents.map((event) => (
               <div
-                key={event.userName}
+                key={event.id}
                 style={{
                   background: "#2b2b2b",
                   borderRadius: "8px",
@@ -621,9 +621,9 @@ body: JSON.stringify({
               >
                 <strong>{event.userName}</strong>
                 <span style={{ color: "#aaa", textAlign: "right" }}>
-                  {new Date(`${event.openedAt}Z`).toLocaleString()}
+                  {new Date(`${event.clickedAt}Z`).toLocaleString()}
                   <br />
-                  {event.lastScreen || "Unknown screen"}
+                  {event.screen || "Unknown screen"} | {event.target || "Unknown element"}
                 </span>
               </div>
             ))}

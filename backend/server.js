@@ -227,6 +227,32 @@ async function ensureAppOpenEventsTable() {
   }
 }
 
+async function ensureChangeLogTable() {
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS changeLog (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userName TEXT NOT NULL,
+      method TEXT NOT NULL,
+      path TEXT NOT NULL,
+      statusCode INTEGER NOT NULL,
+      details TEXT,
+      changedAt TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
+async function ensureClickLogTable() {
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS clickLog (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userName TEXT NOT NULL,
+      target TEXT NOT NULL,
+      screen TEXT NOT NULL,
+      clickedAt TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
 async function ensureHeroPointsTables() {
   await turso.execute(`
     CREATE TABLE IF NOT EXISTS heroPoints (
@@ -657,6 +683,32 @@ app.use((req, res, next) => {
   return next();
 });
 
+app.use((req, res, next) => {
+  if (
+    !["POST", "PUT", "PATCH", "DELETE"].includes(req.method) ||
+    req.path === "/app-open-events" ||
+    req.path === "/click-log"
+  ) {
+    return next();
+  }
+
+  res.on("finish", () => {
+    if (res.statusCode >= 400) return;
+    const body = { ...(req.body || {}) };
+    for (const field of ["password", "currentPassword", "newPassword", "confirmPassword", "setupKey"]) {
+      if (field in body) body[field] = "[redacted]";
+    }
+    turso.execute({
+      sql: `
+        INSERT INTO changeLog (userName, method, path, statusCode, details)
+        VALUES (?, ?, ?, ?, ?)
+      `,
+      args: [req.user, req.method, req.path, res.statusCode, JSON.stringify(body)],
+    }).catch((error) => console.error("Change log error:", error));
+  });
+  return next();
+});
+
 app.post("/auth/change-password", async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body || {};
@@ -721,6 +773,37 @@ app.post("/app-open-events", async (req, res) => {
   } catch (error) {
     console.error("App open log error:", error);
     return res.status(500).json({ error: "Could not log app open" });
+  }
+});
+
+app.post("/click-log", async (req, res) => {
+  try {
+    const target = String(req.body?.target || "").trim().slice(0, 160) || "Unknown element";
+    const screen = String(req.body?.screen || "").trim().slice(0, 80) || "Unknown screen";
+    await turso.execute({
+      sql: "INSERT INTO clickLog (userName, target, screen) VALUES (?, ?, ?)",
+      args: [req.user, target, screen],
+    });
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("Click log error:", error);
+    return res.status(500).json({ error: "Could not log click" });
+  }
+});
+
+app.get("/click-log", async (req, res) => {
+  try {
+    if (req.user !== "David") return res.status(403).json({ error: "Only David can view the click log" });
+    const result = await turso.execute(`
+      SELECT id, userName, target, screen, clickedAt
+      FROM clickLog
+      ORDER BY id DESC
+      LIMIT 1000
+    `);
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("Click log fetch error:", error);
+    return res.status(500).json({ error: "Could not load click log" });
   }
 });
 
@@ -3821,6 +3904,14 @@ ensureAppOpenEventsTable().catch((error) => {
   console.error("Failed to ensure app open events table:", error);
 });
 
+ensureChangeLogTable().catch((error) => {
+  console.error("Failed to ensure change log table:", error);
+});
+
+ensureClickLogTable().catch((error) => {
+  console.error("Failed to ensure click log table:", error);
+});
+
 ensureHeroPointsTables().catch((error) => {
   console.error("Failed to ensure Hero Points tables:", error);
 });
@@ -4707,5 +4798,21 @@ Return ONLY a valid JSON object matching this schema:
   } catch (error) {
     console.error("AI customizer error:", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/change-log", async (req, res) => {
+  try {
+    if (req.user !== "David") return res.status(403).json({ error: "Only David can view the change log" });
+    const result = await turso.execute(`
+      SELECT id, userName, method, path, statusCode, details, changedAt
+      FROM changeLog
+      ORDER BY id DESC
+      LIMIT 500
+    `);
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("Change log fetch error:", error);
+    return res.status(500).json({ error: "Could not load change log" });
   }
 });

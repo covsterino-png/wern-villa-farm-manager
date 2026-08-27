@@ -103,6 +103,24 @@ function App() {
   }, [page, user]);
 
   useEffect(() => {
+    if (!user) return;
+    const logClick = (event) => {
+      const element = event.target.closest?.("button, a, input, select, textarea, [role], [data-click-log]") || event.target;
+      const label = element.getAttribute?.("aria-label") || element.getAttribute?.("placeholder") || element.getAttribute?.("name") || element.textContent || element.id || element.tagName;
+      apiFetch("/click-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          target: String(label || "Unknown element").replace(/\s+/g, " ").trim().slice(0, 160),
+          screen: page,
+        }),
+      }).catch(() => {});
+    };
+    document.addEventListener("click", logClick, true);
+    return () => document.removeEventListener("click", logClick, true);
+  }, [page, user]);
+
+  useEffect(() => {
     const handler = (event) => {
       event.preventDefault();
       setInstallPrompt(event);
