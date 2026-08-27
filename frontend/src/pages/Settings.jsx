@@ -30,7 +30,7 @@ const [clickEvents, setClickEvents] = useState([]);
 const [showClickLog, setShowClickLog] = useState(false);
 const [clickLogMessage, setClickLogMessage] = useState("");
 
-const [showAiCustomizer, setShowAiCustomizer] = useState(user === "David");
+const [showAiCustomizer, setShowAiCustomizer] = useState(false);
 const [aiPrompt, setAiPrompt] = useState("");
 const [aiLoading, setAiLoading] = useState(false);
 const [aiMessage, setAiMessage] = useState("");
