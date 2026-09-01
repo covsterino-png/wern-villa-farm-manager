@@ -636,6 +636,14 @@ function isValidUserName(username) {
   return username === "David" || username === "Gemma";
 }
 
+async function notifyDavidGemmaActive(screen) {
+  await sendPushToUser("David", {
+    title: "Gemma is active",
+    message: screen ? `Gemma is active on ${screen}.` : "Gemma is active on the app.",
+    data: { type: "gemma-active", screen },
+  });
+}
+
 app.post("/auth/setup-password", async (req, res) => {
   try {
     const { username, password, setupKey } = req.body || {};
@@ -765,6 +773,23 @@ app.post("/auth/admin-reset-password", async (req, res) => {
 app.post("/app-open-events", async (req, res) => {
   try {
     const screen = String(req.body?.screen || "").trim().slice(0, 80) || null;
+    if (req.user === "Gemma") {
+      const recentActivity = await turso.execute({
+        sql: `
+          SELECT id
+          FROM appOpenEvents
+          WHERE userName = ?
+            AND openedAt >= datetime('now', '-15 minutes')
+          LIMIT 1
+        `,
+        args: ["Gemma"],
+      });
+
+      if (recentActivity.rows.length === 0) {
+        await notifyDavidGemmaActive(screen);
+      }
+    }
+
     await turso.execute({
       sql: "INSERT INTO appOpenEvents (userName, userAgent, ipAddress, lastScreen) VALUES (?, ?, ?, ?)",
       args: [req.user, req.get("user-agent") || null, req.get("x-forwarded-for") || req.ip || null, screen],
