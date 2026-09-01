@@ -29,7 +29,7 @@ const [holdingMessage, setHoldingMessage] = useState("");
 const [clickEvents, setClickEvents] = useState([]);
 const [showClickLog, setShowClickLog] = useState(false);
 const [clickLogMessage, setClickLogMessage] = useState("");
-const [clickLogUser, setClickLogUser] = useState("David");
+const [clickLogUser, setClickLogUser] = useState("Gemma");
 
 const [showAiCustomizer, setShowAiCustomizer] = useState(false);
 const [aiPrompt, setAiPrompt] = useState("");
