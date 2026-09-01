@@ -794,12 +794,18 @@ app.post("/click-log", async (req, res) => {
 app.get("/click-log", async (req, res) => {
   try {
     if (req.user !== "David") return res.status(403).json({ error: "Only David can view the click log" });
-    const result = await turso.execute(`
-      SELECT id, userName, target, screen, clickedAt
-      FROM clickLog
-      ORDER BY id DESC
-      LIMIT 1000
-    `);
+    const selectedUser = String(req.query.userName || "").trim();
+    const filterUser = isValidUserName(selectedUser) ? selectedUser : null;
+    const result = await turso.execute({
+      sql: `
+        SELECT id, userName, target, screen, clickedAt
+        FROM clickLog
+        ${filterUser ? "WHERE userName = ?" : ""}
+        ORDER BY id DESC
+        LIMIT 1000
+      `,
+      args: filterUser ? [filterUser] : [],
+    });
     return res.json(result.rows);
   } catch (error) {
     console.error("Click log fetch error:", error);

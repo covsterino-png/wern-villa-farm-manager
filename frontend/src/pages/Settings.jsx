@@ -29,6 +29,7 @@ const [holdingMessage, setHoldingMessage] = useState("");
 const [clickEvents, setClickEvents] = useState([]);
 const [showClickLog, setShowClickLog] = useState(false);
 const [clickLogMessage, setClickLogMessage] = useState("");
+const [clickLogUser, setClickLogUser] = useState("David");
 
 const [showAiCustomizer, setShowAiCustomizer] = useState(false);
 const [aiPrompt, setAiPrompt] = useState("");
@@ -216,10 +217,10 @@ async function resetAccountPassword(event) {
       .then((data) => setHoldings(data));
   }
 
-  async function loadClickEvents() {
+  async function loadClickEvents(selectedUser = clickLogUser) {
     setClickLogMessage("");
     try {
-      setClickEvents(await fetchJson("/click-log"));
+      setClickEvents(await fetchJson(`/click-log?userName=${encodeURIComponent(selectedUser)}`));
     } catch (error) {
       setClickLogMessage(error.message);
     }
@@ -603,8 +604,31 @@ body: JSON.stringify({
         }}
       >
         {clickLogMessage && <p style={{ color: "#ff8a80" }}>{clickLogMessage}</p>}
+          <div style={{ display: "flex", gap: "8px", marginBottom: "12px", flexWrap: "wrap" }}>
+            {["David", "Gemma"].map((person) => (
+              <button
+                key={person}
+                type="button"
+                onClick={() => {
+                  setClickLogUser(person);
+                  loadClickEvents(person);
+                }}
+                style={{
+                  background: clickLogUser === person ? "#03a9f4" : "#2b2b2b",
+                  color: clickLogUser === person ? "#06121a" : "#f8fafc",
+                  border: "1px solid #03a9f4",
+                  borderRadius: "8px",
+                  padding: "8px 12px",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                }}
+              >
+                {person}'s history
+              </button>
+            ))}
+          </div>
         {clickEvents.length === 0 ? (
-          <p style={{ color: "#aaa" }}>No clicks have been logged yet.</p>
+            <p style={{ color: "#aaa" }}>No clicks have been logged for {clickLogUser} yet.</p>
         ) : (
           <div style={{ display: "grid", gap: "10px", maxWidth: "760px" }}>
             {clickEvents.map((event) => (
