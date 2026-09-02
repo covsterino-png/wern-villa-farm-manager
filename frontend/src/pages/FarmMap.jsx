@@ -1,10 +1,73 @@
 import { useEffect, useState } from "react";
 import { API } from "../api";
 
+const LAMBING_SHED = "Lambing Shed";
+
+const BAYS = [
+  "Bay 1",
+  "Bay 2",
+  "Bay 3",
+  "Bay 4",
+  "Bay 5",
+  "Bay 6",
+];
+
+const WERN_VILLA_BUILDINGS = [LAMBING_SHED, ...BAYS];
+
+const BAY_MERGE_KEY = "wernVillaBayMerges";
+
+// Merges are stored as the split boundaries that remain open, e.g. [1,3] keeps
+// Bay 1 | Bay 2 + Bay 3 | Bay 4 ... The stored value is the merged pairs.
+function loadMerges() {
+  try {
+    const raw = localStorage.getItem(BAY_MERGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter(
+          (i) => Number.isInteger(i) && i >= 0 && i < BAYS.length - 1
+        )
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function buildBayGroups(merges) {
+  const groups = [];
+  let current = [BAYS[0]];
+
+  for (let i = 1; i < BAYS.length; i++) {
+    if (merges.includes(i - 1)) {
+      current.push(BAYS[i]);
+    } else {
+      groups.push(current);
+      current = [BAYS[i]];
+    }
+  }
+
+  groups.push(current);
+  return groups;
+}
+
 export default function FarmMap() {
   const [fieldStatus, setFieldStatus] =
     useState([]);
   const [farm, setFarm] = useState("Gellidywyll");
+  const [yardOpen, setYardOpen] = useState(false);
+  const [bayMerges, setBayMerges] = useState(loadMerges);
+  const [editingBays, setEditingBays] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem(BAY_MERGE_KEY, JSON.stringify(bayMerges));
+  }, [bayMerges]);
+
+  const toggleMerge = (boundary) => {
+    setBayMerges((current) =>
+      current.includes(boundary)
+        ? current.filter((i) => i !== boundary)
+        : [...current, boundary].sort((a, b) => a - b)
+    );
+  };
 
   useEffect(() => {
     fetch(`${API}/field-status`)
@@ -50,6 +113,47 @@ export default function FarmMap() {
 
     return "#f44336";
   };
+
+  const buildings = WERN_VILLA_BUILDINGS.map((name) => {
+    const match = fieldsForFarm.find(
+      (f) => (f.name || "").trim().toLowerCase() === name.toLowerCase()
+    );
+
+    return {
+      name,
+      sheep: Number(match?.sheepCount) || 0,
+      groups: match?.groups ?? [],
+    };
+  });
+
+  const sheepFor = (name) =>
+    buildings.find((b) => b.name === name)?.sheep ?? 0;
+
+  const bayGroups = buildBayGroups(bayMerges).map((bays) => ({
+    bays,
+    label:
+      bays.length === 1
+        ? bays[0]
+        : `Bays ${bays[0].replace("Bay ", "")}–${bays[bays.length - 1].replace(
+            "Bay ",
+            ""
+          )}`,
+    sheep: bays.reduce((total, bay) => total + sheepFor(bay), 0),
+  }));
+
+  const yardUnits = [
+    {
+      bays: [LAMBING_SHED],
+      label: LAMBING_SHED,
+      sheep: sheepFor(LAMBING_SHED),
+    },
+    ...bayGroups,
+  ];
+
+  const sheepInBuildings = buildings.reduce(
+    (total, b) => total + b.sheep,
+    0
+  );
 
   const totalSheepOnFarm = fieldsForFarm.reduce(
     (total, field) => total + (Number(field.sheepCount) || 0),
@@ -176,13 +280,122 @@ export default function FarmMap() {
             marginTop: "-112px",
           }}
         >
-          <FieldCard
-            name="🏠 Home & Yard"
-            colour="#607d8b"
-            sheep="-"
-            height="65px"
-            building
-          />
+          <div
+            onClick={() => setYardOpen((open) => !open)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setYardOpen((open) => !open);
+              }
+            }}
+            style={{
+              background: "#607d8b",
+              borderRadius: "20px",
+              padding: "16px",
+              color: "white",
+              cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <strong>🏠 Home & Yard</strong>
+              <span>{yardOpen ? "▲" : "▼"}</span>
+            </div>
+
+            <div style={{ fontSize: "0.85rem", marginTop: "4px" }}>
+              {yardUnits.length} buildings · 🐑 {sheepInBuildings}
+            </div>
+
+            {yardOpen && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  marginTop: "12px",
+                  display: "grid",
+                  gap: "8px",
+                }}
+              >
+                <button
+                  onClick={() => setEditingBays((v) => !v)}
+                  style={{
+                    justifySelf: "start",
+                    background: editingBays ? "#03a9f4" : "#37474f",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "10px",
+                    padding: "6px 12px",
+                    cursor: "pointer",
+                    fontSize: "0.8rem",
+                  }}
+                >
+                  {editingBays ? "Done" : "Merge bays"}
+                </button>
+
+                {yardUnits.map((unit, index) => (
+                  <div key={unit.label}>
+                    <div
+                      style={{
+                        background: unit.sheep > 0 ? "#2196f3" : "#455a64",
+                        borderRadius: "12px",
+                        padding: "10px 12px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      <span>🏚️ {unit.label}</span>
+
+                      <span style={{ display: "flex", gap: "8px" }}>
+                        {editingBays && unit.bays.length > 1 && (
+                          <BayButton
+                            label="Split"
+                            onClick={() =>
+                              setBayMerges((current) =>
+                                current.filter(
+                                  (i) =>
+                                    i < BAYS.indexOf(unit.bays[0]) ||
+                                    i >=
+                                      BAYS.indexOf(
+                                        unit.bays[unit.bays.length - 1]
+                                      )
+                                )
+                              )
+                            }
+                          />
+                        )}
+                        <span>🐑 {unit.sheep}</span>
+                      </span>
+                    </div>
+
+                    {editingBays &&
+                      index > 0 &&
+                      index < yardUnits.length - 1 && (
+                        <BayButton
+                          label="⇵ Merge with below"
+                          block
+                          onClick={() =>
+                            toggleMerge(
+                              BAYS.indexOf(unit.bays[unit.bays.length - 1])
+                            )
+                          }
+                        />
+                      )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div />
         </div>
@@ -228,6 +441,27 @@ export default function FarmMap() {
   );
 }
 
+function BayButton({ label, onClick, block }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        background: "#263238",
+        color: "white",
+        border: "none",
+        borderRadius: "8px",
+        padding: block ? "4px 10px" : "2px 8px",
+        margin: block ? "4px auto" : 0,
+        display: block ? "block" : "inline-block",
+        cursor: "pointer",
+        fontSize: "0.75rem",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 function FieldCard({
   name,
   colour,
@@ -237,7 +471,6 @@ function FieldCard({
   daysEmpty,
   size,
   height,
-  building,
 }) {
   return (
     <div
@@ -256,46 +489,42 @@ function FieldCard({
     >
       <strong>{name}</strong>
 
-      {building ? (
-        <div>Buildings</div>
-      ) : (
+      <div>
         <div>
-          <div>
-            {occupied
-              ? "🔵 Occupied"
-              : "⚪ Empty"}
-          </div>
-
-          <div>
-            🐑 {sheep} Sheep
-          </div>
-
-          <div>
-            📏 {size} acres
-          </div>
-
-          {groups?.length > 0 && (
-            <div
-              style={{
-                marginTop: "8px",
-                fontSize: "0.85rem",
-              }}
-            >
-              {groups.map((group) => (
-                <div key={group}>
-                  • {group}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {!occupied && (
-            <div>
-              🌱 {daysEmpty} Days Empty
-            </div>
-          )}
+          {occupied
+            ? "🔵 Occupied"
+            : "⚪ Empty"}
         </div>
-      )}
+
+        <div>
+          🐑 {sheep} Sheep
+        </div>
+
+        <div>
+          📏 {size} acres
+        </div>
+
+        {groups?.length > 0 && (
+          <div
+            style={{
+              marginTop: "8px",
+              fontSize: "0.85rem",
+            }}
+          >
+            {groups.map((group) => (
+              <div key={group}>
+                • {group}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!occupied && (
+          <div>
+            🌱 {daysEmpty} Days Empty
+          </div>
+        )}
+      </div>
     </div>
   );
 }
