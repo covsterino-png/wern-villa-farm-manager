@@ -2,6 +2,31 @@ import { useEffect, useState } from "react";
 import { API } from "../api";
 import { submitWrite } from "../offlineQueue";
 
+function LocationOptions({ fields }) {
+  const grazing = fields.filter((f) => (f.type || "field") !== "building");
+  const buildings = fields.filter((f) => f.type === "building");
+
+  return (
+    <>
+      <optgroup label="🌱 Fields">
+        {grazing.map((field) => (
+          <option key={field.id} value={field.name}>
+            {field.name} ({field.farm || "Gellidywyll"})
+          </option>
+        ))}
+      </optgroup>
+
+      <optgroup label="🏚️ Buildings">
+        {buildings.map((field) => (
+          <option key={field.id} value={field.name}>
+            {field.name} ({field.farm || "Gellidywyll"})
+          </option>
+        ))}
+      </optgroup>
+    </>
+  );
+}
+
 export default function MoveSheep({ movements, setMovements }) {
   const [number, setNumber] = useState("");
   const [fields, setFields] = useState([]);
@@ -127,14 +152,7 @@ export default function MoveSheep({ movements, setMovements }) {
               padding: "10px",
             }}
           >
-            {fields.map((field) => (
-              <option
-                key={field.id}
-                value={field.name}
-              >
-                {field.name}
-              </option>
-            ))}
+            <LocationOptions fields={fields} />
           </select>
         </div>
 
@@ -159,14 +177,7 @@ export default function MoveSheep({ movements, setMovements }) {
               padding: "10px",
             }}
           >
-            {fields.map((field) => (
-              <option
-                key={field.id}
-                value={field.name}
-              >
-                {field.name}
-              </option>
-            ))}
+            <LocationOptions fields={fields} />
           </select>
         </div>
 

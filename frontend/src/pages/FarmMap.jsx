@@ -80,6 +80,10 @@ export default function FarmMap() {
     (f) => (f.farm || "Gellidywyll") === farm
   );
 
+  const grazingFields = fieldsForFarm.filter(
+    (f) => (f.type || "field") !== "building"
+  );
+
   const field1 = fieldsForFarm.find(
     (f) => Number(f.position) === 1
   );
@@ -129,6 +133,14 @@ export default function FarmMap() {
   const sheepFor = (name) =>
     buildings.find((b) => b.name === name)?.sheep ?? 0;
 
+  const groupsFor = (names) => [
+    ...new Set(
+      names.flatMap(
+        (name) => buildings.find((b) => b.name === name)?.groups ?? []
+      )
+    ),
+  ];
+
   const bayGroups = buildBayGroups(bayMerges).map((bays) => ({
     bays,
     label:
@@ -139,6 +151,7 @@ export default function FarmMap() {
             ""
           )}`,
     sheep: bays.reduce((total, bay) => total + sheepFor(bay), 0),
+    groups: groupsFor(bays),
   }));
 
   const yardUnits = [
@@ -146,6 +159,7 @@ export default function FarmMap() {
       bays: [LAMBING_SHED],
       label: LAMBING_SHED,
       sheep: sheepFor(LAMBING_SHED),
+      groups: groupsFor([LAMBING_SHED]),
     },
     ...bayGroups,
   ];
@@ -200,7 +214,7 @@ export default function FarmMap() {
       </div>
 
       <div style={{ color: "#aaa", marginBottom: "16px" }}>
-        {fieldsForFarm.length} fields · 🐑 {totalSheepOnFarm} sheep
+        {grazingFields.length} fields · 🐑 {totalSheepOnFarm} sheep
       </div>
 
       {farm === "Wern Villa" ? (
@@ -354,7 +368,20 @@ export default function FarmMap() {
                         fontSize: "0.9rem",
                       }}
                     >
-                      <span>🏚️ {unit.label}</span>
+                      <span>
+                        🏚️ {unit.label}
+                        {unit.groups.length > 0 && (
+                          <span
+                            style={{
+                              display: "block",
+                              fontSize: "0.75rem",
+                              opacity: 0.85,
+                            }}
+                          >
+                            {unit.groups.join(", ")}
+                          </span>
+                        )}
+                      </span>
 
                       <span style={{ display: "flex", gap: "8px" }}>
                         {editingBays && unit.bays.length > 1 && (
@@ -400,7 +427,7 @@ export default function FarmMap() {
           <div />
         </div>
       </div>
-      ) : fieldsForFarm.length === 0 ? (
+      ) : grazingFields.length === 0 ? (
         <div
           style={{
             background: "#1f1f1f",
@@ -422,7 +449,7 @@ export default function FarmMap() {
             gap: "12px",
           }}
         >
-          {fieldsForFarm.map((field) => (
+          {grazingFields.map((field) => (
             <FieldCard
               key={field.name}
               name={`🌱 ${field.name}`}

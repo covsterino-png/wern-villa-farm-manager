@@ -107,14 +107,31 @@ export default function MoveGroup() {
           Select Field
         </option>
 
-        {fields.map((field) => (
-          <option
-            key={field.id}
-            value={field.name}
-          >
-            {field.name}
-          </option>
-        ))}
+        <optgroup label="🌱 Fields">
+          {fields
+            .filter((field) => (field.type || "field") !== "building")
+            .map((field) => (
+              <option
+                key={field.id}
+                value={field.name}
+              >
+                {field.name} ({field.farm || "Gellidywyll"})
+              </option>
+            ))}
+        </optgroup>
+
+        <optgroup label="🏚️ Buildings">
+          {fields
+            .filter((field) => field.type === "building")
+            .map((field) => (
+              <option
+                key={field.id}
+                value={field.name}
+              >
+                {field.name} ({field.farm || "Gellidywyll"})
+              </option>
+            ))}
+        </optgroup>
       </select>
 
       <button

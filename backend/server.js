@@ -342,6 +342,51 @@ async function ensureFieldFarmColumn() {
   `);
 }
 
+const WERN_VILLA_BUILDINGS = [
+  "Lambing Shed",
+  "Bay 1",
+  "Bay 2",
+  "Bay 3",
+  "Bay 4",
+  "Bay 5",
+  "Bay 6",
+];
+
+async function ensureFieldTypeColumn() {
+  try {
+    await turso.execute("ALTER TABLE fields ADD COLUMN type TEXT");
+  } catch (error) {
+    if (!error.message.toLowerCase().includes("duplicate column")) {
+      throw error;
+    }
+  }
+
+  await turso.execute(`
+    UPDATE fields
+    SET type = 'field'
+    WHERE type IS NULL OR type = ''
+  `);
+
+  for (const name of WERN_VILLA_BUILDINGS) {
+    const existing = await turso.execute({
+      sql: "SELECT id FROM fields WHERE name = ? AND farm = ?",
+      args: [name, "Wern Villa"],
+    });
+
+    if (existing.rows.length === 0) {
+      await turso.execute({
+        sql: "INSERT INTO fields (name, farm, type) VALUES (?, ?, 'building')",
+        args: [name, "Wern Villa"],
+      });
+    } else {
+      await turso.execute({
+        sql: "UPDATE fields SET type = 'building' WHERE id = ?",
+        args: [existing.rows[0].id],
+      });
+    }
+  }
+}
+
 async function ensureEidCymruMovementSubmissionsTable() {
   await turso.execute(`
     CREATE TABLE IF NOT EXISTS eidCymruMovementSubmissions (
@@ -2700,18 +2745,24 @@ app.get("/fields", async (req, res) => {
 
 app.post("/fields", async (req, res) => {
   try {
-const { name, size, farm } = req.body || {};
+const { name, size, farm, type } = req.body || {};
     const result =
       await turso.execute({
         sql: `
 INSERT INTO fields (
   name,
   size,
-  farm
+  farm,
+  type
 )
-VALUES (?, ?, ?)
+VALUES (?, ?, ?, ?)
         `,
-        args: [name ?? null, size ?? null, farm || "Gellidywyll"],
+        args: [
+          name ?? null,
+          size ?? null,
+          farm || "Gellidywyll",
+          type === "building" ? "building" : "field",
+        ],
       });
 
     res.json({
@@ -2731,6 +2782,7 @@ app.put("/fields/:id", async (req, res) => {
       size,
       position,
       farm,
+      type,
     } = req.body || {};
 
     const existing = await turso.execute({
@@ -2749,7 +2801,8 @@ app.put("/fields/:id", async (req, res) => {
           name = ?,
           size = ?,
           position = ?,
-          farm = ?
+          farm = ?,
+          type = ?
         WHERE id = ?
       `,
       args: [
@@ -2757,6 +2810,7 @@ app.put("/fields/:id", async (req, res) => {
         size ?? field.size,
         position ?? field.position,
         farm ?? field.farm ?? "Gellidywyll",
+        type ?? field.type ?? "field",
         id,
       ],
     });
@@ -3653,6 +3707,7 @@ app.get("/field-status", async (req, res) => {
           size: field.size,
           position: field.position,
           farm: field.farm || "Gellidywyll",
+          type: field.type || "field",
           sheepCount,
           occupied:
             groupsInField.length > 0,
@@ -3955,9 +4010,11 @@ ensureAppConfigTables().catch((error) => {
   console.error("Failed to ensure app config tables:", error);
 });
 
-ensureFieldFarmColumn().catch((error) => {
-  console.error("Failed to ensure field farm column:", error);
-});
+ensureFieldFarmColumn()
+  .then(ensureFieldTypeColumn)
+  .catch((error) => {
+    console.error("Failed to ensure field columns:", error);
+  });
 
 ensureEidCymruMovementSubmissionsTable().catch((error) => {
   console.error("Failed to ensure EID Cymru movement submissions table:", error);

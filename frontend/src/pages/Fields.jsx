@@ -5,6 +5,7 @@ export default function Fields() {
   const [fields, setFields] = useState([]);
   const [newField, setNewField] = useState("");
   const [newFieldFarm, setNewFieldFarm] = useState("Gellidywyll");
+  const [newFieldType, setNewFieldType] = useState("field");
 
   function loadFields() {
     fetch(`${API}/fields`)
@@ -31,6 +32,7 @@ export default function Fields() {
       body: JSON.stringify({
         name: newField,
         farm: newFieldFarm,
+        type: newFieldType,
       }),
     }).then(() => {
       setNewField("");
@@ -71,6 +73,15 @@ export default function Fields() {
           <option value="Wern Villa">Wern Villa</option>
         </select>
 
+        <select
+          value={newFieldType}
+          onChange={(e) => setNewFieldType(e.target.value)}
+          style={{ marginLeft: "10px" }}
+        >
+          <option value="field">🌱 Field</option>
+          <option value="building">🏚️ Building</option>
+        </select>
+
         <button
           onClick={addField}
           style={{
@@ -94,7 +105,9 @@ export default function Fields() {
             gap: "10px",
           }}
         >
-          <span>🌱 {field.name}</span>
+          <span>
+            {field.type === "building" ? "🏚️" : "🌱"} {field.name}
+          </span>
           <small style={{ color: "#aaa" }}>
             {field.farm || "Gellidywyll"}
           </small>
