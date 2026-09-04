@@ -556,11 +556,11 @@ return (
   }}
 >
             <div style={{ fontWeight: "bold" }}>
-              🐑 {animal.name || animal.eid || "Unnamed"}
+              🐑 {animal.name || getEidFormats(animal.eid).iso || animal.eid || "Unnamed"}
             </div>
             {animal.name && (
               <div style={{ color: "#999", fontSize: "0.85rem" }}>
-                {animal.eid}
+                {getEidFormats(animal.eid).iso || animal.eid}
               </div>
             )}
           </div>
