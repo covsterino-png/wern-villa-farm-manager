@@ -10,6 +10,8 @@ import Treatments from "./pages/Treatments";
 import Feed from "./pages/Feed";
 import Settings from "./pages/Settings";
 import FarmMap from "./pages/FarmMap";
+import Outbuildings from "./pages/Outbuildings";
+import OutbuildingDetail from "./pages/OutbuildingDetail";
 import FlockRegister from "./pages/FlockRegister";
 import SheepRegister from "./pages/SheepRegister";
 import Receipts from "./pages/Receipts";
@@ -46,6 +48,8 @@ function App() {
 
   const [installPrompt, setInstallPrompt] = useState(null);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
+
+  const [selectedBuilding, setSelectedBuilding] = useState(null);
 
   const [showBugModal, setShowBugModal] = useState(false);
   const [bugTitle, setBugTitle] = useState("");
@@ -458,7 +462,24 @@ Receipts
 )}
 
         {page === "farm-map" && (
-          <FarmMap />
+          <FarmMap onOpenOutbuildings={() => setPage("outbuildings")} />
+        )}
+
+        {page === "outbuildings" && (
+          <Outbuildings
+            onBack={() => setPage("farm-map")}
+            onSelectBuilding={(unit) => {
+              setSelectedBuilding(unit);
+              setPage("outbuilding-detail");
+            }}
+          />
+        )}
+
+        {page === "outbuilding-detail" && (
+          <OutbuildingDetail
+            unit={selectedBuilding}
+            onBack={() => setPage("outbuildings")}
+          />
         )}
 
         {page === "settings" &&

@@ -661,6 +661,37 @@ async function ensureAppConfigTables() {
   `);
 }
 
+async function ensureSmartDeviceHaColumn() {
+  try {
+    await turso.execute("ALTER TABLE smartDevices ADD COLUMN haEntityId TEXT");
+  } catch (error) {
+    if (!error.message.toLowerCase().includes("duplicate column")) {
+      throw error;
+    }
+  }
+}
+
+function homeAssistantConfigured() {
+  return Boolean(process.env.HOMEASSISTANT_URL && process.env.HOMEASSISTANT_TOKEN);
+}
+
+async function homeAssistantRequest(path, options = {}) {
+  if (!homeAssistantConfigured()) {
+    throw new Error("Home Assistant is not configured on this server");
+  }
+  const baseUrl = process.env.HOMEASSISTANT_URL.replace(/\/$/, "");
+  return axios({
+    url: `${baseUrl}${path}`,
+    timeout: 8000,
+    ...options,
+    headers: {
+      Authorization: `Bearer ${process.env.HOMEASSISTANT_TOKEN}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+}
+
 app.use(
   cors({
     origin: "*"
@@ -4010,6 +4041,10 @@ ensureAppConfigTables().catch((error) => {
   console.error("Failed to ensure app config tables:", error);
 });
 
+ensureSmartDeviceHaColumn().catch((error) => {
+  console.error("Failed to ensure smart device Home Assistant column:", error);
+});
+
 ensureFieldFarmColumn()
   .then(ensureFieldTypeColumn)
   .catch((error) => {
@@ -4587,19 +4622,49 @@ app.get("/ai/config", async (req, res) => {
   }
 });
 
+app.get("/home-assistant/status", async (req, res) => {
+  res.json({ configured: homeAssistantConfigured() });
+});
+
+app.get("/home-assistant/entities", async (req, res) => {
+  try {
+    if (req.user !== "David") {
+      return res.status(403).json({ error: "Only David can browse Home Assistant entities." });
+    }
+    if (!homeAssistantConfigured()) {
+      return res.status(400).json({ error: "Home Assistant is not configured on this server yet." });
+    }
+    const response = await homeAssistantRequest("/api/states");
+    const domains = ["light", "switch", "camera"];
+    const entities = response.data
+      .filter((entity) => domains.includes(entity.entity_id.split(".")[0]))
+      .map((entity) => ({
+        entityId: entity.entity_id,
+        domain: entity.entity_id.split(".")[0],
+        name: entity.attributes?.friendly_name || entity.entity_id,
+        state: entity.state,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    res.json({ entities });
+  } catch (error) {
+    console.error("Get Home Assistant entities error:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post("/ai/devices", async (req, res) => {
   try {
     if (req.user !== "David") {
       return res.status(403).json({ error: "Access denied. Only David can modify smart devices." });
     }
-    const { name, type, icon, endpointUrl, location } = req.body || {};
+    const { name, type, icon, endpointUrl, location, haEntityId } = req.body || {};
     if (!name || !String(name).trim()) {
       return res.status(400).json({ error: "Device name is required" });
     }
     const result = await turso.execute({
       sql: `
-        INSERT INTO smartDevices (name, type, icon, endpointUrl, location, createdBy)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO smartDevices (name, type, icon, endpointUrl, location, createdBy, haEntityId)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `,
       args: [
         String(name).trim(),
@@ -4608,11 +4673,47 @@ app.post("/ai/devices", async (req, res) => {
         endpointUrl || null,
         location || null,
         req.user || "David",
+        haEntityId || null,
       ],
     });
     res.json({ success: true, id: Number(result.lastInsertRowid) });
   } catch (error) {
     console.error("Create smart device error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put("/ai/devices/:id", async (req, res) => {
+  try {
+    if (req.user !== "David") {
+      return res.status(403).json({ error: "Access denied. Only David can modify smart devices." });
+    }
+    const existing = await turso.execute({
+      sql: "SELECT * FROM smartDevices WHERE id = ?",
+      args: [req.params.id],
+    });
+    const device = existing.rows[0];
+    if (!device) return res.status(404).json({ error: "Device not found" });
+
+    const { name, icon, endpointUrl, location, haEntityId } = req.body || {};
+    await turso.execute({
+      sql: `
+        UPDATE smartDevices
+        SET name = ?, icon = ?, endpointUrl = ?, location = ?, haEntityId = ?
+        WHERE id = ?
+      `,
+      args: [
+        name?.trim() || device.name,
+        icon ?? device.icon,
+        endpointUrl ?? device.endpointUrl,
+        location ?? device.location,
+        haEntityId ?? device.haEntityId,
+        req.params.id,
+      ],
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Update smart device error:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -4626,9 +4727,19 @@ app.post("/ai/devices/:id/toggle", async (req, res) => {
     const device = deviceResult.rows[0];
     if (!device) return res.status(404).json({ error: "Device not found" });
 
-    const newState = device.state === "on" ? "off" : "on";
-    
-    if (device.endpointUrl) {
+    let newState = device.state === "on" ? "off" : "on";
+
+    if (device.haEntityId) {
+      if (!homeAssistantConfigured()) {
+        return res.status(400).json({ error: "Home Assistant is not configured on this server yet." });
+      }
+      await homeAssistantRequest("/api/services/homeassistant/toggle", {
+        method: "post",
+        data: { entity_id: device.haEntityId },
+      });
+      const stateRes = await homeAssistantRequest(`/api/states/${device.haEntityId}`);
+      newState = stateRes.data.state === "on" ? "on" : "off";
+    } else if (device.endpointUrl) {
       try {
         await axios.post(device.endpointUrl, { state: newState, deviceId: device.id }, { timeout: 4000 });
       } catch (err) {
@@ -4644,6 +4755,30 @@ app.post("/ai/devices/:id/toggle", async (req, res) => {
     res.json({ success: true, state: newState });
   } catch (error) {
     console.error("Toggle smart device error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/ai/devices/:id/camera-snapshot", async (req, res) => {
+  try {
+    const deviceResult = await turso.execute({
+      sql: "SELECT * FROM smartDevices WHERE id = ?",
+      args: [req.params.id],
+    });
+    const device = deviceResult.rows[0];
+    if (!device || !device.haEntityId || !device.haEntityId.startsWith("camera.")) {
+      return res.status(404).json({ error: "No Home Assistant camera linked to this device" });
+    }
+    if (!homeAssistantConfigured()) {
+      return res.status(400).json({ error: "Home Assistant is not configured on this server yet." });
+    }
+    const response = await homeAssistantRequest(`/api/camera_proxy/${device.haEntityId}`, {
+      responseType: "arraybuffer",
+    });
+    res.set("Content-Type", response.headers["content-type"] || "image/jpeg");
+    res.send(Buffer.from(response.data));
+  } catch (error) {
+    console.error("Camera snapshot error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });

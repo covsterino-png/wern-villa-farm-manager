@@ -1,73 +1,11 @@
 import { useEffect, useState } from "react";
 import { API } from "../api";
+import { WERN_VILLA_BUILDINGS } from "./outbuildingsData";
 
-const LAMBING_SHED = "Lambing Shed";
-
-const BAYS = [
-  "Bay 1",
-  "Bay 2",
-  "Bay 3",
-  "Bay 4",
-  "Bay 5",
-  "Bay 6",
-];
-
-const WERN_VILLA_BUILDINGS = [LAMBING_SHED, ...BAYS];
-
-const BAY_MERGE_KEY = "wernVillaBayMerges";
-
-// Merges are stored as the split boundaries that remain open, e.g. [1,3] keeps
-// Bay 1 | Bay 2 + Bay 3 | Bay 4 ... The stored value is the merged pairs.
-function loadMerges() {
-  try {
-    const raw = localStorage.getItem(BAY_MERGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed)
-      ? parsed.filter(
-          (i) => Number.isInteger(i) && i >= 0 && i < BAYS.length - 1
-        )
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-function buildBayGroups(merges) {
-  const groups = [];
-  let current = [BAYS[0]];
-
-  for (let i = 1; i < BAYS.length; i++) {
-    if (merges.includes(i - 1)) {
-      current.push(BAYS[i]);
-    } else {
-      groups.push(current);
-      current = [BAYS[i]];
-    }
-  }
-
-  groups.push(current);
-  return groups;
-}
-
-export default function FarmMap() {
+export default function FarmMap({ onOpenOutbuildings }) {
   const [fieldStatus, setFieldStatus] =
     useState([]);
   const [farm, setFarm] = useState("Gellidywyll");
-  const [yardOpen, setYardOpen] = useState(false);
-  const [bayMerges, setBayMerges] = useState(loadMerges);
-  const [editingBays, setEditingBays] = useState(false);
-
-  useEffect(() => {
-    localStorage.setItem(BAY_MERGE_KEY, JSON.stringify(bayMerges));
-  }, [bayMerges]);
-
-  const toggleMerge = (boundary) => {
-    setBayMerges((current) =>
-      current.includes(boundary)
-        ? current.filter((i) => i !== boundary)
-        : [...current, boundary].sort((a, b) => a - b)
-    );
-  };
 
   useEffect(() => {
     fetch(`${API}/field-status`)
@@ -129,40 +67,6 @@ export default function FarmMap() {
       groups: match?.groups ?? [],
     };
   });
-
-  const sheepFor = (name) =>
-    buildings.find((b) => b.name === name)?.sheep ?? 0;
-
-  const groupsFor = (names) => [
-    ...new Set(
-      names.flatMap(
-        (name) => buildings.find((b) => b.name === name)?.groups ?? []
-      )
-    ),
-  ];
-
-  const bayGroups = buildBayGroups(bayMerges).map((bays) => ({
-    bays,
-    label:
-      bays.length === 1
-        ? bays[0]
-        : `Bays ${bays[0].replace("Bay ", "")}–${bays[bays.length - 1].replace(
-            "Bay ",
-            ""
-          )}`,
-    sheep: bays.reduce((total, bay) => total + sheepFor(bay), 0),
-    groups: groupsFor(bays),
-  }));
-
-  const yardUnits = [
-    {
-      bays: [LAMBING_SHED],
-      label: LAMBING_SHED,
-      sheep: sheepFor(LAMBING_SHED),
-      groups: groupsFor([LAMBING_SHED]),
-    },
-    ...bayGroups,
-  ];
 
   const sheepInBuildings = buildings.reduce(
     (total, b) => total + b.sheep,
@@ -295,13 +199,13 @@ export default function FarmMap() {
           }}
         >
           <div
-            onClick={() => setYardOpen((open) => !open)}
+            onClick={() => onOpenOutbuildings?.()}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                setYardOpen((open) => !open);
+                onOpenOutbuildings?.();
               }
             }}
             style={{
@@ -322,106 +226,12 @@ export default function FarmMap() {
               }}
             >
               <strong>🏠 Home & Yard</strong>
-              <span>{yardOpen ? "▲" : "▼"}</span>
+              <span>▶</span>
             </div>
 
             <div style={{ fontSize: "0.85rem", marginTop: "4px" }}>
-              {yardUnits.length} buildings · 🐑 {sheepInBuildings}
+              {WERN_VILLA_BUILDINGS.length} buildings · 🐑 {sheepInBuildings}
             </div>
-
-            {yardOpen && (
-              <div
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  marginTop: "12px",
-                  display: "grid",
-                  gap: "8px",
-                }}
-              >
-                <button
-                  onClick={() => setEditingBays((v) => !v)}
-                  style={{
-                    justifySelf: "start",
-                    background: editingBays ? "#03a9f4" : "#37474f",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "10px",
-                    padding: "6px 12px",
-                    cursor: "pointer",
-                    fontSize: "0.8rem",
-                  }}
-                >
-                  {editingBays ? "Done" : "Merge bays"}
-                </button>
-
-                {yardUnits.map((unit, index) => (
-                  <div key={unit.label}>
-                    <div
-                      style={{
-                        background: unit.sheep > 0 ? "#2196f3" : "#455a64",
-                        borderRadius: "12px",
-                        padding: "10px 12px",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: "8px",
-                        fontSize: "0.9rem",
-                      }}
-                    >
-                      <span>
-                        🏚️ {unit.label}
-                        {unit.groups.length > 0 && (
-                          <span
-                            style={{
-                              display: "block",
-                              fontSize: "0.75rem",
-                              opacity: 0.85,
-                            }}
-                          >
-                            {unit.groups.join(", ")}
-                          </span>
-                        )}
-                      </span>
-
-                      <span style={{ display: "flex", gap: "8px" }}>
-                        {editingBays && unit.bays.length > 1 && (
-                          <BayButton
-                            label="Split"
-                            onClick={() =>
-                              setBayMerges((current) =>
-                                current.filter(
-                                  (i) =>
-                                    i < BAYS.indexOf(unit.bays[0]) ||
-                                    i >=
-                                      BAYS.indexOf(
-                                        unit.bays[unit.bays.length - 1]
-                                      )
-                                )
-                              )
-                            }
-                          />
-                        )}
-                        <span>🐑 {unit.sheep}</span>
-                      </span>
-                    </div>
-
-                    {editingBays &&
-                      index > 0 &&
-                      index < yardUnits.length - 1 && (
-                        <BayButton
-                          label="⇵ Merge with below"
-                          block
-                          onClick={() =>
-                            toggleMerge(
-                              BAYS.indexOf(unit.bays[unit.bays.length - 1])
-                            )
-                          }
-                        />
-                      )}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           <div />
@@ -465,27 +275,6 @@ export default function FarmMap() {
         </div>
       )}
     </div>
-  );
-}
-
-function BayButton({ label, onClick, block }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        background: "#263238",
-        color: "white",
-        border: "none",
-        borderRadius: "8px",
-        padding: block ? "4px 10px" : "2px 8px",
-        margin: block ? "4px auto" : 0,
-        display: block ? "block" : "inline-block",
-        cursor: "pointer",
-        fontSize: "0.75rem",
-      }}
-    >
-      {label}
-    </button>
   );
 }
 
