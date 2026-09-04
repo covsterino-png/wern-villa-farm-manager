@@ -214,7 +214,6 @@ const cardStyle = {
   }
 
   const searchTerm = eidSearch.trim().toLowerCase();
-  const searchFormats = getEidFormats(eidSearch);
   const visibleSheep = searchTerm
     ? sheep.filter((animal) => {
         if ((animal.name || "").toLowerCase().includes(searchTerm)) return true;
@@ -223,8 +222,8 @@ const cardStyle = {
         const normalizedSearchTerm = normalizeEid(eidSearch);
         return (
           normalizedAnimalEid.includes(normalizedSearchTerm) ||
-          (searchFormats.hex && animalFormats.hex === searchFormats.hex) ||
-          (searchFormats.iso && animalFormats.iso === searchFormats.iso)
+          (animalFormats.hex && animalFormats.hex.includes(normalizedSearchTerm)) ||
+          (animalFormats.iso && animalFormats.iso.includes(normalizedSearchTerm))
         );
       })
     : sheep;
