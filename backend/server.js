@@ -323,7 +323,7 @@ async function ensureReceiptsTable() {
 }
 
 async function ensureSheepEarTagColumns() {
-  for (const column of ["tagStatus TEXT", "earTags TEXT", "earTagsCompliant INTEGER DEFAULT 0"]) {
+  for (const column of ["tagStatus TEXT", "earTags TEXT", "earTagsCompliant INTEGER DEFAULT 0", "isReplacementTracked INTEGER DEFAULT 0"]) {
     try {
       await turso.execute(`ALTER TABLE sheep ADD COLUMN ${column}`);
     } catch (error) {
@@ -2530,6 +2530,71 @@ app.put("/sheep/:id/eartags", async (req, res) => {
         VALUES (?, ?, ?)
       `,
       args: [id, "Ear Tags Updated", `Tag status: ${tagStatus || "Not set"}, Compliant: ${earTagsCompliant ? "Yes" : "No"}`],
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+// Slaughter lamb kept for breeding: old tag stays recorded (retired, not deleted) and a pair of
+// red replacement tags takes over as the active identity. Logs the DEFRA cross-reference audit trail.
+app.put("/sheep/:id/eartags/upgrade-to-breeding", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      newEid,
+      earTags,
+      originalFlockMark,
+      crossReferencedInHoldingRegister,
+    } = req.body || {};
+
+    if (!newEid) {
+      return res.status(400).json({ error: "A new EID for the red replacement tags is required." });
+    }
+
+    await turso.execute({
+      sql: `
+        UPDATE sheep
+        SET
+          eid = ?,
+          tagStatus = ?,
+          earTags = ?,
+          isReplacementTracked = 1
+        WHERE id = ?
+      `,
+      args: [
+        newEid,
+        "Double Tagged (Breeding)",
+        JSON.stringify(Array.isArray(earTags) ? earTags : []),
+        id,
+      ],
+    });
+
+    await turso.execute({
+      sql: `
+        INSERT INTO sheepHistory
+        (sheepId, eventType, details)
+        VALUES (?, ?, ?)
+      `,
+      args: [
+        id,
+        "Tag Upgrade to Breeding",
+        JSON.stringify({
+          event_type: "TAG_UPGRADE_TO_BREEDING",
+          date_of_action: new Date().toISOString().split("T")[0],
+          original_identity: {
+            flock_mark: originalFlockMark || null,
+            comment: "Old breeder slaughter tag removed",
+          },
+          new_identity: {
+            electronic_eid: newEid,
+            tag_colour: "RED",
+          },
+          cross_referenced_in_holding_register: Boolean(crossReferencedInHoldingRegister),
+        }),
+      ],
     });
 
     res.json({ success: true });

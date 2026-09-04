@@ -237,6 +237,9 @@ const [scanResult, setScanResult] = useState("Single");
     new Date().toISOString().split("T")[0]
   );
   const [newTagReplacement, setNewTagReplacement] = useState(false);
+  const [showUpgradeForm, setShowUpgradeForm] = useState(false);
+  const [upgradeNewEid, setUpgradeNewEid] = useState("");
+  const [upgradeRegisterConfirmed, setUpgradeRegisterConfirmed] = useState(false);
 
   useEffect(() => {
     fetch(
@@ -543,6 +546,74 @@ function resolveCase(caseId) {
     const nextEarTags = earTags.filter((_, i) => i !== index);
     setEarTags(nextEarTags);
     saveEarTags(tagStatus, nextEarTags, earTagsCompliant);
+  }
+
+  // Slaughter lamb kept for breeding: old tag is retired (kept for audit) and a red
+  // replacement pair (EID + matching visual) becomes the animal's active identity.
+  function upgradeToBreeding() {
+    const newFormats = getEidFormats(upgradeNewEid);
+    if (!newFormats.iso) {
+      setToast("Enter a valid hex or ISO EID for the new red tags first.");
+      setTimeout(() => setToast(""), 3000);
+      return;
+    }
+    if (!upgradeRegisterConfirmed) {
+      setToast("Confirm the holding register cross-reference before upgrading.");
+      setTimeout(() => setToast(""), 3000);
+      return;
+    }
+
+    const oldBreakdown = getEidBreakdown(sheep.eid);
+    const newBreakdown = getEidBreakdown(upgradeNewEid);
+    const today = new Date().toISOString().split("T")[0];
+
+    const retiredTags = earTags.map((tag) => ({ ...tag, retired: true, retiredDate: today }));
+    const newRedTags = [
+      {
+        colour: "Red",
+        type: "Electronic (EID)",
+        flockMark: newBreakdown.flockMark || "",
+        individualNumber: newBreakdown.individualNumber || "",
+        eid: newBreakdown.iso,
+        dateApplied: today,
+        replacement: true,
+      },
+      {
+        colour: "Red",
+        type: "Visual",
+        flockMark: newBreakdown.flockMark || "",
+        individualNumber: newBreakdown.individualNumber || "",
+        eid: newBreakdown.iso,
+        dateApplied: today,
+        replacement: true,
+      },
+    ];
+    const nextEarTags = [...retiredTags, ...newRedTags];
+    const originalFlockMark = oldBreakdown.flockMark ? `UK${oldBreakdown.flockMark}` : null;
+
+    submitWrite(
+      `https://wern-villa-api.onrender.com/sheep/${sheep.id}/eartags/upgrade-to-breeding`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          newEid: newBreakdown.iso,
+          earTags: nextEarTags,
+          originalFlockMark,
+          crossReferencedInHoldingRegister: upgradeRegisterConfirmed,
+        }),
+      },
+      `Upgrade ${sheep.name || sheep.eid} to breeding tags`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.queued) {
+          setToast("Saved offline — will sync automatically once you're back online.");
+          setTimeout(() => setToast(""), 3000);
+          return;
+        }
+        window.location.reload();
+      });
   }
 
   function saveWeight() {
@@ -2196,11 +2267,12 @@ function saveEvent() {
   const monthsOld = getMonthsOld(dob);
   const deadlines = getTaggingDeadlines(dob);
   const eidBreakdown = getEidBreakdown(sheep.eid);
-  const electronicCount = earTags.filter((t) => t.type === "Electronic (EID)").length;
-  const visualCount = earTags.filter((t) => t.type === "Visual").length;
+  const activeTags = earTags.filter((t) => !t.retired);
+  const electronicCount = activeTags.filter((t) => t.type === "Electronic (EID)").length;
+  const visualCount = activeTags.filter((t) => t.type === "Visual").length;
 
   const setWarnings = [];
-  if (tagStatus === "Single Tag (Slaughter)" && earTags.length !== 1) {
+  if (tagStatus === "Single Tag (Slaughter)" && activeTags.length !== 1) {
     setWarnings.push("Slaughter lambs should carry exactly 1 electronic tag.");
   }
   if (tagStatus === "Double Tagged (Breeding)" && (electronicCount < 1 || visualCount < 1)) {
@@ -2267,6 +2339,74 @@ function saveEvent() {
         Ear tags compliant (confirmed correct for a future compliance report)
       </label>
 
+      {sheep.isReplacementTracked ? (
+        <p style={{ color: "#ef9a9a" }}>
+          🔴 This animal is on red replacement tags — its identity is cross-referenced to a tag
+          applied off its holding of birth.
+        </p>
+      ) : null}
+
+      {tagStatus === "Single Tag (Slaughter)" && (
+        <div style={{ background: "#1f1f1f", padding: "12px", borderRadius: "8px", marginBottom: "16px" }}>
+          <button
+            type="button"
+            onClick={() => setShowUpgradeForm((prev) => !prev)}
+            style={{
+              background: "#c62828",
+              color: "white",
+              border: "none",
+              padding: "10px 14px",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+          >
+            {showUpgradeForm ? "➖ Cancel Upgrade" : "🔴 Keeping this lamb for breeding? Upgrade to Breeding Tags"}
+          </button>
+
+          {showUpgradeForm && (
+            <div style={{ marginTop: "12px" }}>
+              <p style={{ color: "#aaa" }}>
+                Fit a red electronic tag and a matching red visual tag (your farm's flock mark),
+                then retire the old slaughter tag here. This is a replacement off the holding of
+                birth, so both new tags must be red.
+              </p>
+              <label>New Red Electronic Tag EID</label>
+              <input
+                style={inputStyle}
+                value={upgradeNewEid}
+                onChange={(e) => setUpgradeNewEid(e.target.value)}
+                placeholder="Hex or ISO EID from the new red tag"
+              />
+              <label style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+                <input
+                  type="checkbox"
+                  checked={upgradeRegisterConfirmed}
+                  onChange={(e) => setUpgradeRegisterConfirmed(e.target.checked)}
+                />
+                I've logged this tag change in the holding register (within 36 hours)
+              </label>
+              <button
+                type="button"
+                onClick={upgradeToBreeding}
+                style={{
+                  background: "#c62828",
+                  color: "white",
+                  border: "none",
+                  padding: "12px",
+                  borderRadius: "10px",
+                  width: "100%",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                }}
+              >
+                Confirm Upgrade to Breeding
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       <h3 style={{ color: "#03a9f4" }}>Tags Applied</h3>
       {earTags.length === 0 ? (
         <p>No tags recorded yet.</p>
@@ -2279,9 +2419,11 @@ function saveEvent() {
               padding: "12px",
               borderRadius: "8px",
               marginBottom: "10px",
+              opacity: tag.retired ? 0.5 : 1,
             }}
           >
             <strong>{tag.colour} — {tag.type}</strong>
+            {tag.retired && <span style={{ color: "#ff8a65" }}> (Retired)</span>}
             <br />
             Flock mark: {tag.flockMark || "—"}
             {tag.individualNumber ? ` #${tag.individualNumber}` : ""}
