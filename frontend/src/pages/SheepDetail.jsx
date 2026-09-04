@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { submitWrite } from "../offlineQueue";
-import { getEidFormats } from "../eidUtils";
+import { getEidFormats, getEidBreakdown } from "../eidUtils";
 
 const TAG_STATUS_OPTIONS = [
   "Not Tagged",
@@ -222,6 +222,7 @@ const [scanResult, setScanResult] = useState("Single");
     useState(sheep.notes || "");
 
   const [tagStatus, setTagStatus] = useState(sheep.tagStatus || "Not Tagged");
+  const [earTagsCompliant, setEarTagsCompliant] = useState(Boolean(sheep.earTagsCompliant));
   const [earTags, setEarTags] = useState(() => {
     try {
       const parsed = JSON.parse(sheep.earTags || "[]");
@@ -232,9 +233,6 @@ const [scanResult, setScanResult] = useState("Single");
   });
   const [newTagColour, setNewTagColour] = useState("Yellow");
   const [newTagType, setNewTagType] = useState("Electronic (EID)");
-  const [newTagFlockMark, setNewTagFlockMark] = useState("");
-  const [newTagIndividualNumber, setNewTagIndividualNumber] = useState("");
-  const [newTagEid, setNewTagEid] = useState("");
   const [newTagDate, setNewTagDate] = useState(
     new Date().toISOString().split("T")[0]
   );
@@ -485,7 +483,7 @@ function resolveCase(caseId) {
       });
   }
 
-  function saveEarTags(nextTagStatus, nextEarTags) {
+  function saveEarTags(nextTagStatus, nextEarTags, nextCompliant) {
     submitWrite(
       `https://wern-villa-api.onrender.com/sheep/${sheep.id}/eartags`,
       {
@@ -496,6 +494,7 @@ function resolveCase(caseId) {
         body: JSON.stringify({
           tagStatus: nextTagStatus,
           earTags: nextEarTags,
+          earTagsCompliant: nextCompliant,
         }),
       },
       `Update ear tags for ${sheep.name || sheep.eid}`
@@ -514,33 +513,36 @@ function resolveCase(caseId) {
 
   function updateTagStatus(value) {
     setTagStatus(value);
-    saveEarTags(value, earTags);
+    saveEarTags(value, earTags, earTagsCompliant);
+  }
+
+  function updateEarTagsCompliant(value) {
+    setEarTagsCompliant(value);
+    saveEarTags(tagStatus, earTags, value);
   }
 
   function addEarTag() {
     if (!newTagColour || !newTagType) return;
+    const breakdown = getEidBreakdown(sheep.eid);
     const tag = {
       colour: newTagColour,
       type: newTagType,
-      flockMark: newTagFlockMark,
-      individualNumber: newTagIndividualNumber,
-      eid: newTagType === "Electronic (EID)" ? newTagEid : "",
+      flockMark: breakdown.flockMark || "",
+      individualNumber: breakdown.individualNumber || "",
+      eid: breakdown.iso || sheep.eid || "",
       dateApplied: newTagDate,
       replacement: newTagReplacement,
     };
     const nextEarTags = [...earTags, tag];
     setEarTags(nextEarTags);
-    saveEarTags(tagStatus, nextEarTags);
-    setNewTagFlockMark("");
-    setNewTagIndividualNumber("");
-    setNewTagEid("");
+    saveEarTags(tagStatus, nextEarTags, earTagsCompliant);
     setNewTagReplacement(false);
   }
 
   function removeEarTag(index) {
     const nextEarTags = earTags.filter((_, i) => i !== index);
     setEarTags(nextEarTags);
-    saveEarTags(tagStatus, nextEarTags);
+    saveEarTags(tagStatus, nextEarTags, earTagsCompliant);
   }
 
   function saveWeight() {
@@ -1078,6 +1080,13 @@ function saveEvent() {
             </p>
           );
         })()}
+
+        <p>
+          <strong>Ear tags:</strong>{" "}
+          {sheep.tagStatus || "Not Tagged"}
+          {" — "}
+          {earTagsCompliant ? "✅ Compliant" : "⚠️ Not confirmed compliant"}
+        </p>
 
         <p>
           <strong>DOB:</strong>{" "}
@@ -2186,6 +2195,7 @@ function saveEvent() {
 {activeTab === "eartags" && (() => {
   const monthsOld = getMonthsOld(dob);
   const deadlines = getTaggingDeadlines(dob);
+  const eidBreakdown = getEidBreakdown(sheep.eid);
   const electronicCount = earTags.filter((t) => t.type === "Electronic (EID)").length;
   const visualCount = earTags.filter((t) => t.type === "Visual").length;
 
@@ -2247,6 +2257,15 @@ function saveEvent() {
       {setWarnings.map((warning, i) => (
         <p key={i} style={{ color: "#ffcc80" }}>⚠️ {warning}</p>
       ))}
+
+      <label style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+        <input
+          type="checkbox"
+          checked={earTagsCompliant}
+          onChange={(e) => updateEarTagsCompliant(e.target.checked)}
+        />
+        Ear tags compliant (confirmed correct for a future compliance report)
+      </label>
 
       <h3 style={{ color: "#03a9f4" }}>Tags Applied</h3>
       {earTags.length === 0 ? (
@@ -2334,31 +2353,19 @@ function saveEvent() {
       </select>
 
       <label>UK Flock Mark</label>
-      <input
-        style={inputStyle}
-        value={newTagFlockMark}
-        onChange={(e) => setNewTagFlockMark(e.target.value)}
-        placeholder="e.g. UK 123456"
-      />
+      <input style={inputStyle} value={eidBreakdown.flockMark || "—"} disabled readOnly />
 
-      <label>Individual Number (5 digits, breeding tags)</label>
-      <input
-        style={inputStyle}
-        value={newTagIndividualNumber}
-        onChange={(e) => setNewTagIndividualNumber(e.target.value)}
-        placeholder="e.g. 00123"
-      />
+      <label>Individual Number</label>
+      <input style={inputStyle} value={eidBreakdown.individualNumber || "—"} disabled readOnly />
 
-      {newTagType === "Electronic (EID)" && (
-        <>
-          <label>EID</label>
-          <input
-            style={inputStyle}
-            value={newTagEid}
-            onChange={(e) => setNewTagEid(e.target.value)}
-            placeholder="Hex or ISO EID"
-          />
-        </>
+      <label>EID</label>
+      <input style={inputStyle} value={eidBreakdown.iso || sheep.eid || "—"} disabled readOnly />
+
+      {!eidBreakdown.iso && (
+        <p style={{ color: "#ffcc80", marginTop: "-8px" }}>
+          ⚠️ Add this sheep's EID on the Overview tab first — flock mark, individual number and
+          EID are derived from it.
+        </p>
       )}
 
       <label>Date Applied</label>
@@ -2380,14 +2387,15 @@ function saveEvent() {
 
       <button
         onClick={addEarTag}
+        disabled={!eidBreakdown.iso}
         style={{
-          background: "#4caf50",
+          background: eidBreakdown.iso ? "#4caf50" : "#555",
           color: "white",
           border: "none",
           padding: "12px",
           borderRadius: "10px",
           width: "100%",
-          cursor: "pointer",
+          cursor: eidBreakdown.iso ? "pointer" : "not-allowed",
           fontWeight: "bold",
         }}
       >

@@ -323,7 +323,7 @@ async function ensureReceiptsTable() {
 }
 
 async function ensureSheepEarTagColumns() {
-  for (const column of ["tagStatus TEXT", "earTags TEXT"]) {
+  for (const column of ["tagStatus TEXT", "earTags TEXT", "earTagsCompliant INTEGER DEFAULT 0"]) {
     try {
       await turso.execute(`ALTER TABLE sheep ADD COLUMN ${column}`);
     } catch (error) {
@@ -2504,19 +2504,21 @@ app.put("/sheep/:id", async (req, res) => {
 app.put("/sheep/:id/eartags", async (req, res) => {
   try {
     const { id } = req.params;
-    const { tagStatus, earTags } = req.body || {};
+    const { tagStatus, earTags, earTagsCompliant } = req.body || {};
 
     await turso.execute({
       sql: `
         UPDATE sheep
         SET
           tagStatus = ?,
-          earTags = ?
+          earTags = ?,
+          earTagsCompliant = ?
         WHERE id = ?
       `,
       args: [
         tagStatus || null,
         JSON.stringify(Array.isArray(earTags) ? earTags : []),
+        earTagsCompliant ? 1 : 0,
         id,
       ],
     });
@@ -2527,7 +2529,7 @@ app.put("/sheep/:id/eartags", async (req, res) => {
         (sheepId, eventType, details)
         VALUES (?, ?, ?)
       `,
-      args: [id, "Ear Tags Updated", `Tag status: ${tagStatus || "Not set"}`],
+      args: [id, "Ear Tags Updated", `Tag status: ${tagStatus || "Not set"}, Compliant: ${earTagsCompliant ? "Yes" : "No"}`],
     });
 
     res.json({ success: true });

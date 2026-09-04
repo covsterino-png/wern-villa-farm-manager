@@ -48,3 +48,21 @@ export function getEidFormats(value) {
   }
   return { hex: null, iso: null };
 }
+
+// UK sheep EID national ID (12 digits after the country code) is issued as a
+// 6-digit flock mark followed by a 6-digit individual animal number.
+export function getEidBreakdown(value) {
+  const { hex, iso } = getEidFormats(value);
+  if (!hex || !iso) {
+    return { hex: null, iso: null, countryCode: null, flockMark: null, individualNumber: null };
+  }
+  const national = iso.slice(3);
+  return {
+    hex,
+    iso,
+    countryCode: iso.slice(0, 3),
+    flockMark: national.slice(0, 6),
+    individualNumber: national.slice(6),
+  };
+}
+
