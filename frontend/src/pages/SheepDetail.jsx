@@ -1059,19 +1059,24 @@ function saveEvent() {
           {sheep.sex}
         </p>
 
-        <p>
-          <strong>EID:</strong>{" "}
-          {sheep.eid ||
-            "Not Tagged Yet"}
-        </p>
-
-        {sheep.eid && (() => {
+        {(() => {
           const { hex, iso } = getEidFormats(sheep.eid);
+          if (!sheep.eid) {
+            return (
+              <p>
+                <strong>EID:</strong> Not Tagged Yet
+              </p>
+            );
+          }
           return hex && iso ? (
             <p>
               <strong>Hex:</strong> {hex} &nbsp;|&nbsp; <strong>ISO:</strong> {iso}
             </p>
-          ) : null;
+          ) : (
+            <p>
+              <strong>EID:</strong> {sheep.eid}
+            </p>
+          );
         })()}
 
         <p>

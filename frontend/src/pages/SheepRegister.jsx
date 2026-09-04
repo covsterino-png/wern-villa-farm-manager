@@ -7,6 +7,17 @@ function normalizeEid(value) {
   return String(value || "").replace(/[^a-z0-9]/gi, "").toUpperCase();
 }
 
+// Two EIDs match if either their hex or their ISO decimal form is identical.
+function eidsMatch(a, b) {
+  if (!a || !b) return false;
+  const formatsA = getEidFormats(a);
+  const formatsB = getEidFormats(b);
+  return (
+    (formatsA.hex && formatsB.hex && formatsA.hex === formatsB.hex) ||
+    (formatsA.iso && formatsB.iso && formatsA.iso === formatsB.iso)
+  );
+}
+
 export default function SheepRegister() {
   const [sheep, setSheep] = useState([]);
 
@@ -160,7 +171,7 @@ const cardStyle = {
     const lowerName = trimmed.toLowerCase();
 
     const eidMatch = allSheep.find(
-      (animal) => scannedEid && normalizeEid(animal.eid) === scannedEid
+      (animal) => scannedEid && eidsMatch(animal.eid, value)
     );
     const nameMatches = allSheep.filter(
       (animal) => (animal.name || "").toLowerCase() === lowerName
@@ -197,19 +208,25 @@ const cardStyle = {
     clearTimeout(eidLookupTimer.current);
 
     const normalized = normalizeEid(value);
-    if (normalized.length === 10 || normalized.length === 15) {
+    if (normalized.length === 12 || normalized.length === 15) {
       eidLookupTimer.current = setTimeout(() => lookupEid(value), 400);
     }
   }
 
   const searchTerm = eidSearch.trim().toLowerCase();
-  const normalizedSearchTerm = normalizeEid(eidSearch);
+  const searchFormats = getEidFormats(eidSearch);
   const visibleSheep = searchTerm
-    ? sheep.filter(
-        (animal) =>
-          (animal.name || "").toLowerCase().includes(searchTerm) ||
-          normalizeEid(animal.eid).includes(normalizedSearchTerm)
-      )
+    ? sheep.filter((animal) => {
+        if ((animal.name || "").toLowerCase().includes(searchTerm)) return true;
+        const animalFormats = getEidFormats(animal.eid);
+        const normalizedAnimalEid = normalizeEid(animal.eid);
+        const normalizedSearchTerm = normalizeEid(eidSearch);
+        return (
+          normalizedAnimalEid.includes(normalizedSearchTerm) ||
+          (searchFormats.hex && animalFormats.hex === searchFormats.hex) ||
+          (searchFormats.iso && animalFormats.iso === searchFormats.iso)
+        );
+      })
     : sheep;
 
 if (selectedSheep) {
