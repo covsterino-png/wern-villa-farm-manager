@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import SheepDetail from "./SheepDetail";
 import { submitWrite } from "../offlineQueue";
+import { getEidFormats } from "../eidUtils";
 
 function normalizeEid(value) {
   return String(value || "").replace(/[^a-z0-9]/gi, "").toUpperCase();
@@ -333,8 +334,16 @@ return (
           onChange={(e) =>
             setEid(e.target.value)
           }
-          placeholder="EID"
+          placeholder="EID (scan hex or type ISO)"
         />
+        {(() => {
+          const { hex, iso } = getEidFormats(eid);
+          return hex && iso ? (
+            <p style={{ marginTop: "-8px", color: "#999" }}>
+              Hex: {hex} &nbsp;|&nbsp; ISO: {iso}
+            </p>
+          ) : null;
+        })()}
 
         <select
           style={inputStyle}

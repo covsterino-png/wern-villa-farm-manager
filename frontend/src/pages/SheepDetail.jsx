@@ -1,5 +1,51 @@
 import { useState, useEffect } from "react";
 import { submitWrite } from "../offlineQueue";
+import { getEidFormats } from "../eidUtils";
+
+const TAG_STATUS_OPTIONS = [
+  "Not Tagged",
+  "Single Tag (Slaughter)",
+  "Double Tagged (Breeding)",
+  "Awaiting Replacement",
+  "Bolus Fitted",
+];
+
+const TAG_COLOUR_OPTIONS = ["Yellow", "Red", "Black", "Other"];
+const TAG_TYPE_OPTIONS = ["Electronic (EID)", "Visual", "Bolus"];
+
+// DEFRA colour rules: yellow = EID only, black = bolus only, red = replacement tags only.
+function getTagWarnings(tag) {
+  const warnings = [];
+  if (tag.colour === "Yellow" && tag.type !== "Electronic (EID)") {
+    warnings.push("Yellow tags are reserved for the electronic (EID) tag.");
+  }
+  if (tag.colour === "Black" && tag.type !== "Bolus") {
+    warnings.push("Black tags are reserved for electronic boluses.");
+  }
+  if (tag.colour === "Red" && !tag.replacement) {
+    warnings.push("Red tags are reserved for replacement tags applied off the holding of birth.");
+  }
+  return warnings;
+}
+
+function getMonthsOld(dob) {
+  if (!dob) return null;
+  const birth = new Date(dob);
+  if (Number.isNaN(birth.getTime())) return null;
+  const now = new Date();
+  return (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
+}
+
+function getTaggingDeadlines(dob) {
+  if (!dob) return null;
+  const birth = new Date(dob);
+  if (Number.isNaN(birth.getTime())) return null;
+  const indoor = new Date(birth);
+  indoor.setMonth(indoor.getMonth() + 6);
+  const outdoor = new Date(birth);
+  outdoor.setMonth(outdoor.getMonth() + 9);
+  return { indoor, outdoor };
+}
 
 export default function SheepDetail({
   sheep,
@@ -174,6 +220,25 @@ const [scanResult, setScanResult] = useState("Single");
 
   const [notes, setNotes] =
     useState(sheep.notes || "");
+
+  const [tagStatus, setTagStatus] = useState(sheep.tagStatus || "Not Tagged");
+  const [earTags, setEarTags] = useState(() => {
+    try {
+      const parsed = JSON.parse(sheep.earTags || "[]");
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
+  const [newTagColour, setNewTagColour] = useState("Yellow");
+  const [newTagType, setNewTagType] = useState("Electronic (EID)");
+  const [newTagFlockMark, setNewTagFlockMark] = useState("");
+  const [newTagIndividualNumber, setNewTagIndividualNumber] = useState("");
+  const [newTagEid, setNewTagEid] = useState("");
+  const [newTagDate, setNewTagDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [newTagReplacement, setNewTagReplacement] = useState(false);
 
   useEffect(() => {
     fetch(
@@ -420,6 +485,64 @@ function resolveCase(caseId) {
       });
   }
 
+  function saveEarTags(nextTagStatus, nextEarTags) {
+    submitWrite(
+      `https://wern-villa-api.onrender.com/sheep/${sheep.id}/eartags`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tagStatus: nextTagStatus,
+          earTags: nextEarTags,
+        }),
+      },
+      `Update ear tags for ${sheep.name || sheep.eid}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.queued) {
+          setToast("Saved offline — will sync automatically once you're back online.");
+          setTimeout(() => setToast(""), 3000);
+          return;
+        }
+        setToast("Ear tags updated.");
+        setTimeout(() => setToast(""), 3000);
+      });
+  }
+
+  function updateTagStatus(value) {
+    setTagStatus(value);
+    saveEarTags(value, earTags);
+  }
+
+  function addEarTag() {
+    if (!newTagColour || !newTagType) return;
+    const tag = {
+      colour: newTagColour,
+      type: newTagType,
+      flockMark: newTagFlockMark,
+      individualNumber: newTagIndividualNumber,
+      eid: newTagType === "Electronic (EID)" ? newTagEid : "",
+      dateApplied: newTagDate,
+      replacement: newTagReplacement,
+    };
+    const nextEarTags = [...earTags, tag];
+    setEarTags(nextEarTags);
+    saveEarTags(tagStatus, nextEarTags);
+    setNewTagFlockMark("");
+    setNewTagIndividualNumber("");
+    setNewTagEid("");
+    setNewTagReplacement(false);
+  }
+
+  function removeEarTag(index) {
+    const nextEarTags = earTags.filter((_, i) => i !== index);
+    setEarTags(nextEarTags);
+    saveEarTags(tagStatus, nextEarTags);
+  }
+
   function saveWeight() {
   fetch(
     `https://wern-villa-api.onrender.com/sheep/${sheep.id}/weights`,
@@ -626,7 +749,16 @@ function saveEvent() {
           onChange={(e) =>
             setEid(e.target.value)
           }
+          placeholder="Hex or ISO EID"
         />
+        {(() => {
+          const { hex, iso } = getEidFormats(eid);
+          return hex && iso ? (
+            <p style={{ marginTop: "-8px", color: "#999" }}>
+              Hex: {hex} &nbsp;|&nbsp; ISO: {iso}
+            </p>
+          ) : null;
+        })()}
 
         <label>Sex</label>
         <select
@@ -891,6 +1023,11 @@ function saveEvent() {
   active={activeTab === "financial"}
   onClick={() => setActiveTab("financial")}
 />
+<TabButton
+  label="Ear Tags"
+  active={activeTab === "eartags"}
+  onClick={() => setActiveTab("eartags")}
+/>
 </div>
 <button
   onClick={() =>
@@ -927,6 +1064,15 @@ function saveEvent() {
           {sheep.eid ||
             "Not Tagged Yet"}
         </p>
+
+        {sheep.eid && (() => {
+          const { hex, iso } = getEidFormats(sheep.eid);
+          return hex && iso ? (
+            <p>
+              <strong>Hex:</strong> {hex} &nbsp;|&nbsp; <strong>ISO:</strong> {iso}
+            </p>
+          ) : null;
+        })()}
 
         <p>
           <strong>DOB:</strong>{" "}
@@ -2031,6 +2177,226 @@ function saveEvent() {
     )}
   </div>
 )}
+
+{activeTab === "eartags" && (() => {
+  const monthsOld = getMonthsOld(dob);
+  const deadlines = getTaggingDeadlines(dob);
+  const electronicCount = earTags.filter((t) => t.type === "Electronic (EID)").length;
+  const visualCount = earTags.filter((t) => t.type === "Visual").length;
+
+  const setWarnings = [];
+  if (tagStatus === "Single Tag (Slaughter)" && earTags.length !== 1) {
+    setWarnings.push("Slaughter lambs should carry exactly 1 electronic tag.");
+  }
+  if (tagStatus === "Double Tagged (Breeding)" && (electronicCount < 1 || visualCount < 1)) {
+    setWarnings.push("Breeding stock must carry 1 electronic (yellow) tag and 1 visual tag.");
+  }
+  if (tagStatus === "Single Tag (Slaughter)" && monthsOld != null && monthsOld >= 12) {
+    setWarnings.push("This lamb is now over 12 months old — it must be upgraded to double tagging (breeding stock) before its first birthday.");
+  }
+  if (tagStatus === "Not Tagged" && deadlines) {
+    const today = new Date();
+    if (today > deadlines.indoor) {
+      setWarnings.push(
+        `Tagging deadline has passed: due within 6 months (indoor) / 9 months (outdoor) of birth, and always before leaving the holding of birth.`
+      );
+    }
+  }
+
+  return (
+    <div
+      style={{
+        background: "#2b2b2b",
+        padding: "20px",
+        borderRadius: "10px",
+      }}
+    >
+      <h2 style={{ color: "#03a9f4", marginTop: 0 }}>🏷️ Ear Tags</h2>
+      <p style={{ color: "#aaa" }}>
+        DEFRA requires official ear tags (or a bolus) for traceability. Tag colour is tightly
+        regulated: yellow is the electronic (EID) tag, black is reserved for boluses, and red is
+        reserved for replacement tags fitted off the holding of birth.
+      </p>
+
+      {deadlines && (
+        <p style={{ color: "#999" }}>
+          Tagging deadline: by {deadlines.indoor.toLocaleDateString()} if reared indoors overnight,
+          or {deadlines.outdoor.toLocaleDateString()} if reared outdoors — whichever is sooner, and
+          always before the animal leaves its holding of birth.
+        </p>
+      )}
+
+      <label>Tag Status</label>
+      <select
+        style={inputStyle}
+        value={tagStatus}
+        onChange={(e) => updateTagStatus(e.target.value)}
+      >
+        {TAG_STATUS_OPTIONS.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+
+      {setWarnings.map((warning, i) => (
+        <p key={i} style={{ color: "#ffcc80" }}>⚠️ {warning}</p>
+      ))}
+
+      <h3 style={{ color: "#03a9f4" }}>Tags Applied</h3>
+      {earTags.length === 0 ? (
+        <p>No tags recorded yet.</p>
+      ) : (
+        earTags.map((tag, index) => (
+          <div
+            key={index}
+            style={{
+              background: "#1f1f1f",
+              padding: "12px",
+              borderRadius: "8px",
+              marginBottom: "10px",
+            }}
+          >
+            <strong>{tag.colour} — {tag.type}</strong>
+            <br />
+            Flock mark: {tag.flockMark || "—"}
+            {tag.individualNumber ? ` #${tag.individualNumber}` : ""}
+            {tag.eid && (() => {
+              const { hex, iso } = getEidFormats(tag.eid);
+              return (
+                <>
+                  <br />
+                  EID: {tag.eid}
+                  {hex && iso ? ` (Hex: ${hex} | ISO: ${iso})` : ""}
+                </>
+              );
+            })()}
+            <br />
+            Applied: {tag.dateApplied || "Unknown"}
+            {tag.replacement && (
+              <>
+                <br />
+                Replacement tag
+              </>
+            )}
+            {getTagWarnings(tag).map((warning, i) => (
+              <p key={i} style={{ color: "#ff8a65", marginBottom: 0 }}>⚠️ {warning}</p>
+            ))}
+            <br />
+            <button
+              onClick={() => removeEarTag(index)}
+              style={{
+                background: "#e53935",
+                color: "white",
+                border: "none",
+                padding: "6px 12px",
+                borderRadius: "8px",
+                cursor: "pointer",
+                marginTop: "8px",
+              }}
+            >
+              Remove
+            </button>
+          </div>
+        ))
+      )}
+
+      <h3 style={{ color: "#03a9f4" }}>Add a Tag</h3>
+      <label>Colour</label>
+      <select
+        style={inputStyle}
+        value={newTagColour}
+        onChange={(e) => setNewTagColour(e.target.value)}
+      >
+        {TAG_COLOUR_OPTIONS.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+
+      <label>Type</label>
+      <select
+        style={inputStyle}
+        value={newTagType}
+        onChange={(e) => setNewTagType(e.target.value)}
+      >
+        {TAG_TYPE_OPTIONS.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+
+      <label>UK Flock Mark</label>
+      <input
+        style={inputStyle}
+        value={newTagFlockMark}
+        onChange={(e) => setNewTagFlockMark(e.target.value)}
+        placeholder="e.g. UK 123456"
+      />
+
+      <label>Individual Number (5 digits, breeding tags)</label>
+      <input
+        style={inputStyle}
+        value={newTagIndividualNumber}
+        onChange={(e) => setNewTagIndividualNumber(e.target.value)}
+        placeholder="e.g. 00123"
+      />
+
+      {newTagType === "Electronic (EID)" && (
+        <>
+          <label>EID</label>
+          <input
+            style={inputStyle}
+            value={newTagEid}
+            onChange={(e) => setNewTagEid(e.target.value)}
+            placeholder="Hex or ISO EID"
+          />
+        </>
+      )}
+
+      <label>Date Applied</label>
+      <input
+        type="date"
+        style={inputStyle}
+        value={newTagDate}
+        onChange={(e) => setNewTagDate(e.target.value)}
+      />
+
+      <label style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+        <input
+          type="checkbox"
+          checked={newTagReplacement}
+          onChange={(e) => setNewTagReplacement(e.target.checked)}
+        />
+        Replacement tag (lost original, off holding of birth)
+      </label>
+
+      <button
+        onClick={addEarTag}
+        style={{
+          background: "#4caf50",
+          color: "white",
+          border: "none",
+          padding: "12px",
+          borderRadius: "10px",
+          width: "100%",
+          cursor: "pointer",
+          fontWeight: "bold",
+        }}
+      >
+        ➕ Add Tag
+      </button>
+
+      <p style={{ color: "#999", marginTop: "12px" }}>
+        Remember to record any tagging or replacement event in your holding register within 36
+        hours of applying the tag(s). If a sheep loses a tag, replace it within 28 days of
+        noticing, or before it moves off the farm, whichever is sooner.
+      </p>
+    </div>
+  );
+})()}
     </div>
   );
 }

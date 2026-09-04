@@ -322,6 +322,18 @@ async function ensureReceiptsTable() {
   }
 }
 
+async function ensureSheepEarTagColumns() {
+  for (const column of ["tagStatus TEXT", "earTags TEXT"]) {
+    try {
+      await turso.execute(`ALTER TABLE sheep ADD COLUMN ${column}`);
+    } catch (error) {
+      if (!error.message.toLowerCase().includes("duplicate column")) {
+        throw error;
+      }
+    }
+  }
+}
+
 async function ensureFieldFarmColumn() {
   try {
     await turso.execute("ALTER TABLE fields ADD COLUMN farm TEXT");
@@ -2488,6 +2500,42 @@ app.put("/sheep/:id", async (req, res) => {
   }
 });
 
+// Ear tag status and tag list (DEFRA tagging record), amendable independently of the main sheep edit form.
+app.put("/sheep/:id/eartags", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tagStatus, earTags } = req.body || {};
+
+    await turso.execute({
+      sql: `
+        UPDATE sheep
+        SET
+          tagStatus = ?,
+          earTags = ?
+        WHERE id = ?
+      `,
+      args: [
+        tagStatus || null,
+        JSON.stringify(Array.isArray(earTags) ? earTags : []),
+        id,
+      ],
+    });
+
+    await turso.execute({
+      sql: `
+        INSERT INTO sheepHistory
+        (sheepId, eventType, details)
+        VALUES (?, ?, ?)
+      `,
+      args: [id, "Ear Tags Updated", `Tag status: ${tagStatus || "Not set"}`],
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
 app.post("/flock-register", async (req, res) => {
   try {
     console.log(req.body);
@@ -4050,6 +4098,10 @@ ensureFieldFarmColumn()
   .catch((error) => {
     console.error("Failed to ensure field columns:", error);
   });
+
+ensureSheepEarTagColumns().catch((error) => {
+  console.error("Failed to ensure sheep ear tag columns:", error);
+});
 
 ensureEidCymruMovementSubmissionsTable().catch((error) => {
   console.error("Failed to ensure EID Cymru movement submissions table:", error);
