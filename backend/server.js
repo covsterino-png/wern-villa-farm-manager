@@ -2238,8 +2238,13 @@ app.get("/flock-register", async (req, res) => {
 app.get("/recent-history", async (req, res) => {
   try {
     const result = await turso.execute(`
-      SELECT *
+      SELECT id, eventType, details, eventDate, 'sheep' AS source
       FROM sheepHistory
+      UNION ALL
+      SELECT id, eventType,
+        TRIM(COALESCE(title || ': ', '') || COALESCE(details, '')) AS details,
+        createdDate AS eventDate, source
+      FROM historyEvents
       ORDER BY eventDate DESC
       LIMIT 20
     `);

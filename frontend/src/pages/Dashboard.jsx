@@ -1531,7 +1531,7 @@ boxShadow:
     ) : (
       activity.map((item) => (
             <div
-              key={item.id}
+              key={`${item.source || "sheep"}-${item.id}`}
               style={{
                 marginBottom: "12px",
                 paddingBottom: "12px",
