@@ -683,6 +683,43 @@ async function ensureSmartDeviceHaColumn() {
   }
 }
 
+// Schema for the Home Assistant (and future machine integrations) API.
+async function ensureHomeAssistantIntegrationTables() {
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS apiKeys (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      label TEXT NOT NULL,
+      keyHash TEXT NOT NULL UNIQUE,
+      source TEXT NOT NULL DEFAULT 'home_assistant',
+      active INTEGER NOT NULL DEFAULT 1,
+      createdDate TEXT DEFAULT CURRENT_TIMESTAMP,
+      lastUsedAt TEXT
+    )
+  `);
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS historyEvents (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source TEXT NOT NULL DEFAULT 'app',
+      eventType TEXT NOT NULL,
+      title TEXT,
+      details TEXT,
+      sheepId INTEGER,
+      createdBy TEXT,
+      createdDate TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  for (const [table, columnDef] of [
+    ["tasks", "source TEXT DEFAULT 'app'"],
+    ["notifications", "source TEXT DEFAULT 'app'"],
+  ]) {
+    try {
+      await turso.execute(`ALTER TABLE ${table} ADD COLUMN ${columnDef}`);
+    } catch (error) {
+      if (!String(error.message || "").toLowerCase().includes("duplicate column")) throw error;
+    }
+  }
+}
+
 function homeAssistantConfigured() {
   return Boolean(process.env.HOMEASSISTANT_URL && process.env.HOMEASSISTANT_TOKEN);
 }
@@ -692,16 +729,27 @@ async function homeAssistantRequest(path, options = {}) {
     throw new Error("Home Assistant is not configured on this server");
   }
   const baseUrl = process.env.HOMEASSISTANT_URL.replace(/\/$/, "");
-  return axios({
-    url: `${baseUrl}${path}`,
-    timeout: 8000,
-    ...options,
-    headers: {
-      Authorization: `Bearer ${process.env.HOMEASSISTANT_TOKEN}`,
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-  });
+  try {
+    return await axios({
+      url: `${baseUrl}${path}`,
+      timeout: 8000,
+      ...options,
+      headers: {
+        Authorization: `Bearer ${process.env.HOMEASSISTANT_TOKEN}`,
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+    });
+  } catch (error) {
+    // This backend runs on Render, not on the home LAN, so a bare .local
+    // address or unreachable home IP will fail with one of these codes.
+    if (["ENOTFOUND", "ECONNREFUSED", "ETIMEDOUT", "EAI_AGAIN"].includes(error.code)) {
+      throw new Error(
+        `Could not reach Home Assistant at ${baseUrl}. HOMEASSISTANT_URL must be reachable from the internet (e.g. a Nabu Casa or Cloudflare Tunnel URL), not a local-only address like homeassistant.local.`
+      );
+    }
+    throw error;
+  }
 }
 
 app.use(
@@ -711,6 +759,42 @@ app.use(
 
   
 );app.use(express.json());
+
+const HOME_ASSISTANT_API_PREFIX = "/api/home-assistant";
+
+function hashApiKey(rawKey) {
+  return crypto.createHash("sha256").update(rawKey).digest("hex");
+}
+
+async function findApiKeyRecord(rawKey) {
+  if (!rawKey) return null;
+  const result = await turso.execute({
+    sql: "SELECT * FROM apiKeys WHERE keyHash = ? AND active = 1",
+    args: [hashApiKey(rawKey)],
+  });
+  return result.rows[0] || null;
+}
+
+// API-key auth for machine integrations (e.g. Home Assistant). Runs ahead of
+// the session-based auth middleware below, which trusts req.integration.
+app.use(HOME_ASSISTANT_API_PREFIX, async (req, res, next) => {
+  try {
+    const providedKey = req.get("x-api-key");
+    if (!providedKey) return res.status(401).json({ error: "Missing X-API-Key header" });
+    const keyRecord = await findApiKeyRecord(providedKey);
+    if (!keyRecord) return res.status(401).json({ error: "Invalid or inactive API key" });
+    req.integration = { source: keyRecord.source, apiKeyId: keyRecord.id, label: keyRecord.label };
+    req.user = `integration:${keyRecord.source}`;
+    turso.execute({
+      sql: "UPDATE apiKeys SET lastUsedAt = CURRENT_TIMESTAMP WHERE id = ?",
+      args: [keyRecord.id],
+    }).catch((error) => console.error("Failed to update API key last used:", error.message));
+    return next();
+  } catch (error) {
+    console.error("API key auth error:", error.message);
+    return res.status(500).json({ error: "Authentication error" });
+  }
+});
 
 async function getStoredUser(username) {
   const result = await turso.execute({
@@ -770,7 +854,8 @@ app.use((req, res, next) => {
     req.path === "/auth/login" ||
     req.path === "/auth/setup-password" ||
     req.path === "/auth/passkey/login/options" ||
-    req.path === "/auth/passkey/login/verify"
+    req.path === "/auth/passkey/login/verify" ||
+    req.integration
   ) return next();
   const token = req.get("authorization")?.replace(/^Bearer\s+/i, "");
   const session = readSessionToken(token);
@@ -4160,6 +4245,10 @@ ensureSmartDeviceHaColumn().catch((error) => {
   console.error("Failed to ensure smart device Home Assistant column:", error);
 });
 
+ensureHomeAssistantIntegrationTables().catch((error) => {
+  console.error("Failed to ensure Home Assistant integration tables:", error);
+});
+
 ensureFieldFarmColumn()
   .then(ensureFieldTypeColumn)
   .catch((error) => {
@@ -4743,6 +4832,131 @@ app.get("/ai/config", async (req, res) => {
 
 app.get("/home-assistant/status", async (req, res) => {
   res.json({ configured: homeAssistantConfigured() });
+});
+
+// --- Home Assistant / integration API key management (admin only) ---
+app.post("/home-assistant/api-keys", async (req, res) => {
+  if (req.user !== "David") {
+    return res.status(403).json({ error: "Only David can manage integration API keys." });
+  }
+  const { label, source } = req.body || {};
+  if (!label || !String(label).trim()) {
+    return res.status(400).json({ error: "A label is required (e.g. 'Home Assistant')." });
+  }
+  const rawKey = crypto.randomBytes(32).toString("hex");
+  try {
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO apiKeys (label, keyHash, source)
+        VALUES (?, ?, ?)
+      `,
+      args: [String(label).trim(), hashApiKey(rawKey), source || "home_assistant"],
+    });
+    // The raw key is only ever shown once, at creation time.
+    res.json({ success: true, id: Number(result.lastInsertRowid), apiKey: rawKey });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/home-assistant/api-keys", async (req, res) => {
+  if (req.user !== "David") {
+    return res.status(403).json({ error: "Only David can view integration API keys." });
+  }
+  const result = await turso.execute(
+    "SELECT id, label, source, active, createdDate, lastUsedAt FROM apiKeys ORDER BY id DESC"
+  );
+  res.json(result.rows);
+});
+
+app.post("/home-assistant/api-keys/:id/revoke", async (req, res) => {
+  if (req.user !== "David") {
+    return res.status(403).json({ error: "Only David can revoke integration API keys." });
+  }
+  await turso.execute({
+    sql: "UPDATE apiKeys SET active = 0 WHERE id = ?",
+    args: [req.params.id],
+  });
+  res.json({ success: true });
+});
+
+// --- Home Assistant integration API (authenticated via X-API-Key) ---
+app.get("/api/home-assistant/ping", (req, res) => {
+  res.json({ success: true, source: req.integration.source });
+});
+
+app.post("/api/home-assistant/tasks", async (req, res) => {
+  try {
+    const { task } = req.body || {};
+    if (!task || !String(task).trim()) {
+      return res.status(400).json({ error: "task is required" });
+    }
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO tasks (task, createdBy, source)
+        VALUES (?, ?, ?)
+      `,
+      args: [String(task).trim(), req.integration.label || req.integration.source, req.integration.source],
+    });
+    res.json({ success: true, id: Number(result.lastInsertRowid) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/home-assistant/notifications", async (req, res) => {
+  try {
+    const { userName, title, message, data } = req.body || {};
+    if (!title || !String(title).trim()) {
+      return res.status(400).json({ error: "title is required" });
+    }
+    const targets = userName ? [userName] : ["David", "Gemma"];
+    const invalidTarget = targets.find((target) => !isValidUserName(target));
+    if (invalidTarget) {
+      return res.status(400).json({ error: `Unknown userName: ${invalidTarget}` });
+    }
+    const ids = [];
+    for (const target of targets) {
+      const result = await turso.execute({
+        sql: `
+          INSERT INTO notifications (userName, title, message, data, source)
+          VALUES (?, ?, ?, ?, ?)
+        `,
+        args: [target, title, message || null, data ? JSON.stringify(data) : null, req.integration.source],
+      });
+      ids.push(Number(result.lastInsertRowid));
+      await sendPushToUser(target, { title, message, data });
+    }
+    res.json({ success: true, ids });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/home-assistant/history", async (req, res) => {
+  try {
+    const { eventType, title, details, sheepId } = req.body || {};
+    if (!eventType || !String(eventType).trim()) {
+      return res.status(400).json({ error: "eventType is required" });
+    }
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO historyEvents (source, eventType, title, details, sheepId, createdBy)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `,
+      args: [
+        req.integration.source,
+        String(eventType).trim(),
+        title || null,
+        details || null,
+        sheepId || null,
+        req.integration.label || req.integration.source,
+      ],
+    });
+    res.json({ success: true, id: Number(result.lastInsertRowid) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.get("/home-assistant/entities", async (req, res) => {
