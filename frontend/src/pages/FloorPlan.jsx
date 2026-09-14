@@ -204,16 +204,22 @@ export default function FloorPlan({ user }) {
             type="submit"
             disabled={uploading || !newName.trim() || !newFile}
             style={{
-              background: "#03a9f4",
+              background: uploading || !newName.trim() || !newFile ? "#555" : "#03a9f4",
               color: "white",
               border: "none",
               padding: "8px 14px",
               borderRadius: "6px",
-              cursor: "pointer",
+              cursor: uploading || !newName.trim() || !newFile ? "not-allowed" : "pointer",
+              opacity: uploading || !newName.trim() || !newFile ? 0.6 : 1,
             }}
           >
             {uploading ? "Uploading..." : "Add Floorplan"}
           </button>
+          {(!newName.trim() || !newFile) && (
+            <span style={{ color: "#888", fontSize: "0.8rem" }}>
+              Enter a name and choose an image to enable this button
+            </span>
+          )}
         </form>
       )}
 
