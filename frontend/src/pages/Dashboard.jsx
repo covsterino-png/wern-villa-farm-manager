@@ -52,6 +52,55 @@ const [actionNotes, setActionNotes] =
   const [unassignedSheep, setUnassignedSheep] = useState([]);
   const [smartDevices, setSmartDevices] = useState([]);
 
+  const todayKey = () => new Date().toISOString().split("T")[0];
+  const [feedTallyDate, setFeedTallyDate] = useState(todayKey());
+  const [feedTallyBatches, setFeedTallyBatches] = useState([]);
+  const [feedBatchSize, setFeedBatchSize] = useState(5);
+
+  // Feed tally is a quick on-device counter (replaces the calculator app used while
+  // feeding batches of sheep), so it's kept in localStorage and resets each new day.
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("feedTally") || "null");
+      if (saved && saved.date === todayKey()) {
+        setFeedTallyDate(saved.date);
+        setFeedTallyBatches(Array.isArray(saved.batches) ? saved.batches : []);
+      } else {
+        setFeedTallyDate(todayKey());
+        setFeedTallyBatches([]);
+      }
+    } catch {
+      setFeedTallyDate(todayKey());
+      setFeedTallyBatches([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "feedTally",
+      JSON.stringify({ date: feedTallyDate, batches: feedTallyBatches })
+    );
+  }, [feedTallyDate, feedTallyBatches]);
+
+  const feedTallyTotal = feedTallyBatches.reduce((sum, b) => sum + b.size, 0);
+
+  function addFeedBatch(size) {
+    const amount = Number(size);
+    if (!(amount > 0)) return;
+    setFeedTallyBatches((prev) => [...prev, { size: amount, time: Date.now() }]);
+  }
+
+  function undoLastFeedBatch() {
+    setFeedTallyBatches((prev) => prev.slice(0, -1));
+  }
+
+  function resetFeedTally() {
+    if (feedTallyBatches.length > 0 && !window.confirm("Reset today's feed tally to zero?")) {
+      return;
+    }
+    setFeedTallyBatches([]);
+  }
+
   useEffect(() => {
     fetch(`${API}/ai/config`)
       .then((res) => res.json())
@@ -601,6 +650,102 @@ function saveActionFromDashboard(
         </div>
       )}
 
+      <div
+        style={{
+          background: "#1e293b",
+          padding: "14px",
+          borderRadius: "12px",
+          marginBottom: "12px",
+          border: "1px solid #334155",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+          <h3 style={{ margin: 0, color: "#38bdf8", fontSize: "1.05rem" }}>
+            🌾 Feed Tally
+          </h3>
+          <button
+            onClick={resetFeedTally}
+            style={{
+              background: "transparent",
+              color: "#f87171",
+              border: "1px solid #334155",
+              borderRadius: "8px",
+              padding: "4px 10px",
+              fontSize: "0.8rem",
+              cursor: "pointer",
+            }}
+          >
+            Reset
+          </button>
+        </div>
+
+        <div style={{ textAlign: "center", marginBottom: "12px" }}>
+          <div style={{ fontSize: "2.4rem", fontWeight: "bold", color: "white", lineHeight: 1 }}>
+            {feedTallyTotal}
+          </div>
+          <div style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+            sheep fed today{summary.totalSheep ? ` of ${summary.totalSheep}` : ""}
+            {feedTallyBatches.length > 0 && ` · ${feedTallyBatches.length} batch${feedTallyBatches.length === 1 ? "" : "es"}`}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "10px" }}>
+          <span style={{ color: "#94a3b8", fontSize: "0.85rem" }}>Batch size</span>
+          <button
+            onClick={() => setFeedBatchSize((n) => Math.max(1, n - 1))}
+            style={{ background: "#0f172a", color: "white", border: "1px solid #334155", borderRadius: "8px", padding: "6px 12px", cursor: "pointer" }}
+          >
+            −
+          </button>
+          <input
+            type="number"
+            min="1"
+            value={feedBatchSize}
+            onChange={(e) => setFeedBatchSize(Math.max(1, Number(e.target.value) || 1))}
+            style={{ width: "60px", textAlign: "center", padding: "6px", borderRadius: "8px", border: "1px solid #334155", background: "#0f172a", color: "white" }}
+          />
+          <button
+            onClick={() => setFeedBatchSize((n) => n + 1)}
+            style={{ background: "#0f172a", color: "white", border: "1px solid #334155", borderRadius: "8px", padding: "6px 12px", cursor: "pointer" }}
+          >
+            +
+          </button>
+        </div>
+
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button
+            onClick={() => addFeedBatch(feedBatchSize)}
+            style={{
+              flex: 1,
+              background: "#0284c7",
+              color: "white",
+              border: "none",
+              padding: "12px",
+              borderRadius: "10px",
+              fontWeight: "bold",
+              fontSize: "1rem",
+              cursor: "pointer",
+            }}
+          >
+            ➕ Add batch of {feedBatchSize}
+          </button>
+          <button
+            onClick={undoLastFeedBatch}
+            disabled={feedTallyBatches.length === 0}
+            style={{
+              background: "#0f172a",
+              color: "white",
+              border: "1px solid #334155",
+              padding: "12px 14px",
+              borderRadius: "10px",
+              cursor: feedTallyBatches.length === 0 ? "default" : "pointer",
+              opacity: feedTallyBatches.length === 0 ? 0.5 : 1,
+            }}
+          >
+            ↩ Undo
+          </button>
+        </div>
+      </div>
 
         <div
   style={{
