@@ -3,6 +3,14 @@ import { apiFetch, fetchJson } from "../api";
 
 const DEVICE_ON_COLOR = "#4caf50";
 const DEVICE_OFF_COLOR = "#616161";
+const DOMAIN_ICON = { light: "\uD83D\uDCA1", switch: "\uD83D\uDD0C", camera: "\uD83D\uDCF9" };
+const ICON_OPTIONS = [
+  { value: "\uD83D\uDCA1", label: "\uD83D\uDCA1 Light" },
+  { value: "\uD83D\uDD0C", label: "\uD83D\uDD0C Plug / Switch" },
+  { value: "\uD83D\uDCA7", label: "\uD83D\uDCA7 Water / Pump" },
+  { value: "\uD83D\uDEAA", label: "\uD83D\uDEAA Gate / Door" },
+  { value: "\uD83D\uDCF9", label: "\uD83D\uDCF9 Camera" },
+];
 
 export default function FloorPlan({ user }) {
   const [floorplans, setFloorplans] = useState([]);
@@ -16,6 +24,15 @@ export default function FloorPlan({ user }) {
   const [error, setError] = useState("");
   const [draggingPinId, setDraggingPinId] = useState(null);
   const imageRef = useRef(null);
+
+  const [haConfigured, setHaConfigured] = useState(false);
+  const [haEntities, setHaEntities] = useState([]);
+  const [showAddDevice, setShowAddDevice] = useState(false);
+  const [deviceName, setDeviceName] = useState("");
+  const [deviceIcon, setDeviceIcon] = useState("\uD83D\uDCA1");
+  const [deviceLocation, setDeviceLocation] = useState("House");
+  const [deviceHaEntityId, setDeviceHaEntityId] = useState("");
+  const [savingDevice, setSavingDevice] = useState(false);
 
   const isDavid = user === "David";
   const active = floorplans.find((f) => f.id === activeId) || null;
@@ -37,16 +54,65 @@ export default function FloorPlan({ user }) {
       .catch((err) => setError(err.message));
   }
 
-  useEffect(() => {
-    loadFloorplans();
+  function loadAllDevices() {
     fetchJson("/ai/config")
       .then((data) => setAllDevices(Array.isArray(data.devices) ? data.devices : []))
       .catch(() => setAllDevices([]));
+  }
+
+  useEffect(() => {
+    loadFloorplans();
+    loadAllDevices();
+    fetchJson("/home-assistant/status")
+      .then((data) => setHaConfigured(Boolean(data.configured)))
+      .catch(() => setHaConfigured(false));
   }, []);
+
+  useEffect(() => {
+    if (!haConfigured) return;
+    fetchJson("/home-assistant/entities")
+      .then((data) => setHaEntities(Array.isArray(data.entities) ? data.entities : []))
+      .catch(() => setHaEntities([]));
+  }, [haConfigured]);
 
   useEffect(() => {
     loadPins(activeId);
   }, [activeId]);
+
+  function selectHaEntity(entityId) {
+    setDeviceHaEntityId(entityId);
+    const entity = haEntities.find((e) => e.entityId === entityId);
+    if (entity) {
+      if (!deviceName.trim()) setDeviceName(entity.name);
+      setDeviceIcon(DOMAIN_ICON[entity.domain] || deviceIcon);
+    }
+  }
+
+  async function addDevice(e) {
+    e.preventDefault();
+    if (!deviceName.trim()) return;
+    setSavingDevice(true);
+    try {
+      await fetchJson("/ai/devices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: deviceName.trim(),
+          icon: deviceIcon,
+          location: deviceLocation,
+          haEntityId: deviceHaEntityId || null,
+        }),
+      });
+      setDeviceName("");
+      setDeviceHaEntityId("");
+      setShowAddDevice(false);
+      loadAllDevices();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSavingDevice(false);
+    }
+  }
 
   async function uploadFloorplan(e) {
     e.preventDefault();
@@ -251,6 +317,114 @@ export default function FloorPlan({ user }) {
 
       {active && (
         <>
+          {isDavid && (
+            <div style={{ marginBottom: "10px" }}>
+              <button
+                type="button"
+                onClick={() => setShowAddDevice((v) => !v)}
+                style={{
+                  background: "#334155",
+                  color: "#38bdf8",
+                  border: "1px solid #475569",
+                  padding: "6px 12px",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                }}
+              >
+                {showAddDevice ? "✖ Close" : "➕ Add New Device"}
+              </button>
+
+              <div
+                style={{
+                  marginTop: "8px",
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  fontSize: "0.85rem",
+                  background: haConfigured ? "#052e1a" : "#1e293b",
+                  border: haConfigured ? "1px solid #10b981" : "1px solid #334155",
+                  color: haConfigured ? "#6ee7b7" : "#94a3b8",
+                }}
+              >
+                {haConfigured
+                  ? "🏡 Home Assistant connected — pick an entity below to control a real light/switch/camera."
+                  : "🏡 Home Assistant not connected yet. Devices added here will be placeholders until HOMEASSISTANT_URL/TOKEN are set on the backend."}
+              </div>
+
+              {showAddDevice && (
+                <form
+                  onSubmit={addDevice}
+                  style={{
+                    background: "#0f172a",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    marginTop: "8px",
+                    display: "grid",
+                    gap: "10px",
+                    maxWidth: "450px",
+                  }}
+                >
+                  {haConfigured && (
+                    <select
+                      value={deviceHaEntityId}
+                      onChange={(e) => selectHaEntity(e.target.value)}
+                      style={{ padding: "8px" }}
+                    >
+                      <option value="">— Choose a Home Assistant entity (optional) —</option>
+                      {haEntities.map((entity) => (
+                        <option key={entity.entityId} value={entity.entityId}>
+                          {DOMAIN_ICON[entity.domain]} {entity.name} ({entity.entityId})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <input
+                    required
+                    type="text"
+                    value={deviceName}
+                    onChange={(e) => setDeviceName(e.target.value)}
+                    placeholder="Device name (e.g. Living Room Lamp)"
+                  />
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <select
+                      value={deviceIcon}
+                      onChange={(e) => setDeviceIcon(e.target.value)}
+                      style={{ padding: "8px" }}
+                    >
+                      {ICON_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      value={deviceLocation}
+                      onChange={(e) => setDeviceLocation(e.target.value)}
+                      placeholder="Room / location"
+                      style={{ flex: 1, padding: "8px" }}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={savingDevice || !deviceName.trim()}
+                    style={{
+                      background: "#10b981",
+                      color: "white",
+                      border: "none",
+                      padding: "8px",
+                      borderRadius: "6px",
+                      fontWeight: "bold",
+                      cursor: savingDevice || !deviceName.trim() ? "not-allowed" : "pointer",
+                      opacity: savingDevice || !deviceName.trim() ? 0.6 : 1,
+                    }}
+                  >
+                    {savingDevice ? "Saving..." : "Save Device"}
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
+
           {isDavid && (
             <div
               style={{
