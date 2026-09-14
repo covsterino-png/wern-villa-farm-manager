@@ -55,6 +55,17 @@ const [actionNotes, setActionNotes] =
   const todayKey = () => new Date().toISOString().split("T")[0];
   const [feedTallyBatches, setFeedTallyBatches] = useState([]);
   const [feedBatchSize, setFeedBatchSize] = useState(25);
+  const [showFeedTally, setShowFeedTally] = useState(
+    () => localStorage.getItem("feedTallyMinimised") !== "true"
+  );
+
+  function toggleFeedTally() {
+    setShowFeedTally((prev) => {
+      const next = !prev;
+      localStorage.setItem("feedTallyMinimised", String(!next));
+      return next;
+    });
+  }
 
   // Shared feed tally (server-backed so David and Gemma both see/update the same
   // running count of sheep fed today, replacing a physical calculator app).
@@ -662,26 +673,33 @@ function saveActionFromDashboard(
           border: "1px solid #334155",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-          <h3 style={{ margin: 0, color: "#38bdf8", fontSize: "1.05rem" }}>
-            🌾 Feed Tally
-          </h3>
-          <button
-            onClick={resetFeedTally}
-            style={{
-              background: "transparent",
-              color: "#f87171",
-              border: "1px solid #334155",
-              borderRadius: "8px",
-              padding: "4px 10px",
-              fontSize: "0.8rem",
-              cursor: "pointer",
-            }}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: showFeedTally ? "10px" : 0 }}>
+          <h3
+            onClick={toggleFeedTally}
+            style={{ margin: 0, color: "#38bdf8", fontSize: "1.05rem", cursor: "pointer" }}
           >
-            Reset
-          </button>
+            🌾 Feed Tally ({feedTallyTotal}) {showFeedTally ? "▲" : "▼"}
+          </h3>
+          {showFeedTally && (
+            <button
+              onClick={resetFeedTally}
+              style={{
+                background: "transparent",
+                color: "#f87171",
+                border: "1px solid #334155",
+                borderRadius: "8px",
+                padding: "4px 10px",
+                fontSize: "0.8rem",
+                cursor: "pointer",
+              }}
+            >
+              Reset
+            </button>
+          )}
         </div>
 
+        {showFeedTally && (
+        <>
         <div style={{ textAlign: "center", marginBottom: "12px" }}>
           <div style={{ fontSize: "2.4rem", fontWeight: "bold", color: "white", lineHeight: 1 }}>
             {feedTallyTotal}
@@ -748,6 +766,8 @@ function saveActionFromDashboard(
             ↩ Undo
           </button>
         </div>
+        </>
+        )}
       </div>
 
         <div
