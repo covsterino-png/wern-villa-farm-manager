@@ -352,54 +352,15 @@ function App() {
             Home
           </button>
 
-          <button
-            style={buttonStyle("move")}
-            onClick={() => navigate("move")}
-          >
-Move
-          </button>
-
-          <button
-            style={buttonStyle(
-              "history"
-            )}
-            onClick={() => navigate("history")}
-          >
-            History
-          </button>
-
-
-          <button
-  style={buttonStyle("receipts")}
-  onClick={() => navigate("receipts")}
->
-Receipts
-</button>
-          <button
-            style={buttonStyle("financial")}
-            onClick={() => navigate("financial")}
-          >
-            Finances
-          </button>
-          <button
-            style={buttonStyle("feed")}
-            onClick={() => navigate("feed")}
-          >
-            Flock Feed
-          </button>
-          
-          <button
-            style={buttonStyle("notifications")}
-            onClick={() => navigate("notifications")}
-          >
-            🔔 Notifications {unreadCount > 0 && `(${unreadCount})`}
-          </button>
-          <button
-            style={buttonStyle("hero-points")}
-            onClick={() => navigate("hero-points")}
-          >
-            Hero Points
-          </button>
+          {navItems.map(([nextPage, label]) => (
+            <button
+              key={nextPage}
+              style={buttonStyle(nextPage)}
+              onClick={() => navigate(nextPage)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
         )}
 
