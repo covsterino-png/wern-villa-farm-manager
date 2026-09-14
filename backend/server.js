@@ -183,6 +183,18 @@ async function ensureFeedTable() {
   `);
 }
 
+async function ensureFeedTallyTable() {
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS feedTallyBatches (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tallyDate TEXT NOT NULL,
+      size INTEGER NOT NULL,
+      createdBy TEXT,
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
 async function ensurePasskeysTable() {
   await turso.execute(`
     CREATE TABLE IF NOT EXISTS passkeys (
@@ -1178,6 +1190,10 @@ ensureMedicineColumns().catch((error) => {
 
 ensureFeedTable().catch((error) => {
   console.error("Failed to ensure feed table:", error);
+});
+
+ensureFeedTallyTable().catch((error) => {
+  console.error("Failed to ensure feed tally table:", error);
 });
 
 ensureReceiptsTable().catch((error) => {
@@ -4843,6 +4859,70 @@ app.post("/feed-records", async (req, res) => {
       });
     }
     res.json({ success: true, id: Number(result.lastInsertRowid), sheepCount, costPerSheep: cost / sheepCount });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Shared feed tally: a running count of sheep fed today, visible to all users
+// (replaces a physical calculator used while feeding batches).
+app.get("/feed-tally", async (req, res) => {
+  try {
+    const date = String(req.query.date || new Date().toISOString().split("T")[0]);
+    const result = await turso.execute({
+      sql: "SELECT * FROM feedTallyBatches WHERE tallyDate = ? ORDER BY id ASC",
+      args: [date],
+    });
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/feed-tally", async (req, res) => {
+  try {
+    const { date, size, createdBy } = req.body || {};
+    const tallyDate = String(date || new Date().toISOString().split("T")[0]);
+    const amount = Number(size);
+    if (!(amount > 0)) {
+      return res.status(400).json({ error: "Batch size must be greater than zero" });
+    }
+    const result = await turso.execute({
+      sql: "INSERT INTO feedTallyBatches (tallyDate, size, createdBy) VALUES (?, ?, ?)",
+      args: [tallyDate, amount, createdBy || ""],
+    });
+    res.json({ success: true, id: Number(result.lastInsertRowid) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/feed-tally/last", async (req, res) => {
+  try {
+    const date = String(req.query.date || new Date().toISOString().split("T")[0]);
+    const last = await turso.execute({
+      sql: "SELECT id FROM feedTallyBatches WHERE tallyDate = ? ORDER BY id DESC LIMIT 1",
+      args: [date],
+    });
+    if (last.rows.length === 0) return res.json({ success: true, removed: false });
+    await turso.execute({
+      sql: "DELETE FROM feedTallyBatches WHERE id = ?",
+      args: [last.rows[0].id],
+    });
+    res.json({ success: true, removed: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/feed-tally", async (req, res) => {
+  try {
+    const date = String(req.query.date || new Date().toISOString().split("T")[0]);
+    await turso.execute({
+      sql: "DELETE FROM feedTallyBatches WHERE tallyDate = ?",
+      args: [date],
+    });
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

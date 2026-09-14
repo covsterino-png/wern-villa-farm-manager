@@ -53,52 +53,55 @@ const [actionNotes, setActionNotes] =
   const [smartDevices, setSmartDevices] = useState([]);
 
   const todayKey = () => new Date().toISOString().split("T")[0];
-  const [feedTallyDate, setFeedTallyDate] = useState(todayKey());
   const [feedTallyBatches, setFeedTallyBatches] = useState([]);
   const [feedBatchSize, setFeedBatchSize] = useState(5);
 
-  // Feed tally is a quick on-device counter (replaces the calculator app used while
-  // feeding batches of sheep), so it's kept in localStorage and resets each new day.
+  // Shared feed tally (server-backed so David and Gemma both see/update the same
+  // running count of sheep fed today, replacing a physical calculator app).
+  function loadFeedTally() {
+    fetch(`${API}/feed-tally?date=${todayKey()}`)
+      .then((res) => res.json())
+      .then((data) => setFeedTallyBatches(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }
+
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("feedTally") || "null");
-      if (saved && saved.date === todayKey()) {
-        setFeedTallyDate(saved.date);
-        setFeedTallyBatches(Array.isArray(saved.batches) ? saved.batches : []);
-      } else {
-        setFeedTallyDate(todayKey());
-        setFeedTallyBatches([]);
-      }
-    } catch {
-      setFeedTallyDate(todayKey());
-      setFeedTallyBatches([]);
-    }
+    loadFeedTally();
+    const interval = setInterval(loadFeedTally, 8000);
+    return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem(
-      "feedTally",
-      JSON.stringify({ date: feedTallyDate, batches: feedTallyBatches })
-    );
-  }, [feedTallyDate, feedTallyBatches]);
-
-  const feedTallyTotal = feedTallyBatches.reduce((sum, b) => sum + b.size, 0);
+  const feedTallyTotal = feedTallyBatches.reduce((sum, b) => sum + Number(b.size || 0), 0);
 
   function addFeedBatch(size) {
     const amount = Number(size);
     if (!(amount > 0)) return;
-    setFeedTallyBatches((prev) => [...prev, { size: amount, time: Date.now() }]);
+    fetch(`${API}/feed-tally`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        date: todayKey(),
+        size: amount,
+        createdBy: localStorage.getItem("user"),
+      }),
+    })
+      .then(loadFeedTally)
+      .catch(() => {});
   }
 
   function undoLastFeedBatch() {
-    setFeedTallyBatches((prev) => prev.slice(0, -1));
+    fetch(`${API}/feed-tally/last?date=${todayKey()}`, { method: "DELETE" })
+      .then(loadFeedTally)
+      .catch(() => {});
   }
 
   function resetFeedTally() {
-    if (feedTallyBatches.length > 0 && !window.confirm("Reset today's feed tally to zero?")) {
+    if (feedTallyBatches.length > 0 && !window.confirm("Reset today's feed tally to zero for everyone?")) {
       return;
     }
-    setFeedTallyBatches([]);
+    fetch(`${API}/feed-tally?date=${todayKey()}`, { method: "DELETE" })
+      .then(loadFeedTally)
+      .catch(() => {});
   }
 
   useEffect(() => {
