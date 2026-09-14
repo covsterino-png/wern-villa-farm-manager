@@ -546,9 +546,25 @@ function saveActionFromDashboard(
             border: "1px solid #334155",
           }}
         >
-          <h3 style={{ margin: "0 0 10px 0", color: "#38bdf8", fontSize: "1.05rem" }}>
-            ⚡ Smart Farm Controls
-          </h3>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+            <h3 style={{ margin: 0, color: "#38bdf8", fontSize: "1.05rem" }}>
+              ⚡ Smart Farm Controls
+            </h3>
+            <button
+              onClick={() => setPage("floorplan")}
+              style={{
+                background: "transparent",
+                color: "#38bdf8",
+                border: "1px solid #334155",
+                borderRadius: "8px",
+                padding: "4px 10px",
+                fontSize: "0.8rem",
+                cursor: "pointer",
+              }}
+            >
+              View Floorplan →
+            </button>
+          </div>
           <div
             style={{
               display: "grid",
