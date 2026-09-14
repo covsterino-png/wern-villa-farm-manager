@@ -12,6 +12,7 @@ import Settings from "./pages/Settings";
 import FarmMap from "./pages/FarmMap";
 import Outbuildings from "./pages/Outbuildings";
 import OutbuildingDetail from "./pages/OutbuildingDetail";
+import FloorPlan from "./pages/FloorPlan";
 import FlockRegister from "./pages/FlockRegister";
 import SheepRegister from "./pages/SheepRegister";
 import Receipts from "./pages/Receipts";
@@ -217,6 +218,7 @@ function App() {
     ["sheep-register", "Sheep Register"],
     ["flock-register", "Flock Register"],
     ["farm-map", "Farm Map"],
+    ["floorplan", "Floorplan Devices"],
     ["hero-points", "Hero Points"],
   ];
 
@@ -480,6 +482,10 @@ Receipts
             unit={selectedBuilding}
             onBack={() => setPage("outbuildings")}
           />
+        )}
+
+        {page === "floorplan" && (
+          <FloorPlan user={user} />
         )}
 
         {page === "settings" &&

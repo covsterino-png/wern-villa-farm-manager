@@ -673,6 +673,29 @@ async function ensureAppConfigTables() {
   `);
 }
 
+async function ensureFloorplanTables() {
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS floorplans (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      imageUrl TEXT NOT NULL,
+      createdBy TEXT,
+      createdDate TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS floorplanDevices (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      floorplanId INTEGER NOT NULL,
+      deviceId INTEGER NOT NULL,
+      xPct REAL NOT NULL,
+      yPct REAL NOT NULL,
+      FOREIGN KEY (floorplanId) REFERENCES floorplans(id),
+      FOREIGN KEY (deviceId) REFERENCES smartDevices(id)
+    )
+  `);
+}
+
 async function ensureSmartDeviceHaColumn() {
   try {
     await turso.execute("ALTER TABLE smartDevices ADD COLUMN haEntityId TEXT");
@@ -4254,6 +4277,10 @@ ensureHomeAssistantIntegrationTables().catch((error) => {
   console.error("Failed to ensure Home Assistant integration tables:", error);
 });
 
+ensureFloorplanTables().catch((error) => {
+  console.error("Failed to ensure floorplan tables:", error);
+});
+
 ensureFieldFarmColumn()
   .then(ensureFieldTypeColumn)
   .catch((error) => {
@@ -5133,6 +5160,139 @@ app.delete("/ai/devices/:id", async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Delete smart device error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/floorplans", async (req, res) => {
+  try {
+    const result = await turso.execute("SELECT * FROM floorplans ORDER BY id DESC");
+    res.json(result.rows);
+  } catch (error) {
+    console.error("List floorplans error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/floorplans", upload.single("image"), async (req, res) => {
+  try {
+    if (req.user !== "David") {
+      return res.status(403).json({ error: "Access denied. Only David can add floorplans." });
+    }
+    const { name } = req.body || {};
+    if (!name || !String(name).trim()) {
+      return res.status(400).json({ error: "Floorplan name is required" });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: "A floorplan image is required" });
+    }
+    const uploadResult = await cloudinary.uploader.upload(
+      `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
+      { folder: "floorplans" }
+    );
+    const result = await turso.execute({
+      sql: `INSERT INTO floorplans (name, imageUrl, createdBy) VALUES (?, ?, ?)`,
+      args: [String(name).trim(), uploadResult.secure_url, req.user || "David"],
+    });
+    res.json({ success: true, id: Number(result.lastInsertRowid), imageUrl: uploadResult.secure_url });
+  } catch (error) {
+    console.error("Create floorplan error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/floorplans/:id", async (req, res) => {
+  try {
+    if (req.user !== "David") {
+      return res.status(403).json({ error: "Access denied. Only David can delete floorplans." });
+    }
+    await turso.execute({
+      sql: "DELETE FROM floorplanDevices WHERE floorplanId = ?",
+      args: [req.params.id],
+    });
+    await turso.execute({
+      sql: "DELETE FROM floorplans WHERE id = ?",
+      args: [req.params.id],
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete floorplan error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/floorplans/:id/devices", async (req, res) => {
+  try {
+    const result = await turso.execute({
+      sql: `
+        SELECT fd.id AS pinId, fd.floorplanId, fd.xPct, fd.yPct,
+               sd.id AS deviceId, sd.name, sd.icon, sd.state, sd.type, sd.haEntityId, sd.location
+        FROM floorplanDevices fd
+        JOIN smartDevices sd ON sd.id = fd.deviceId
+        WHERE fd.floorplanId = ?
+        ORDER BY fd.id
+      `,
+      args: [req.params.id],
+    });
+    res.json(result.rows);
+  } catch (error) {
+    console.error("List floorplan devices error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/floorplans/:id/devices", async (req, res) => {
+  try {
+    if (req.user !== "David") {
+      return res.status(403).json({ error: "Access denied. Only David can place devices on a floorplan." });
+    }
+    const { deviceId, xPct, yPct } = req.body || {};
+    if (!deviceId || xPct == null || yPct == null) {
+      return res.status(400).json({ error: "deviceId, xPct and yPct are required" });
+    }
+    const result = await turso.execute({
+      sql: `INSERT INTO floorplanDevices (floorplanId, deviceId, xPct, yPct) VALUES (?, ?, ?, ?)`,
+      args: [req.params.id, deviceId, xPct, yPct],
+    });
+    res.json({ success: true, id: Number(result.lastInsertRowid) });
+  } catch (error) {
+    console.error("Place floorplan device error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put("/floorplans/devices/:pinId", async (req, res) => {
+  try {
+    if (req.user !== "David") {
+      return res.status(403).json({ error: "Access denied. Only David can move devices on a floorplan." });
+    }
+    const { xPct, yPct } = req.body || {};
+    if (xPct == null || yPct == null) {
+      return res.status(400).json({ error: "xPct and yPct are required" });
+    }
+    await turso.execute({
+      sql: "UPDATE floorplanDevices SET xPct = ?, yPct = ? WHERE id = ?",
+      args: [xPct, yPct, req.params.pinId],
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Move floorplan device error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/floorplans/devices/:pinId", async (req, res) => {
+  try {
+    if (req.user !== "David") {
+      return res.status(403).json({ error: "Access denied. Only David can remove devices from a floorplan." });
+    }
+    await turso.execute({
+      sql: "DELETE FROM floorplanDevices WHERE id = ?",
+      args: [req.params.pinId],
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Remove floorplan device error:", error);
     res.status(500).json({ error: error.message });
   }
 });
