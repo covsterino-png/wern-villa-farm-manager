@@ -54,7 +54,7 @@ const [actionNotes, setActionNotes] =
 
   const todayKey = () => new Date().toISOString().split("T")[0];
   const [feedTallyBatches, setFeedTallyBatches] = useState([]);
-  const [feedBatchSize, setFeedBatchSize] = useState(5);
+  const [feedBatchSize, setFeedBatchSize] = useState(25);
 
   // Shared feed tally (server-backed so David and Gemma both see/update the same
   // running count of sheep fed today, replacing a physical calculator app).
