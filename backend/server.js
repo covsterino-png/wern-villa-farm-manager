@@ -3452,6 +3452,25 @@ app.delete(
   }
 );
 
+// Temporary diagnostic: identifies which table's foreign key blocks calendarEvents deletes.
+app.get("/debug/calendar-events-fk", async (req, res) => {
+  try {
+    const fkList = await turso.execute("PRAGMA foreign_key_list(calendarEvents)");
+    const tables = await turso.execute(
+      "SELECT name, sql FROM sqlite_master WHERE type = 'table'"
+    );
+    const referencing = tables.rows.filter((row) =>
+      String(row.sql || "").toLowerCase().includes("calendarevents")
+    );
+    res.json({
+      foreignKeysOnCalendarEvents: fkList.rows,
+      tablesReferencingCalendarEvents: referencing.map((row) => ({ name: row.name, sql: row.sql })),
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post("/flock-groups", async (req, res) => {
   try {
     const { name } = req.body || {};
