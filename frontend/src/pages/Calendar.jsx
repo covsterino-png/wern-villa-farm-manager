@@ -167,7 +167,10 @@ const deleteEvent = async (id) => {
 
   try {
     const res = await fetch(`${API}/manual-calendar-events/${id}`, { method: "DELETE" });
-    if (!res.ok) throw new Error(`Delete failed (${res.status})`);
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      throw new Error(body?.error || `Delete failed (${res.status})`);
+    }
     loadEvents();
   } catch (error) {
     alert(`Could not delete this event. ${error.message}`);
