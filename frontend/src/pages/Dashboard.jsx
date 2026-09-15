@@ -1,5 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { API, fetchJson } from "../api";
+
+const FEED_CELEBRATION_MESSAGES = {
+  David: [
+    "🏆 Every sheep fed, David — legend status confirmed!",
+    "☕ Flock's full, David. Kettle's on you now.",
+    "🐑 David 1, Hunger 0. Full flock, job done!",
+  ],
+  Gemma: [
+    "🌟 All sheep fed, Gemma — the flock loves you!",
+    "💪 Nailed it, Gemma. Full flock, zero fuss.",
+    "🐑 Gemma clears the tally — every sheep fed today!",
+  ],
+  default: [
+    "🎉 Every sheep fed today — nice work!",
+    "🐑 Full flock, happy flock. Well done!",
+  ],
+};
 
 export default function Dashboard({ setPage }) {
   const [summary, setSummary] = useState({
@@ -83,6 +100,23 @@ const [actionNotes, setActionNotes] =
   }, []);
 
   const feedTallyTotal = feedTallyBatches.reduce((sum, b) => sum + Number(b.size || 0), 0);
+
+  const [showFeedCelebration, setShowFeedCelebration] = useState(false);
+  const [feedCelebrationMessage, setFeedCelebrationMessage] = useState("");
+  const wasAllFedRef = useRef(false);
+
+  useEffect(() => {
+    const allFed = summary.totalSheep > 0 && feedTallyTotal >= summary.totalSheep;
+    if (allFed && !wasAllFedRef.current) {
+      const user = localStorage.getItem("user");
+      const pool = FEED_CELEBRATION_MESSAGES[user] || FEED_CELEBRATION_MESSAGES.default;
+      setFeedCelebrationMessage(pool[Math.floor(Math.random() * pool.length)]);
+      setShowFeedCelebration(true);
+    } else if (!allFed) {
+      setShowFeedCelebration(false);
+    }
+    wasAllFedRef.current = allFed;
+  }, [feedTallyTotal, summary.totalSheep]);
 
   function addFeedBatch(size) {
     const amount = Number(size);
@@ -769,6 +803,21 @@ function saveActionFromDashboard(
         </>
         )}
       </div>
+
+      {showFeedCelebration && (
+        <div className="sheep-egg">
+          <span className="sheep-egg-sheep">🐑</span>
+          <strong>All sheep fed!</strong>
+          <span>{feedCelebrationMessage}</span>
+          <button
+            className="sheep-egg-close"
+            onClick={() => setShowFeedCelebration(false)}
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
         <div
   style={{
