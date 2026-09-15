@@ -639,12 +639,12 @@ body: JSON.stringify({
                   borderRadius: "8px",
                   padding: "12px",
                   display: "flex",
-                  justifyContent: "space-between",
-                  gap: "12px",
+                  flexDirection: "column",
+                  gap: "4px",
+                  minWidth: 0,
                 }}
               >
-                <strong>{event.userName}</strong>
-                <span style={{ color: "#aaa", textAlign: "right" }}>
+                <span style={{ color: "#aaa", overflowWrap: "anywhere" }}>
                   {new Date(`${event.clickedAt}Z`).toLocaleString()}
                   <br />
                   {event.screen || "Unknown screen"} | {event.target || "Unknown element"}
