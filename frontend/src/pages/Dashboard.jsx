@@ -64,6 +64,7 @@ const [actionNotes, setActionNotes] =
     useState(0);
   const [heroPoints, setHeroPoints] = useState({ balance: 0, pending: 0 });
   const [notesCount, setNotesCount] = useState(0);
+  const [calendarUpcomingCount, setCalendarUpcomingCount] = useState(0);
   const [salesTotal, setSalesTotal] = useState(0);
   const [showUnassigned, setShowUnassigned] = useState(false);
   const [unassignedSheep, setUnassignedSheep] = useState([]);
@@ -230,6 +231,19 @@ const [actionNotes, setActionNotes] =
     fetch(`${API}/notes`)
       .then((res) => res.json())
       .then((data) => setNotesCount(Array.isArray(data) ? data.length : 0))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch(`${API}/calendar-events`)
+      .then((res) => res.json())
+      .then((data) => {
+        const todayKeyValue = todayKey();
+        const upcoming = Array.isArray(data)
+          ? data.filter((event) => event.date >= todayKeyValue).length
+          : 0;
+        setCalendarUpcomingCount(upcoming);
+      })
       .catch(() => {});
   }, []);
 
@@ -1705,7 +1719,7 @@ boxShadow:
 <DashboardCard
   icon="📅"
   title="Calendar"
-  value={4}
+  value={calendarUpcomingCount}
   subtitle="Upcoming"
   colour="#00bcd4"
   onClick={() =>
