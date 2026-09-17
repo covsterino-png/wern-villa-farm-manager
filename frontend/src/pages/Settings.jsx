@@ -48,6 +48,48 @@ const [manualLocation, setManualLocation] = useState("");
 const [devNotes, setDevNotes] = useState([]);
 const [showDevNotes, setShowDevNotes] = useState(false);
 
+const [showChickens, setShowChickens] = useState(false);
+const [chickenCount, setChickenCount] = useState(0);
+const [chickenCountInput, setChickenCountInput] = useState("0");
+const [savingChickenCount, setSavingChickenCount] = useState(false);
+const [chickenMessage, setChickenMessage] = useState("");
+
+function loadChickens() {
+  fetchJson("/chickens")
+    .then((data) => {
+      setChickenCount(Number(data?.count) || 0);
+      setChickenCountInput(String(Number(data?.count) || 0));
+    })
+    .catch((err) => console.error("Error loading chickens:", err));
+}
+
+useEffect(() => {
+  loadChickens();
+}, []);
+
+async function saveChickenCount() {
+  const amount = Number(chickenCountInput);
+  if (!Number.isFinite(amount) || amount < 0) {
+    setChickenMessage("Enter a valid chicken count.");
+    return;
+  }
+  setSavingChickenCount(true);
+  setChickenMessage("");
+  try {
+    await fetchJson("/chickens", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ count: amount }),
+    });
+    setChickenCount(amount);
+    setChickenMessage("Saved!");
+  } catch (err) {
+    setChickenMessage("Could not save: " + err.message);
+  } finally {
+    setSavingChickenCount(false);
+  }
+}
+
 function loadDevNotes() {
   fetchJson("/dev-notes")
     .then((data) => setDevNotes(Array.isArray(data) ? data : []))
@@ -793,7 +835,35 @@ body: JSON.stringify({
       </SettingsSection>
 
       <SettingsSection
-        title="💉 Medicines"
+        title="� Chickens"
+        open={showChickens}
+        onToggle={() => setShowChickens((open) => !open)}
+      >
+        <div style={{ display: "flex", gap: "10px", alignItems: "center", maxWidth: "320px" }}>
+          <input
+            type="number"
+            min="0"
+            value={chickenCountInput}
+            onChange={(e) => setChickenCountInput(e.target.value)}
+            placeholder="Number of chickens..."
+            style={{ flex: 1 }}
+          />
+          <button onClick={saveChickenCount} disabled={savingChickenCount}>
+            Save
+          </button>
+        </div>
+        <p style={{ color: "#aaa", marginTop: "10px" }}>
+          Currently {chickenCount} chicken{chickenCount === 1 ? "" : "s"}.
+        </p>
+        {chickenMessage && (
+          <p style={{ color: chickenMessage.startsWith("Saved") ? "#8bc34a" : "#ff8a80" }}>
+            {chickenMessage}
+          </p>
+        )}
+      </SettingsSection>
+
+      <SettingsSection
+        title="�💉 Medicines"
         open={showMedicines}
         onToggle={() => setShowMedicines((open) => !open)}
       >

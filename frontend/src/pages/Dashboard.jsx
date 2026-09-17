@@ -80,18 +80,13 @@ const [actionNotes, setActionNotes] =
   const [chickenCount, setChickenCount] = useState(0);
   const [eggCollections, setEggCollections] = useState([]);
   const [showEggModal, setShowEggModal] = useState(false);
-  const [chickenCountInput, setChickenCountInput] = useState("0");
-  const [savingChickenCount, setSavingChickenCount] = useState(false);
   const [eggInput, setEggInput] = useState("");
   const [savingEggs, setSavingEggs] = useState(false);
 
   function loadChickens() {
     fetch(`${API}/chickens`)
       .then((res) => res.json())
-      .then((data) => {
-        setChickenCount(Number(data?.count) || 0);
-        setChickenCountInput(String(Number(data?.count) || 0));
-      })
+      .then((data) => setChickenCount(Number(data?.count) || 0))
       .catch(() => {});
   }
 
@@ -108,23 +103,6 @@ const [actionNotes, setActionNotes] =
   }, []);
 
   const eggsToday = eggCollections.reduce((sum, e) => sum + Number(e.count || 0), 0);
-
-  function saveChickenCount() {
-    const amount = Number(chickenCountInput);
-    if (!Number.isFinite(amount) || amount < 0) {
-      alert("Enter a valid chicken count.");
-      return;
-    }
-    setSavingChickenCount(true);
-    fetch(`${API}/chickens`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ count: amount }),
-    })
-      .then(loadChickens)
-      .catch(() => {})
-      .finally(() => setSavingChickenCount(false));
-  }
 
   function addEggs() {
     const amount = Number(eggInput);
@@ -1921,41 +1899,11 @@ boxShadow:
           >
             <h2 style={{ marginTop: 0, color: "#ffb300" }}>🐔 Chickens</h2>
 
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ display: "block", color: "#aaa", marginBottom: "4px" }}>
-                Number of chickens
-              </label>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <input
-                  type="number"
-                  min="0"
-                  value={chickenCountInput}
-                  onChange={(e) => setChickenCountInput(e.target.value)}
-                  style={{
-                    flex: 1,
-                    padding: "10px",
-                    borderRadius: "8px",
-                    border: "1px solid #777",
-                    boxSizing: "border-box",
-                  }}
-                />
-                <button
-                  onClick={saveChickenCount}
-                  disabled={savingChickenCount}
-                  style={{
-                    background: "#ffb300",
-                    color: "#1f1f1f",
-                    border: "none",
-                    padding: "10px 16px",
-                    borderRadius: "8px",
-                    fontWeight: "bold",
-                    cursor: savingChickenCount ? "default" : "pointer",
-                  }}
-                >
-                  Save
-                </button>
-              </div>
-            </div>
+            <p style={{ color: "#94a3b8", marginTop: 0 }}>
+              {chickenCount} chicken{chickenCount === 1 ? "" : "s"}
+              <br />
+              <small>Edit the headcount in Settings.</small>
+            </p>
 
             <hr style={{ border: "none", borderTop: "1px solid #333", margin: "16px 0" }} />
 
