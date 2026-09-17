@@ -195,6 +195,26 @@ async function ensureFeedTallyTable() {
   `);
 }
 
+async function ensureChickenTables() {
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS chickenFlock (
+      id INTEGER PRIMARY KEY,
+      count INTEGER NOT NULL DEFAULT 0,
+      updatedBy TEXT,
+      updatedDate TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS eggCollections (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      collectionDate TEXT NOT NULL,
+      count INTEGER NOT NULL,
+      collectedBy TEXT,
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
 async function ensurePasskeysTable() {
   await turso.execute(`
     CREATE TABLE IF NOT EXISTS passkeys (
@@ -1194,6 +1214,10 @@ ensureFeedTable().catch((error) => {
 
 ensureFeedTallyTable().catch((error) => {
   console.error("Failed to ensure feed tally table:", error);
+});
+
+ensureChickenTables().catch((error) => {
+  console.error("Failed to ensure chicken tables:", error);
 });
 
 ensureReceiptsTable().catch((error) => {
@@ -4330,7 +4354,7 @@ ensureLivestockPurchasesTable().catch((error) => {
   console.error("Failed to ensure livestock purchases table:", error);
 });
 
-const SALE_TYPES = ["livestock", "meat", "logs", "other"];
+const SALE_TYPES = ["livestock", "meat", "logs", "eggs", "other"];
 
 function normaliseDateOnly(value) {
   if (!value) return null;
@@ -4930,6 +4954,86 @@ app.delete("/feed-tally", async (req, res) => {
       args: [date],
     });
     res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Chicken flock: a simple headcount plus a running egg-collection log.
+app.get("/chickens", async (req, res) => {
+  try {
+    const result = await turso.execute("SELECT * FROM chickenFlock WHERE id = 1");
+    res.json({ count: result.rows[0] ? Number(result.rows[0].count) : 0 });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put("/chickens", async (req, res) => {
+  try {
+    const { count } = req.body || {};
+    const amount = Number(count);
+    if (!Number.isFinite(amount) || amount < 0) {
+      return res.status(400).json({ error: "Count must be zero or greater" });
+    }
+    await turso.execute({
+      sql: `
+        INSERT INTO chickenFlock (id, count, updatedBy)
+        VALUES (1, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET count = excluded.count, updatedBy = excluded.updatedBy, updatedDate = CURRENT_TIMESTAMP
+      `,
+      args: [amount, req.user || ""],
+    });
+    res.json({ success: true, count: amount });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/egg-collections", async (req, res) => {
+  try {
+    const date = String(req.query.date || new Date().toISOString().split("T")[0]);
+    const result = await turso.execute({
+      sql: "SELECT * FROM eggCollections WHERE collectionDate = ? ORDER BY id ASC",
+      args: [date],
+    });
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/egg-collections", async (req, res) => {
+  try {
+    const { date, count, collectedBy } = req.body || {};
+    const collectionDate = String(date || new Date().toISOString().split("T")[0]);
+    const amount = Number(count);
+    if (!(amount > 0)) {
+      return res.status(400).json({ error: "Egg count must be greater than zero" });
+    }
+    const result = await turso.execute({
+      sql: "INSERT INTO eggCollections (collectionDate, count, collectedBy) VALUES (?, ?, ?)",
+      args: [collectionDate, amount, collectedBy || ""],
+    });
+    res.json({ success: true, id: Number(result.lastInsertRowid) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/egg-collections/last", async (req, res) => {
+  try {
+    const date = String(req.query.date || new Date().toISOString().split("T")[0]);
+    const last = await turso.execute({
+      sql: "SELECT id FROM eggCollections WHERE collectionDate = ? ORDER BY id DESC LIMIT 1",
+      args: [date],
+    });
+    if (last.rows.length === 0) return res.json({ success: true, removed: false });
+    await turso.execute({
+      sql: "DELETE FROM eggCollections WHERE id = ?",
+      args: [last.rows[0].id],
+    });
+    res.json({ success: true, removed: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

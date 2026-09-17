@@ -5,6 +5,7 @@ const SALE_TYPES = [
   { value: "livestock", label: "🐑 Livestock" },
   { value: "meat", label: "🥩 Meat boxes" },
   { value: "logs", label: "🪵 Logs" },
+  { value: "eggs", label: "🥚 Eggs" },
   { value: "other", label: "📦 Other" },
 ];
 
@@ -436,6 +437,8 @@ export default function Sales() {
                 ? "e.g. Load of seasoned logs"
                 : saleType === "meat"
                 ? "e.g. Half lamb box"
+                : saleType === "eggs"
+                ? "e.g. 6 dozen eggs"
                 : "Description"
             }
             style={inputStyle}

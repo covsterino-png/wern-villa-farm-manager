@@ -77,6 +77,83 @@ const [actionNotes, setActionNotes] =
     () => localStorage.getItem("feedTallyMinimised") !== "true"
   );
 
+  const [chickenCount, setChickenCount] = useState(0);
+  const [eggCollections, setEggCollections] = useState([]);
+  const [showEggModal, setShowEggModal] = useState(false);
+  const [chickenCountInput, setChickenCountInput] = useState("0");
+  const [savingChickenCount, setSavingChickenCount] = useState(false);
+  const [eggInput, setEggInput] = useState("");
+  const [savingEggs, setSavingEggs] = useState(false);
+
+  function loadChickens() {
+    fetch(`${API}/chickens`)
+      .then((res) => res.json())
+      .then((data) => {
+        setChickenCount(Number(data?.count) || 0);
+        setChickenCountInput(String(Number(data?.count) || 0));
+      })
+      .catch(() => {});
+  }
+
+  function loadEggCollections() {
+    fetch(`${API}/egg-collections?date=${todayKey()}`)
+      .then((res) => res.json())
+      .then((data) => setEggCollections(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }
+
+  useEffect(() => {
+    loadChickens();
+    loadEggCollections();
+  }, []);
+
+  const eggsToday = eggCollections.reduce((sum, e) => sum + Number(e.count || 0), 0);
+
+  function saveChickenCount() {
+    const amount = Number(chickenCountInput);
+    if (!Number.isFinite(amount) || amount < 0) {
+      alert("Enter a valid chicken count.");
+      return;
+    }
+    setSavingChickenCount(true);
+    fetch(`${API}/chickens`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ count: amount }),
+    })
+      .then(loadChickens)
+      .catch(() => {})
+      .finally(() => setSavingChickenCount(false));
+  }
+
+  function addEggs() {
+    const amount = Number(eggInput);
+    if (!(amount > 0)) {
+      alert("Enter a number of eggs greater than zero.");
+      return;
+    }
+    setSavingEggs(true);
+    fetch(`${API}/egg-collections`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        date: todayKey(),
+        count: amount,
+        collectedBy: localStorage.getItem("user"),
+      }),
+    })
+      .then(loadEggCollections)
+      .then(() => setEggInput(""))
+      .catch(() => {})
+      .finally(() => setSavingEggs(false));
+  }
+
+  function undoLastEggEntry() {
+    fetch(`${API}/egg-collections/last?date=${todayKey()}`, { method: "DELETE" })
+      .then(loadEggCollections)
+      .catch(() => {});
+  }
+
   function toggleFeedTally() {
     setShowFeedTally((prev) => {
       const next = !prev;
@@ -1717,6 +1794,15 @@ boxShadow:
 />
 
 <DashboardCard
+  icon="🐔"
+  title="Chickens"
+  value={chickenCount}
+  subtitle={`${eggsToday} egg${eggsToday === 1 ? "" : "s"} today`}
+  colour="#ffb300"
+  onClick={() => setShowEggModal(true)}
+/>
+
+<DashboardCard
   icon="📅"
   title="Calendar"
   value={calendarUpcomingCount}
@@ -1802,6 +1888,177 @@ boxShadow:
 )}
   </>
 )}      </div>
+
+      {showEggModal && (
+        <div
+          onClick={() => setShowEggModal(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#1f1f1f",
+              padding: "20px",
+              borderRadius: "16px",
+              border: "1px solid #333",
+              maxWidth: "420px",
+              width: "90%",
+              maxHeight: "80vh",
+              overflowY: "auto",
+              color: "white",
+            }}
+          >
+            <h2 style={{ marginTop: 0, color: "#ffb300" }}>🐔 Chickens</h2>
+
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ display: "block", color: "#aaa", marginBottom: "4px" }}>
+                Number of chickens
+              </label>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input
+                  type="number"
+                  min="0"
+                  value={chickenCountInput}
+                  onChange={(e) => setChickenCountInput(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: "10px",
+                    borderRadius: "8px",
+                    border: "1px solid #777",
+                    boxSizing: "border-box",
+                  }}
+                />
+                <button
+                  onClick={saveChickenCount}
+                  disabled={savingChickenCount}
+                  style={{
+                    background: "#ffb300",
+                    color: "#1f1f1f",
+                    border: "none",
+                    padding: "10px 16px",
+                    borderRadius: "8px",
+                    fontWeight: "bold",
+                    cursor: savingChickenCount ? "default" : "pointer",
+                  }}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+
+            <hr style={{ border: "none", borderTop: "1px solid #333", margin: "16px 0" }} />
+
+            <div style={{ textAlign: "center", marginBottom: "12px" }}>
+              <div style={{ fontSize: "2.4rem", fontWeight: "bold", color: "white", lineHeight: 1 }}>
+                {eggsToday}
+              </div>
+              <div style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+                egg{eggsToday === 1 ? "" : "s"} collected today
+                {eggCollections.length > 0 && ` · ${eggCollections.length} entr${eggCollections.length === 1 ? "y" : "ies"}`}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+              <input
+                type="number"
+                min="1"
+                placeholder="Eggs collected"
+                value={eggInput}
+                onChange={(e) => setEggInput(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: "1px solid #777",
+                  boxSizing: "border-box",
+                }}
+              />
+              <button
+                onClick={addEggs}
+                disabled={savingEggs}
+                style={{
+                  background: "#0284c7",
+                  color: "white",
+                  border: "none",
+                  padding: "10px 16px",
+                  borderRadius: "8px",
+                  fontWeight: "bold",
+                  cursor: savingEggs ? "default" : "pointer",
+                }}
+              >
+                ➕ Add
+              </button>
+            </div>
+
+            <button
+              onClick={undoLastEggEntry}
+              disabled={eggCollections.length === 0}
+              style={{
+                width: "100%",
+                background: "transparent",
+                color: "#f87171",
+                border: "1px solid #334155",
+                borderRadius: "8px",
+                padding: "8px",
+                cursor: eggCollections.length === 0 ? "default" : "pointer",
+                opacity: eggCollections.length === 0 ? 0.5 : 1,
+                marginBottom: "12px",
+              }}
+            >
+              ↩ Undo last entry
+            </button>
+
+            <small style={{ color: "#aaa", display: "block", marginBottom: "12px" }}>
+              Record egg sales income on the Sales page — choose "🥚 Eggs" as the sale type.
+            </small>
+
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                onClick={() => {
+                  setShowEggModal(false);
+                  setPage("sales");
+                }}
+                style={{
+                  flex: 1,
+                  background: "#4caf50",
+                  color: "white",
+                  border: "none",
+                  padding: "10px",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                }}
+              >
+                💰 Log egg sale
+              </button>
+              <button
+                onClick={() => setShowEggModal(false)}
+                style={{
+                  flex: 1,
+                  background: "#333",
+                  color: "white",
+                  border: "none",
+                  padding: "10px",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
