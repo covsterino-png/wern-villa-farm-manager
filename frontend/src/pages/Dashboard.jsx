@@ -813,54 +813,56 @@ function saveActionFromDashboard(
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", marginBottom: "10px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
           <span style={{ color: "#94a3b8", fontSize: "0.85rem" }}>Batch size</span>
-          <button
-            onClick={() => setFeedBatchSize((n) => Math.max(1, (Number(n) || 0) - 5))}
-            style={{ background: "#1e293b", color: "white", border: "1px solid #475569", borderRadius: "8px", padding: "8px 12px", minWidth: "44px", fontWeight: "bold", fontSize: "0.9rem", cursor: "pointer", boxShadow: "0 2px 0 #0f172a" }}
-          >
-            −5
-          </button>
-          <button
-            onClick={() => setFeedBatchSize((n) => Math.max(1, (Number(n) || 0) - 1))}
-            style={{ background: "#1e293b", color: "white", border: "1px solid #475569", borderRadius: "8px", padding: "8px 12px", minWidth: "44px", fontWeight: "bold", fontSize: "0.9rem", cursor: "pointer", boxShadow: "0 2px 0 #0f172a" }}
-          >
-            −1
-          </button>
-          <input
-            type="number"
-            min="1"
-            value={feedBatchSize}
-            onChange={(e) => {
-              const raw = e.target.value;
-              setFeedBatchSize(raw === "" ? "" : Number(raw));
-            }}
-            onBlur={() => setFeedBatchSize((n) => (Number(n) > 0 ? Math.round(Number(n)) : 1))}
-            style={{ width: "60px", textAlign: "center", padding: "6px", borderRadius: "8px", border: "1px solid #334155", background: "#0f172a", color: "white" }}
-          />
-          <button
-            onClick={() => setFeedBatchSize((n) => (Number(n) || 0) + 1)}
-            style={{ background: "#1e293b", color: "white", border: "1px solid #475569", borderRadius: "8px", padding: "8px 12px", minWidth: "44px", fontWeight: "bold", fontSize: "0.9rem", cursor: "pointer", boxShadow: "0 2px 0 #0f172a" }}
-          >
-            +1
-          </button>
-          <button
-            onClick={() => setFeedBatchSize((n) => (Number(n) || 0) + 5)}
-            style={{ background: "#1e293b", color: "white", border: "1px solid #475569", borderRadius: "8px", padding: "8px 12px", minWidth: "44px", fontWeight: "bold", fontSize: "0.9rem", cursor: "pointer", boxShadow: "0 2px 0 #0f172a" }}
-          >
-            +5
-          </button>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", flexWrap: "nowrap", width: "100%" }}>
+            <button
+              onClick={() => setFeedBatchSize((n) => Math.max(1, (Number(n) || 0) - 5))}
+              style={{ flex: "1 1 0", background: "#1e293b", color: "white", border: "1px solid #475569", borderRadius: "8px", padding: "10px 4px", fontWeight: "bold", fontSize: "0.9rem", cursor: "pointer", boxShadow: "0 2px 0 #0f172a" }}
+            >
+              −5
+            </button>
+            <button
+              onClick={() => setFeedBatchSize((n) => Math.max(1, (Number(n) || 0) - 1))}
+              style={{ flex: "1 1 0", background: "#1e293b", color: "white", border: "1px solid #475569", borderRadius: "8px", padding: "10px 4px", fontWeight: "bold", fontSize: "0.9rem", cursor: "pointer", boxShadow: "0 2px 0 #0f172a" }}
+            >
+              −1
+            </button>
+            <input
+              type="number"
+              min="1"
+              value={feedBatchSize}
+              onChange={(e) => {
+                const raw = e.target.value;
+                setFeedBatchSize(raw === "" ? "" : Number(raw));
+              }}
+              onBlur={() => setFeedBatchSize((n) => (Number(n) > 0 ? Math.round(Number(n)) : 1))}
+              style={{ flex: "1.4 1 0", minWidth: "50px", textAlign: "center", padding: "10px 4px", borderRadius: "8px", border: "1px solid #334155", background: "#0f172a", color: "white", fontSize: "1rem", fontWeight: "bold" }}
+            />
+            <button
+              onClick={() => setFeedBatchSize((n) => (Number(n) || 0) + 1)}
+              style={{ flex: "1 1 0", background: "#1e293b", color: "white", border: "1px solid #475569", borderRadius: "8px", padding: "10px 4px", fontWeight: "bold", fontSize: "0.9rem", cursor: "pointer", boxShadow: "0 2px 0 #0f172a" }}
+            >
+              +1
+            </button>
+            <button
+              onClick={() => setFeedBatchSize((n) => (Number(n) || 0) + 5)}
+              style={{ flex: "1 1 0", background: "#1e293b", color: "white", border: "1px solid #475569", borderRadius: "8px", padding: "10px 4px", fontWeight: "bold", fontSize: "0.9rem", cursor: "pointer", boxShadow: "0 2px 0 #0f172a" }}
+            >
+              +5
+            </button>
+          </div>
         </div>
 
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           <button
             onClick={() => addFeedBatch(Number(feedBatchSize) || 0)}
             style={{
-              flex: 1,
+              flex: "1 1 160px",
               background: "#0284c7",
               color: "white",
               border: "none",
-              padding: "12px",
+              padding: "14px",
               borderRadius: "10px",
               fontWeight: "bold",
               fontSize: "1rem",
@@ -873,10 +875,11 @@ function saveActionFromDashboard(
             onClick={undoLastFeedBatch}
             disabled={feedTallyBatches.length === 0}
             style={{
+              flex: "1 1 90px",
               background: "#0f172a",
               color: "white",
               border: "1px solid #334155",
-              padding: "12px 14px",
+              padding: "14px",
               borderRadius: "10px",
               cursor: feedTallyBatches.length === 0 ? "default" : "pointer",
               opacity: feedTallyBatches.length === 0 ? 0.5 : 1,
