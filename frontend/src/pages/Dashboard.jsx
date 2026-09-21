@@ -813,32 +813,48 @@ function saveActionFromDashboard(
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", marginBottom: "10px", flexWrap: "wrap" }}>
           <span style={{ color: "#94a3b8", fontSize: "0.85rem" }}>Batch size</span>
           <button
-            onClick={() => setFeedBatchSize((n) => Math.max(1, n - 1))}
-            style={{ background: "#0f172a", color: "white", border: "1px solid #334155", borderRadius: "8px", padding: "6px 12px", cursor: "pointer" }}
+            onClick={() => setFeedBatchSize((n) => Math.max(1, (Number(n) || 0) - 5))}
+            style={{ background: "#0f172a", color: "white", border: "1px solid #334155", borderRadius: "8px", padding: "6px 10px", cursor: "pointer" }}
           >
-            −
+            −5
+          </button>
+          <button
+            onClick={() => setFeedBatchSize((n) => Math.max(1, (Number(n) || 0) - 1))}
+            style={{ background: "#0f172a", color: "white", border: "1px solid #334155", borderRadius: "8px", padding: "6px 10px", cursor: "pointer" }}
+          >
+            −1
           </button>
           <input
             type="number"
             min="1"
             value={feedBatchSize}
-            onChange={(e) => setFeedBatchSize(Math.max(1, Number(e.target.value) || 1))}
+            onChange={(e) => {
+              const raw = e.target.value;
+              setFeedBatchSize(raw === "" ? "" : Number(raw));
+            }}
+            onBlur={() => setFeedBatchSize((n) => (Number(n) > 0 ? Math.round(Number(n)) : 1))}
             style={{ width: "60px", textAlign: "center", padding: "6px", borderRadius: "8px", border: "1px solid #334155", background: "#0f172a", color: "white" }}
           />
           <button
-            onClick={() => setFeedBatchSize((n) => n + 1)}
-            style={{ background: "#0f172a", color: "white", border: "1px solid #334155", borderRadius: "8px", padding: "6px 12px", cursor: "pointer" }}
+            onClick={() => setFeedBatchSize((n) => (Number(n) || 0) + 1)}
+            style={{ background: "#0f172a", color: "white", border: "1px solid #334155", borderRadius: "8px", padding: "6px 10px", cursor: "pointer" }}
           >
-            +
+            +1
+          </button>
+          <button
+            onClick={() => setFeedBatchSize((n) => (Number(n) || 0) + 5)}
+            style={{ background: "#0f172a", color: "white", border: "1px solid #334155", borderRadius: "8px", padding: "6px 10px", cursor: "pointer" }}
+          >
+            +5
           </button>
         </div>
 
         <div style={{ display: "flex", gap: "8px" }}>
           <button
-            onClick={() => addFeedBatch(feedBatchSize)}
+            onClick={() => addFeedBatch(Number(feedBatchSize) || 0)}
             style={{
               flex: 1,
               background: "#0284c7",
@@ -851,7 +867,7 @@ function saveActionFromDashboard(
               cursor: "pointer",
             }}
           >
-            ➕ Add batch of {feedBatchSize}
+            ➕ Add batch of {feedBatchSize || 0}
           </button>
           <button
             onClick={undoLastFeedBatch}
