@@ -817,13 +817,13 @@ function saveActionFromDashboard(
           <span style={{ color: "#94a3b8", fontSize: "0.85rem" }}>Batch size</span>
           <button
             onClick={() => setFeedBatchSize((n) => Math.max(1, (Number(n) || 0) - 5))}
-            style={{ background: "#0f172a", color: "white", border: "1px solid #334155", borderRadius: "8px", padding: "6px 10px", cursor: "pointer" }}
+            style={{ background: "#1e293b", color: "white", border: "1px solid #475569", borderRadius: "8px", padding: "8px 12px", minWidth: "44px", fontWeight: "bold", fontSize: "0.9rem", cursor: "pointer", boxShadow: "0 2px 0 #0f172a" }}
           >
             −5
           </button>
           <button
             onClick={() => setFeedBatchSize((n) => Math.max(1, (Number(n) || 0) - 1))}
-            style={{ background: "#0f172a", color: "white", border: "1px solid #334155", borderRadius: "8px", padding: "6px 10px", cursor: "pointer" }}
+            style={{ background: "#1e293b", color: "white", border: "1px solid #475569", borderRadius: "8px", padding: "8px 12px", minWidth: "44px", fontWeight: "bold", fontSize: "0.9rem", cursor: "pointer", boxShadow: "0 2px 0 #0f172a" }}
           >
             −1
           </button>
@@ -840,13 +840,13 @@ function saveActionFromDashboard(
           />
           <button
             onClick={() => setFeedBatchSize((n) => (Number(n) || 0) + 1)}
-            style={{ background: "#0f172a", color: "white", border: "1px solid #334155", borderRadius: "8px", padding: "6px 10px", cursor: "pointer" }}
+            style={{ background: "#1e293b", color: "white", border: "1px solid #475569", borderRadius: "8px", padding: "8px 12px", minWidth: "44px", fontWeight: "bold", fontSize: "0.9rem", cursor: "pointer", boxShadow: "0 2px 0 #0f172a" }}
           >
             +1
           </button>
           <button
             onClick={() => setFeedBatchSize((n) => (Number(n) || 0) + 5)}
-            style={{ background: "#0f172a", color: "white", border: "1px solid #334155", borderRadius: "8px", padding: "6px 10px", cursor: "pointer" }}
+            style={{ background: "#1e293b", color: "white", border: "1px solid #475569", borderRadius: "8px", padding: "8px 12px", minWidth: "44px", fontWeight: "bold", fontSize: "0.9rem", cursor: "pointer", boxShadow: "0 2px 0 #0f172a" }}
           >
             +5
           </button>
