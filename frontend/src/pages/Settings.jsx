@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { API, fetchJson } from "../api";
 
-export default function Settings({ user }) {
+export default function Settings({ user, theme, onThemeChange }) {
 const [fields, setFields] = useState([]);
 const [newField, setNewField] = useState("");
 const [fieldSize, setFieldSize] =  useState("");
@@ -21,6 +21,7 @@ const [resetPassword, setResetPassword] = useState("");
 const [confirmResetPassword, setConfirmResetPassword] = useState("");
 const [resetMessage, setResetMessage] = useState("");
 const [showPassword, setShowPassword] = useState(false);
+const [showAppearance, setShowAppearance] = useState(true);
 const [showFields, setShowFields] = useState(false);
 const [showMedicines, setShowMedicines] = useState(false);
 const [holdings, setHoldings] = useState([]);
@@ -357,6 +358,27 @@ body: JSON.stringify({
       >
         ⚙️ Administration
       </h1>
+
+      <SettingsSection
+        title="🎨 Appearance"
+        open={showAppearance}
+        onToggle={() => setShowAppearance((open) => !open)}
+      >
+        <p className="settings-help">Choose how Wern Villa Farm Manager looks on this device.</p>
+        <div className="theme-choice-group" role="group" aria-label="Colour theme">
+          {[{ value: "light", label: "☀️ Light" }, { value: "dark", label: "🌙 Dark" }].map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className={`theme-choice${theme === option.value ? " selected" : ""}`}
+              aria-pressed={theme === option.value}
+              onClick={() => onThemeChange(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </SettingsSection>
 
       {user === "David" && (
         <SettingsSection

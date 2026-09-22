@@ -17,6 +17,34 @@
   }
 }
 
+.settings-help {
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.theme-choice-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.theme-choice {
+  min-width: 120px;
+  padding: 10px 16px;
+  color: var(--app-content-text);
+  background: var(--nav-button-bg);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.theme-choice.selected {
+  border-color: #03a9f4;
+  box-shadow: 0 0 0 2px rgba(3, 169, 244, 0.18);
+  font-weight: 700;
+}
+
 .sheep-egg {
   position: fixed;
   right: 16px;

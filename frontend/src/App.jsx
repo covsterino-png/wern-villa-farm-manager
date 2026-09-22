@@ -30,6 +30,7 @@ const getStoredUser = () =>
     : null;
 
 const lastScreenKey = (username) => `lastScreen:${username}`;
+const getStoredTheme = () => localStorage.getItem("theme") || "dark";
 
 function getStoredPage(username) {
   if (!username) return "dashboard";
@@ -41,6 +42,7 @@ function getStoredPage(username) {
 function App() {
   const [user] = useState(getStoredUser);
   const [page, setPage] = useState(() => getStoredPage(user));
+  const [theme, setTheme] = useState(getStoredTheme);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -90,6 +92,11 @@ function App() {
   }
 
   useEffect(() => subscribeQueueCount(setPendingSyncCount), []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     const updateLayout = () => setIsMobile(window.innerWidth < 768);
@@ -184,8 +191,8 @@ function App() {
     background:
       page === buttonPage
         ? "#03a9f4"
-        : "#2b2b2b",
-    color: "white",
+        : "var(--nav-button-bg)",
+    color: "var(--nav-button-text)",
     border: "none",
     padding: "6px",
     borderRadius: "10px",
@@ -237,8 +244,8 @@ function App() {
           width: isMobile
             ? "100%"
             : "250px",
-          background: "#1f1f1f",
-          color: "white",
+          background: "var(--app-sidebar-bg)",
+          color: "var(--app-sidebar-text)",
           padding: "20px",
           boxSizing: "border-box",
         }}
@@ -405,8 +412,8 @@ function App() {
           padding: isMobile
             ? "10px"
             : "20px",
-          background: "#121212",
-          color: "white",
+          background: "var(--app-content-bg)",
+          color: "var(--app-content-text)",
           position: "relative",
         }}
       >
@@ -451,7 +458,7 @@ function App() {
 
         {page === "settings" &&
           user === "David" && (
-            <Settings user={user} />
+            <Settings user={user} theme={theme} onThemeChange={setTheme} />
           )}
 
       {showBugModal && (
