@@ -1081,7 +1081,7 @@ function SettingsSection({ title, open, onToggle, children }) {
   return (
     <div
       style={{
-        background: "#1f1f1f",
+        background: "var(--settings-surface)",
         borderRadius: "12px",
         marginBottom: "20px",
         overflow: "hidden",
