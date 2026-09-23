@@ -22,6 +22,20 @@
   margin-bottom: 12px;
 }
 
+html[data-theme="light"] .dashboard-card {
+  background: #ffffff !important;
+  color: #18212a !important;
+  box-shadow: 0 4px 12px rgba(34, 49, 62, 0.1) !important;
+}
+
+html[data-theme="light"] .dashboard-card > div:first-child {
+  color: #46505a !important;
+}
+
+html[data-theme="light"] .dashboard-card > div:last-child {
+  color: #66727d !important;
+}
+
 .theme-choice-group {
   display: flex;
   gap: 10px;

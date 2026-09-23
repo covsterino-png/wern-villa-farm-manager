@@ -2044,6 +2044,7 @@ function DashboardCard({
   return (
     <button
       type="button"
+      className="dashboard-card"
       onClick={onClick}
       style={{
         background: "#1b2432",
