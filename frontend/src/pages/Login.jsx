@@ -3,6 +3,7 @@ import { startAuthentication, startRegistration } from "@simplewebauthn/browser"
 import { apiFetch, readJsonResponse } from "../api";
 
 function Login({ onLogin }) {
+  const isLocalDevelopment = ["localhost", "127.0.0.1"].includes(window.location.hostname);
   const [username, setUsername] = useState("David");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -26,6 +27,10 @@ function Login({ onLogin }) {
       const data = await readJsonResponse(response);
       if (!response.ok) throw new Error(data.error || "Login failed");
       localStorage.setItem("authToken", data.token);
+      if (isLocalDevelopment) {
+        onLogin(data.user, data.token);
+        return;
+      }
       setAuthenticated(data);
     } catch (loginError) {
       setError(loginError.message);
@@ -204,7 +209,7 @@ function Login({ onLogin }) {
         <input required type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" autoComplete="current-password" style={{ width: "100%", padding: "14px", marginBottom: "10px", borderRadius: "8px", boxSizing: "border-box" }} />
         {error && <p style={{ color: "#ff8a80" }}>{error}</p>}
         <button type="submit" disabled={busy} style={buttonStyle}>{busy ? "Signing in..." : "Sign in"}</button>
-        <button type="button" disabled={busy} onClick={signInWithPasskey} style={{ ...buttonStyle, marginTop: "10px", background: "#555" }}>Sign in with device</button>
+        {!isLocalDevelopment && <button type="button" disabled={busy} onClick={signInWithPasskey} style={{ ...buttonStyle, marginTop: "10px", background: "#555" }}>Sign in with device</button>}
         <button type="button" disabled={busy} onClick={() => { setSetupMode(true); setError(""); }} style={{ ...buttonStyle, marginTop: "10px", background: "transparent", border: "1px solid #555" }}>Set up a password</button>
         </form>}
       </div>

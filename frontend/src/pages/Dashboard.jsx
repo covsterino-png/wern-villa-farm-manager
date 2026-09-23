@@ -926,7 +926,7 @@ function saveActionFromDashboard(
     cursor: "pointer",
   }}
 >
-  📋 Today's Tasks ({todayTasks.length})
+  📋 Today's Livestock Care ({todayTasks.length})
   {" "}
   {showTasks ? "▲" : "▼"}
 </h2>
@@ -1746,8 +1746,9 @@ boxShadow:
 />
         <DashboardCard
           icon="📋"
-          title="Open Tasks"
+          title="Farm To-dos"
           value={summary.openTasks}
+          subtitle="General shared jobs"
           colour="#e91e63"
           onClick={() => setPage("tasks")}
         />
@@ -2041,66 +2042,69 @@ function DashboardCard({
   const isMobile = window.innerWidth < 768;
 
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
       style={{
-        background: "#1f1f1f",
-        borderRadius: "16px",
-        padding: isMobile ? "12px 4px" : "16px",
-        border: `2px solid ${colour}`,
-        boxShadow: `0 0 15px ${colour}20`,
-        cursor: onClick
-          ? "pointer"
-          : "default",
+        background: "#1b2432",
+        borderRadius: "8px",
+        padding: isMobile ? "8px" : "16px",
+        border: `1px solid ${colour}`,
+        borderLeft: `4px solid ${colour}`,
+        boxShadow: `0 6px 16px ${colour}16`,
+        cursor: onClick ? "pointer" : "default",
         transition: "0.2s",
+        font: "inherit",
+        color: "white",
+        width: "100%",
         minWidth: 0,
         boxSizing: "border-box",
         overflow: "hidden",
-        textAlign: "center",
+        textAlign: "left",
         overflowWrap: "break-word",
       }}
     >
       <div
         style={{
-          fontSize: isMobile ? "1.3rem" : "1.6rem",
-          marginBottom: isMobile ? "6px" : "10px",
-        }}
-      >
-        {icon}
-      </div>
-
-      <div
-        style={{
-          color: "#aaa",
-          fontSize: isMobile ? "0.72rem" : "0.9rem",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          color: "#cbd5e1",
+          fontSize: isMobile ? "0.68rem" : "0.95rem",
           lineHeight: 1.2,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
         }}
       >
-        {title}
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{icon} {title}</span>
+        <span aria-hidden="true" style={{ color: colour }}>›</span>
       </div>
 
       <div
         style={{
-          fontSize: isMobile ? "1.4rem" : "1.8rem",
+          fontSize: isMobile ? "1.2rem" : "1.9rem",
           fontWeight: "bold",
           color: colour,
-          marginTop: isMobile ? "6px" : "10px",
+          marginTop: "8px",
+          lineHeight: 1,
+          textAlign: "center",
         }}
       >
         {value}
       </div>
-      {subtitle && (
+      {subtitle && !isMobile && (
   <div
     style={{
-      fontSize: isMobile ? "0.7rem" : "0.9rem",
-      color: "#aaa",
-      marginTop: "6px",
+      fontSize: isMobile ? "0.72rem" : "0.85rem",
+      color: "#94a3b8",
+      marginTop: "5px",
       lineHeight: 1.2,
     }}
   >
     {subtitle}
   </div>
 )}
-    </div>
+    </button>
   );
 }
