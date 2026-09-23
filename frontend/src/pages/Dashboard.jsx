@@ -804,7 +804,7 @@ function saveActionFromDashboard(
         {showFeedTally && (
         <>
         <div style={{ textAlign: "center", marginBottom: "12px" }}>
-          <div style={{ fontSize: "2.4rem", fontWeight: "bold", color: "white", lineHeight: 1 }}>
+          <div style={{ fontSize: "2.4rem", fontWeight: "bold", color: "#38bdf8", lineHeight: 1 }}>
             {feedTallyTotal}
           </div>
           <div style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
