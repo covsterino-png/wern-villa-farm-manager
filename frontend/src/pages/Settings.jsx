@@ -5,6 +5,7 @@ export default function Settings({ user, theme, onThemeChange }) {
 const [fields, setFields] = useState([]);
 const [newField, setNewField] = useState("");
 const [fieldSize, setFieldSize] =  useState("");
+const [fieldParcelNumber, setFieldParcelNumber] = useState("");
 const [medicines, setMedicines] = useState([]);
 const [newMedicine, setNewMedicine] = useState("");
 const [doseRate, setDoseRate] =  useState("");
@@ -339,11 +340,13 @@ body: JSON.stringify({
 body: JSON.stringify({
   name: newField,
   size: fieldSize,
+  parcelNumber: fieldParcelNumber,
 })
       }
     ).then(() => {
       setNewField("");
       setFieldSize("");
+      setFieldParcelNumber("");
       loadFields();
     });
   }
@@ -769,6 +772,12 @@ body: JSON.stringify({
     marginLeft: "10px",
   }}
 />
+        <input
+          value={fieldParcelNumber}
+          onChange={(e) => setFieldParcelNumber(e.target.value)}
+          placeholder="Parcel number..."
+          style={{ marginLeft: "10px" }}
+        />
 
         <button
           onClick={addField}
@@ -802,6 +811,8 @@ body: JSON.stringify({
   <br />
   📏 {field.size || 0} acres
   <br />
+  🧾 Parcel: {field.parcelNumber || "-"}
+  <br />
   🗺️ Position:{" "}
   {field.position || "-"}
 </span>
@@ -822,6 +833,13 @@ body: JSON.stringify({
 
     if (newSize === null) return;
 
+    const newParcelNumber = prompt(
+      "Parcel number:",
+      field.parcelNumber || ""
+    );
+
+    if (newParcelNumber === null) return;
+
     const newPosition = prompt(
       "Map position (1-4):",
       field.position || ""
@@ -839,6 +857,7 @@ body: JSON.stringify({
         body: JSON.stringify({
           name: newName,
           size: Number(newSize),
+          parcelNumber: newParcelNumber,
           position: Number(
             newPosition
           ),

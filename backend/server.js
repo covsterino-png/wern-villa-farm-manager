@@ -386,6 +386,16 @@ async function ensureFieldFarmColumn() {
   `);
 }
 
+async function ensureFieldParcelNumberColumn() {
+  try {
+    await turso.execute("ALTER TABLE fields ADD COLUMN parcelNumber TEXT");
+  } catch (error) {
+    if (!error.message.toLowerCase().includes("duplicate column")) {
+      throw error;
+    }
+  }
+}
+
 const WERN_VILLA_BUILDINGS = [
   "Lambing Shed",
   "Bay 1",
@@ -3044,7 +3054,7 @@ app.get("/fields", async (req, res) => {
 
 app.post("/fields", async (req, res) => {
   try {
-const { name, size, farm, type } = req.body || {};
+const { name, size, farm, type, parcelNumber } = req.body || {};
     const result =
       await turso.execute({
         sql: `
@@ -3052,15 +3062,17 @@ INSERT INTO fields (
   name,
   size,
   farm,
-  type
+  type,
+  parcelNumber
 )
-VALUES (?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?)
         `,
         args: [
           name ?? null,
           size ?? null,
           farm || "Gellidywyll",
           type === "building" ? "building" : "field",
+          parcelNumber ?? null,
         ],
       });
 
@@ -3082,6 +3094,7 @@ app.put("/fields/:id", async (req, res) => {
       position,
       farm,
       type,
+      parcelNumber,
     } = req.body || {};
 
     const existing = await turso.execute({
@@ -3101,7 +3114,8 @@ app.put("/fields/:id", async (req, res) => {
           size = ?,
           position = ?,
           farm = ?,
-          type = ?
+          type = ?,
+          parcelNumber = ?
         WHERE id = ?
       `,
       args: [
@@ -3110,6 +3124,7 @@ app.put("/fields/:id", async (req, res) => {
         position ?? field.position,
         farm ?? field.farm ?? "Gellidywyll",
         type ?? field.type ?? "field",
+        parcelNumber ?? field.parcelNumber ?? null,
         id,
       ],
     });
@@ -4329,6 +4344,7 @@ ensureFloorplanTables().catch((error) => {
 });
 
 ensureFieldFarmColumn()
+  .then(ensureFieldParcelNumberColumn)
   .then(ensureFieldTypeColumn)
   .catch((error) => {
     console.error("Failed to ensure field columns:", error);

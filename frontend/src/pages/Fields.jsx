@@ -4,6 +4,7 @@ import { API } from "../api";
 export default function Fields() {
   const [fields, setFields] = useState([]);
   const [newField, setNewField] = useState("");
+  const [newParcelNumber, setNewParcelNumber] = useState("");
   const [newFieldFarm, setNewFieldFarm] = useState("Gellidywyll");
   const [newFieldType, setNewFieldType] = useState("field");
 
@@ -31,11 +32,13 @@ export default function Fields() {
       },
       body: JSON.stringify({
         name: newField,
+        parcelNumber: newParcelNumber,
         farm: newFieldFarm,
         type: newFieldType,
       }),
     }).then(() => {
       setNewField("");
+      setNewParcelNumber("");
       loadFields();
     });
   }
@@ -62,6 +65,13 @@ export default function Fields() {
           value={newField}
           onChange={(e) => setNewField(e.target.value)}
           placeholder="Field name..."
+        />
+
+        <input
+          value={newParcelNumber}
+          onChange={(e) => setNewParcelNumber(e.target.value)}
+          placeholder="Parcel number..."
+          style={{ marginLeft: "10px" }}
         />
 
         <select
@@ -110,6 +120,7 @@ export default function Fields() {
           </span>
           <small style={{ color: "#aaa" }}>
             {field.farm || "Gellidywyll"}
+            {field.parcelNumber && ` · Parcel ${field.parcelNumber}`}
           </small>
         </div>
       ))}
