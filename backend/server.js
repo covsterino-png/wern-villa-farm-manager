@@ -189,10 +189,18 @@ async function ensureFeedTallyTable() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       tallyDate TEXT NOT NULL,
       size INTEGER NOT NULL,
+      fieldName TEXT,
       createdBy TEXT,
       createdAt TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
+  try {
+    await turso.execute("ALTER TABLE feedTallyBatches ADD COLUMN fieldName TEXT");
+  } catch (error) {
+    if (!error.message.toLowerCase().includes("duplicate column")) {
+      throw error;
+    }
+  }
 }
 
 async function ensureChickenTables() {
@@ -4928,15 +4936,16 @@ app.get("/feed-tally", async (req, res) => {
 
 app.post("/feed-tally", async (req, res) => {
   try {
-    const { date, size, createdBy } = req.body || {};
+    const { date, size, fieldName, createdBy } = req.body || {};
     const tallyDate = String(date || new Date().toISOString().split("T")[0]);
     const amount = Number(size);
+    const location = String(fieldName || "").trim() || null;
     if (!(amount > 0)) {
       return res.status(400).json({ error: "Batch size must be greater than zero" });
     }
     const result = await turso.execute({
-      sql: "INSERT INTO feedTallyBatches (tallyDate, size, createdBy) VALUES (?, ?, ?)",
-      args: [tallyDate, amount, createdBy || ""],
+      sql: "INSERT INTO feedTallyBatches (tallyDate, size, fieldName, createdBy) VALUES (?, ?, ?, ?)",
+      args: [tallyDate, amount, location, createdBy || ""],
     });
     res.json({ success: true, id: Number(result.lastInsertRowid) });
   } catch (error) {

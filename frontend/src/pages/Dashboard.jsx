@@ -72,6 +72,9 @@ const [actionNotes, setActionNotes] =
 
   const todayKey = () => new Date().toISOString().split("T")[0];
   const [feedTallyBatches, setFeedTallyBatches] = useState([]);
+  const [feedFields, setFeedFields] = useState([]);
+  const [feedFieldSheepCounts, setFeedFieldSheepCounts] = useState({});
+  const [selectedFeedField, setSelectedFeedField] = useState("");
   const [feedBatchSize, setFeedBatchSize] = useState(25);
   const [showFeedTally, setShowFeedTally] = useState(
     () => localStorage.getItem("feedTallyMinimised") !== "true"
@@ -155,7 +158,58 @@ const [actionNotes, setActionNotes] =
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    Promise.all([
+      fetch(`${API}/fields`).then((res) => res.json()),
+      fetch(`${API}/flock-register`).then((res) => res.json()),
+      fetch(`${API}/sheep`).then((res) => res.json()),
+    ])
+      .then(([fields, groups, sheep]) => {
+        const sheepCountsByField = {};
+        if (Array.isArray(groups)) {
+          groups.forEach((group) => {
+            const fieldName = group.currentField;
+            const count = Number(group.sheepCount) || 0;
+            if (fieldName && count > 0) {
+              sheepCountsByField[fieldName] = (sheepCountsByField[fieldName] || 0) + count;
+            }
+          });
+        }
+        if (Array.isArray(sheep)) {
+          sheep.forEach((animal) => {
+            const fieldName = animal.currentField;
+            if (fieldName) {
+              sheepCountsByField[fieldName] = (sheepCountsByField[fieldName] || 0) + 1;
+            }
+          });
+        }
+        setFeedFieldSheepCounts(sheepCountsByField);
+        const occupiedLocations = new Set([
+          ...(Array.isArray(groups)
+            ? groups
+                .filter((group) => Number(group.sheepCount) > 0)
+                .map((group) => group.currentField)
+            : []),
+          ...(Array.isArray(sheep) ? sheep.map((animal) => animal.currentField) : []),
+        ].filter(Boolean));
+        setFeedFields(
+          Array.isArray(fields)
+            ? fields.filter((field) => occupiedLocations.has(field.name))
+            : []
+        );
+      })
+      .catch(() => {});
+  }, []);
+
   const feedTallyTotal = feedTallyBatches.reduce((sum, b) => sum + Number(b.size || 0), 0);
+  const feedTallyByField = feedTallyBatches.reduce((totals, batch) => {
+    const fieldName = batch.fieldName || "No field";
+    totals[fieldName] = (totals[fieldName] || 0) + Number(batch.size || 0);
+    return totals;
+  }, {});
+  const selectedFeedFieldTotal = feedTallyBatches
+    .filter((batch) => batch.fieldName === selectedFeedField)
+    .reduce((sum, batch) => sum + Number(batch.size || 0), 0);
 
   const [showFeedCelebration, setShowFeedCelebration] = useState(false);
   const [feedCelebrationMessage, setFeedCelebrationMessage] = useState("");
@@ -183,6 +237,7 @@ const [actionNotes, setActionNotes] =
       body: JSON.stringify({
         date: todayKey(),
         size: amount,
+        fieldName: selectedFeedField,
         createdBy: localStorage.getItem("user"),
       }),
     })
@@ -812,8 +867,39 @@ function saveActionFromDashboard(
             {feedTallyBatches.length > 0 && ` · ${feedTallyBatches.length} batch${feedTallyBatches.length === 1 ? "" : "es"}`}
           </div>
         </div>
+        {Object.keys(feedTallyByField).length > 0 && (
+          <div style={{ marginBottom: "12px", padding: "8px 10px", background: "#0f172a", borderRadius: "8px" }}>
+            <div style={{ color: "#94a3b8", fontSize: "0.8rem", marginBottom: "4px" }}>Today's count by field</div>
+            {Object.entries(feedTallyByField)
+              .sort(([fieldA], [fieldB]) => fieldA.localeCompare(fieldB))
+              .map(([fieldName, count]) => (
+                <div key={fieldName} style={{ display: "flex", justifyContent: "space-between", color: "#e2e8f0", fontSize: "0.9rem", padding: "2px 0" }}>
+                  <span>{fieldName}</span>
+                  <strong>{count}</strong>
+                </div>
+              ))}
+          </div>
+        )}
 
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+          <label htmlFor="feed-tally-field" style={{ color: "#94a3b8", fontSize: "0.85rem" }}>Field</label>
+          <select
+            id="feed-tally-field"
+            value={selectedFeedField}
+            onChange={(event) => setSelectedFeedField(event.target.value)}
+            style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #334155", background: "#0f172a", color: "white", fontSize: "0.95rem" }}
+          >
+            <option value="">Choose a field...</option>
+            {feedFields.map((field) => (
+              <option key={field.id} value={field.name}>{field.name}</option>
+            ))}
+          </select>
+          {selectedFeedField && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", width: "100%", minWidth: 0, color: "#38bdf8", fontSize: "0.8rem", fontWeight: "bold", whiteSpace: "nowrap" }}>
+              <span title={selectedFeedField} style={{ maxWidth: "48%", overflow: "hidden", textOverflow: "ellipsis" }}>{selectedFeedField}</span>
+              <span style={{ flexShrink: 0 }}>{selectedFeedFieldTotal} fed · {feedFieldSheepCounts[selectedFeedField] || 0} sheep</span>
+            </div>
+          )}
           <span style={{ color: "#94a3b8", fontSize: "0.85rem" }}>Batch size</span>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", flexWrap: "nowrap", width: "100%" }}>
             <button
@@ -857,16 +943,17 @@ function saveActionFromDashboard(
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           <button
             onClick={() => addFeedBatch(Number(feedBatchSize) || 0)}
+            disabled={!selectedFeedField}
             style={{
               flex: "1 1 160px",
-              background: "#0284c7",
+              background: selectedFeedField ? "#0284c7" : "#334155",
               color: "white",
               border: "none",
               padding: "14px",
               borderRadius: "10px",
               fontWeight: "bold",
               fontSize: "1rem",
-              cursor: "pointer",
+              cursor: selectedFeedField ? "pointer" : "not-allowed",
             }}
           >
             ➕ Add batch of {feedBatchSize || 0}
