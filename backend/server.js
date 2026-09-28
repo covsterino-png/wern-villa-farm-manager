@@ -4936,7 +4936,7 @@ app.get("/feed-tally", async (req, res) => {
 
 app.post("/feed-tally", async (req, res) => {
   try {
-    const { date, size, fieldName, createdBy } = req.body || {};
+    const { date, size, fieldName } = req.body || {};
     const tallyDate = String(date || new Date().toISOString().split("T")[0]);
     const amount = Number(size);
     const location = String(fieldName || "").trim() || null;
@@ -4945,7 +4945,7 @@ app.post("/feed-tally", async (req, res) => {
     }
     const result = await turso.execute({
       sql: "INSERT INTO feedTallyBatches (tallyDate, size, fieldName, createdBy) VALUES (?, ?, ?, ?)",
-      args: [tallyDate, amount, location, createdBy || ""],
+      args: [tallyDate, amount, location, req.user || ""],
     });
     res.json({ success: true, id: Number(result.lastInsertRowid) });
   } catch (error) {
@@ -4957,8 +4957,8 @@ app.delete("/feed-tally/last", async (req, res) => {
   try {
     const date = String(req.query.date || new Date().toISOString().split("T")[0]);
     const last = await turso.execute({
-      sql: "SELECT id FROM feedTallyBatches WHERE tallyDate = ? ORDER BY id DESC LIMIT 1",
-      args: [date],
+      sql: "SELECT id FROM feedTallyBatches WHERE tallyDate = ? AND createdBy = ? ORDER BY id DESC LIMIT 1",
+      args: [date, req.user || ""],
     });
     if (last.rows.length === 0) return res.json({ success: true, removed: false });
     await turso.execute({

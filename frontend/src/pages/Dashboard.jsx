@@ -202,14 +202,21 @@ const [actionNotes, setActionNotes] =
   }, []);
 
   const feedTallyTotal = feedTallyBatches.reduce((sum, b) => sum + Number(b.size || 0), 0);
+  const currentUser = localStorage.getItem("user") || "";
+  const canUndoFeedBatch = feedTallyBatches.some((batch) => batch.createdBy === currentUser);
   const feedTallyByField = feedTallyBatches.reduce((totals, batch) => {
     const fieldName = batch.fieldName || "No field";
     totals[fieldName] = (totals[fieldName] || 0) + Number(batch.size || 0);
     return totals;
   }, {});
-  const selectedFeedFieldTotal = feedTallyBatches
-    .filter((batch) => batch.fieldName === selectedFeedField)
-    .reduce((sum, batch) => sum + Number(batch.size || 0), 0);
+  const feedTallyFieldNames = [...new Set([
+    ...feedFields.map((field) => field.name),
+    ...Object.keys(feedTallyByField).filter((fieldName) => fieldName !== "No field"),
+  ])].sort((fieldA, fieldB) => fieldA.localeCompare(fieldB));
+  const feedFieldPopulationTotal = feedTallyFieldNames.reduce(
+    (total, fieldName) => total + (feedFieldSheepCounts[fieldName] || 0),
+    0
+  );
 
   const [showFeedCelebration, setShowFeedCelebration] = useState(false);
   const [feedCelebrationMessage, setFeedCelebrationMessage] = useState("");
@@ -836,7 +843,7 @@ function saveActionFromDashboard(
             onClick={toggleFeedTally}
             style={{ margin: 0, color: "#38bdf8", fontSize: "1.05rem", cursor: "pointer" }}
           >
-            🌾 Feed Tally ({feedTallyTotal}) {showFeedTally ? "▲" : "▼"}
+            🌾 Feed Tally {showFeedTally ? "▲" : "▼"}
           </h3>
           {showFeedTally && (
             <button
@@ -858,26 +865,35 @@ function saveActionFromDashboard(
 
         {showFeedTally && (
         <>
-        <div style={{ textAlign: "center", marginBottom: "12px" }}>
-          <div style={{ fontSize: "2.4rem", fontWeight: "bold", color: "#38bdf8", lineHeight: 1 }}>
-            {feedTallyTotal}
-          </div>
-          <div style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-            sheep fed today{summary.totalSheep ? ` of ${summary.totalSheep}` : ""}
-            {feedTallyBatches.length > 0 && ` · ${feedTallyBatches.length} batch${feedTallyBatches.length === 1 ? "" : "es"}`}
-          </div>
-        </div>
-        {Object.keys(feedTallyByField).length > 0 && (
+        {(feedTallyFieldNames.length > 0 || feedTallyByField["No field"]) && (
           <div style={{ marginBottom: "12px", padding: "8px 10px", background: "#0f172a", borderRadius: "8px" }}>
             <div style={{ color: "#94a3b8", fontSize: "0.8rem", marginBottom: "4px" }}>Today's count by field</div>
-            {Object.entries(feedTallyByField)
-              .sort(([fieldA], [fieldB]) => fieldA.localeCompare(fieldB))
-              .map(([fieldName, count]) => (
-                <div key={fieldName} style={{ display: "flex", justifyContent: "space-between", color: "#e2e8f0", fontSize: "0.9rem", padding: "2px 0" }}>
-                  <span>{fieldName}</span>
-                  <strong>{count}</strong>
+            <div role="table" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 74px 62px", gap: "4px 8px", alignItems: "center" }}>
+              <div role="row" style={{ display: "contents", color: "#94a3b8", fontSize: "0.7rem" }}>
+                <span role="columnheader">Field</span>
+                <span role="columnheader" style={{ textAlign: "right" }}>Fed today</span>
+                <span role="columnheader" style={{ textAlign: "right" }}>In field</span>
+              </div>
+              {feedTallyFieldNames.map((fieldName) => (
+                <div key={fieldName} role="row" style={{ display: "contents", color: "#e2e8f0", fontSize: "0.85rem" }}>
+                  <span role="cell" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={fieldName}>{fieldName}</span>
+                  <strong role="cell" style={{ textAlign: "right" }}>{feedTallyByField[fieldName] || 0}</strong>
+                  <strong role="cell" style={{ textAlign: "right" }}>{feedFieldSheepCounts[fieldName] || 0}</strong>
                 </div>
               ))}
+              {feedTallyByField["No field"] > 0 && (
+                <div role="row" style={{ display: "contents", color: "#e2e8f0", fontSize: "0.85rem" }}>
+                  <span role="cell">No field</span>
+                  <strong role="cell" style={{ textAlign: "right" }}>{feedTallyByField["No field"]}</strong>
+                  <span role="cell" style={{ textAlign: "right", color: "#94a3b8" }}>Unknown</span>
+                </div>
+              )}
+              <div role="row" style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "minmax(0, 1fr) 74px 62px", gap: "4px 8px", paddingTop: "6px", marginTop: "2px", borderTop: "1px solid #334155", color: "#f8fafc", fontSize: "0.85rem", fontWeight: "bold" }}>
+                <span role="cell">Total</span>
+                <span role="cell" style={{ textAlign: "right" }}>{feedTallyTotal}</span>
+                <span role="cell" style={{ textAlign: "right" }}>{feedFieldPopulationTotal}</span>
+              </div>
+            </div>
           </div>
         )}
 
@@ -894,12 +910,6 @@ function saveActionFromDashboard(
               <option key={field.id} value={field.name}>{field.name}</option>
             ))}
           </select>
-          {selectedFeedField && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", width: "100%", minWidth: 0, color: "#38bdf8", fontSize: "0.8rem", fontWeight: "bold", whiteSpace: "nowrap" }}>
-              <span title={selectedFeedField} style={{ maxWidth: "48%", overflow: "hidden", textOverflow: "ellipsis" }}>{selectedFeedField}</span>
-              <span style={{ flexShrink: 0 }}>{selectedFeedFieldTotal} fed · {feedFieldSheepCounts[selectedFeedField] || 0} sheep</span>
-            </div>
-          )}
           <span style={{ color: "#94a3b8", fontSize: "0.85rem" }}>Batch size</span>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", flexWrap: "nowrap", width: "100%" }}>
             <button
@@ -960,7 +970,8 @@ function saveActionFromDashboard(
           </button>
           <button
             onClick={undoLastFeedBatch}
-            disabled={feedTallyBatches.length === 0}
+            disabled={!canUndoFeedBatch}
+            title="Undo your most recent batch"
             style={{
               flex: "1 1 90px",
               background: "#0f172a",
@@ -968,11 +979,11 @@ function saveActionFromDashboard(
               border: "1px solid #334155",
               padding: "14px",
               borderRadius: "10px",
-              cursor: feedTallyBatches.length === 0 ? "default" : "pointer",
-              opacity: feedTallyBatches.length === 0 ? 0.5 : 1,
+              cursor: canUndoFeedBatch ? "pointer" : "default",
+              opacity: canUndoFeedBatch ? 1 : 0.5,
             }}
           >
-            ↩ Undo
+            ↩ Undo mine
           </button>
         </div>
         </>
