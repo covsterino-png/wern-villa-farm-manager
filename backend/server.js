@@ -4154,6 +4154,14 @@ app.post("/hero-rewards/:id/redeem", async (req, res) => {
       sql: "INSERT INTO heroRedemptions (rewardId, rewardName, cost, requestedBy, requestedDate, deliveryDate) VALUES (?, ?, ?, ?, ?, ?)",
       args: [reward.id, reward.name, reward.cost, req.user, requestDate, deliveryDate],
     });
+
+    const message = `${req.user} booked ${reward.name} for ${reward.cost} Hero Points.`;
+    await turso.execute({
+      sql: "INSERT INTO notifications (userName, title, message, data) VALUES (?, ?, ?, ?)",
+      args: ["Gemma", "Hero Points Redemption", message, JSON.stringify({ rewardId: reward.id })],
+    });
+    await sendPushToUser("Gemma", { title: "Hero Points Redemption", message, data: { rewardId: reward.id } });
+
     return res.json({ success: true, status: "requested" });
   } catch (error) {
     return res.status(500).json({ error: error.message });
