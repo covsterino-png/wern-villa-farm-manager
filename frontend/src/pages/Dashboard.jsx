@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { API, fetchJson } from "../api";
+import { API, fetchJson, publicFetch } from "../api";
 
 const FEED_CELEBRATION_MESSAGES = {
   David: [
@@ -18,7 +18,45 @@ const FEED_CELEBRATION_MESSAGES = {
   ],
 };
 
-export default function Dashboard({ setPage }) {
+const WEATHER_POSTCODE = "SA43 2RL";
+
+function localDateKey() {
+  const date = new Date();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+function weatherDescription(code) {
+  if (code === 0) return "Clear sky";
+  if ([1, 2].includes(code)) return "Partly cloudy";
+  if (code === 3) return "Overcast";
+  if ([45, 48].includes(code)) return "Foggy";
+  if ([51, 53, 55, 56, 57].includes(code)) return "Drizzle";
+  if ([61, 63, 65, 66, 67].includes(code)) return "Rain";
+  if ([71, 73, 75, 77].includes(code)) return "Snow";
+  if ([80, 81, 82].includes(code)) return "Rain showers";
+  if ([95, 96, 99].includes(code)) return "Thunderstorms";
+  return "Mixed conditions";
+}
+
+function weatherIcon(code) {
+  if (code === 0) return "☀️";
+  if ([1, 2].includes(code)) return "🌤️";
+  if ([3, 45, 48].includes(code)) return "☁️";
+  if ([71, 73, 75, 77].includes(code)) return "🌨️";
+  if ([95, 96, 99].includes(code)) return "⛈️";
+  return "🌧️";
+}
+
+export default function Dashboard({
+  setPage,
+  showQuickFeed,
+  onCloseQuickFeed,
+  showQuickCare,
+  onCloseQuickCare,
+  onOpenQuickCare,
+}) {
   const [summary, setSummary] = useState({
     totalSheep: 0,
     wernVilla: 0,
@@ -65,6 +103,35 @@ const [actionNotes, setActionNotes] =
   const [heroPoints, setHeroPoints] = useState({ balance: 0, pending: 0 });
   const [notesCount, setNotesCount] = useState(0);
   const [calendarUpcomingCount, setCalendarUpcomingCount] = useState(0);
+  const [calendarUpcomingEvents, setCalendarUpcomingEvents] = useState([]);
+  const [weather, setWeather] = useState({ status: "loading" });
+  const [briefingDay, setBriefingDay] = useState(localDateKey);
+  const [briefingVisible, setBriefingVisible] = useState(() => {
+    const user = localStorage.getItem("user") || "anonymous";
+    return localStorage.getItem(`dailyBriefingDismissed:${user}:${localDateKey()}`) !== "true";
+  });
+
+  useEffect(() => {
+    const checkForNewDay = () => {
+      const currentDay = localDateKey();
+      if (currentDay === briefingDay) return;
+
+      const user = localStorage.getItem("user") || "anonymous";
+      setBriefingDay(currentDay);
+      setBriefingVisible(
+        localStorage.getItem(`dailyBriefingDismissed:${user}:${currentDay}`) !== "true"
+      );
+    };
+
+    const interval = setInterval(checkForNewDay, 60000);
+    return () => clearInterval(interval);
+  }, [briefingDay]);
+
+  function dismissDailyBriefing() {
+    const user = localStorage.getItem("user") || "anonymous";
+    localStorage.setItem(`dailyBriefingDismissed:${user}:${briefingDay}`, "true");
+    setBriefingVisible(false);
+  }
   const [salesTotal, setSalesTotal] = useState(0);
   const [showUnassigned, setShowUnassigned] = useState(false);
   const [unassignedSheep, setUnassignedSheep] = useState([]);
@@ -278,6 +345,45 @@ const [actionNotes, setActionNotes] =
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    async function loadWeather() {
+      try {
+        const locationResponse = await publicFetch(
+          `https://api.postcodes.io/postcodes/${encodeURIComponent(WEATHER_POSTCODE)}`
+        );
+        if (!locationResponse.ok) throw new Error("Postcode lookup failed");
+        const locationData = await locationResponse.json();
+        const { latitude, longitude } = locationData.result;
+        const forecastResponse = await publicFetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=1&timezone=auto`
+        );
+        if (!forecastResponse.ok) throw new Error("Weather lookup failed");
+        const forecastData = await forecastResponse.json();
+        const forecast = {
+          temperature: forecastData.current?.temperature_2m,
+          high: forecastData.daily?.temperature_2m_max?.[0],
+          low: forecastData.daily?.temperature_2m_min?.[0],
+          rainChance: forecastData.daily?.precipitation_probability_max?.[0],
+          code: forecastData.current?.weather_code,
+        };
+        const weatherCode = Number(forecast.code);
+
+        setWeather({
+          status: "ready",
+          temperature: Math.round(Number(forecast.temperature)),
+          high: Math.round(Number(forecast.high)),
+          low: Math.round(Number(forecast.low)),
+          rainChance: Number(forecast.rainChance || 0),
+          code: weatherCode,
+        });
+      } catch {
+        setWeather({ status: "unavailable" });
+      }
+    }
+
+    loadWeather();
+  }, []);
+
   async function toggleDashboardDevice(id) {
     try {
       const res = await fetchJson(`/ai/devices/${id}/toggle`, { method: "POST" });
@@ -360,6 +466,13 @@ const [actionNotes, setActionNotes] =
           ? data.filter((event) => event.date >= todayKeyValue).length
           : 0;
         setCalendarUpcomingCount(upcoming);
+        setCalendarUpcomingEvents(
+          Array.isArray(data)
+            ? data
+                .filter((event) => event.date >= todayKeyValue)
+                .sort((eventA, eventB) => eventA.date.localeCompare(eventB.date))
+            : []
+        );
       })
       .catch(() => {});
   }, []);
@@ -752,6 +865,21 @@ function saveActionFromDashboard(
           )
           .slice(0, 8);
 
+  const attentionItems = [
+    ...(summary.sheepByFarm?.Unassigned > 0
+      ? [{ icon: "🐑", title: `${summary.sheepByFarm.Unassigned} sheep need attention`, detail: "No recognised field" }]
+      : []),
+    ...todayTasks.slice(0, 3).map((task) => ({
+      icon: task.eventType?.toLowerCase().includes("injection") ? "💉" : "📋",
+      title: task.eventType,
+      detail: task.sheepName,
+    })),
+  ];
+  const briefingFields = feedFields.slice(0, 3).map((field) => ({
+    name: field.name,
+    detail: `${feedFieldSheepCounts[field.name] || 0} sheep`,
+  }));
+
   return (
     
     <div
@@ -760,7 +888,7 @@ function saveActionFromDashboard(
         background: "#121212",
         minHeight: "100vh",
         color: "white",
-        padding: window.innerWidth < 768 ? "12px" : "20px",
+        padding: window.innerWidth < 768 ? "8px" : "20px",
       }}
     >
 
@@ -829,13 +957,107 @@ function saveActionFromDashboard(
         </div>
       )}
 
+      {briefingVisible && (
+      <section className="daily-briefing" aria-labelledby="daily-briefing-title">
+        <div className="daily-briefing-header">
+          <div>
+            <h2 id="daily-briefing-title">☀️ Today at Wern Villa</h2>
+            <p>{new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
+          </div>
+          <div className="daily-briefing-header-actions">
+            {weather.status === "ready" ? (
+              <div className="daily-briefing-weather" aria-label={`Weather at Wern Villa: ${weatherDescription(weather.code)}`}>
+                <span className="daily-briefing-weather-icon" aria-hidden="true">{weatherIcon(weather.code)}</span>
+                <span>
+                  <strong>{weather.temperature}°C</strong>
+                  <small>{weatherDescription(weather.code)}</small>
+                  <small>High {weather.high}° · Low {weather.low}° · 💧 {weather.rainChance}%</small>
+                </span>
+              </div>
+            ) : (
+              <span className="daily-briefing-weather-status">
+                {weather.status === "loading" ? "Loading weather..." : "Weather unavailable"}
+              </span>
+            )}
+            <button
+              type="button"
+              className="daily-briefing-dismiss"
+              onClick={dismissDailyBriefing}
+              aria-label="Dismiss today's briefing"
+              title="Dismiss today's briefing"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <div className="daily-briefing-columns">
+          <div className="daily-briefing-panel attention">
+            <h3>⚠️ {attentionItems.length} need attention <span>›</span></h3>
+            {attentionItems.length === 0 ? (
+              <p className="daily-briefing-empty">Nothing urgent today.</p>
+            ) : (
+              attentionItems.map((item, index) => (
+                <div key={`${item.title}-${index}`} className="daily-briefing-item">
+                  <span className="daily-briefing-item-icon">{item.icon}</span>
+                  <span><strong>{item.title}</strong><small>{item.detail}</small></span>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="daily-briefing-panel upcoming">
+            <h3>🕒 {calendarUpcomingEvents.length} coming up <span>›</span></h3>
+            {calendarUpcomingEvents.length === 0 ? (
+              <p className="daily-briefing-empty">Calendar is clear.</p>
+            ) : (
+              calendarUpcomingEvents.slice(0, 4).map((event) => (
+                <div key={event.id} className="daily-briefing-item">
+                  <span className="daily-briefing-item-icon">📅</span>
+                  <span><strong>{event.title}</strong><small>{event.date}</small></span>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="daily-briefing-panel fields">
+            <h3>🌱 Fields today <span>›</span></h3>
+            {briefingFields.length === 0 ? (
+              <p className="daily-briefing-empty">No occupied fields found.</p>
+            ) : (
+              briefingFields.map((field) => (
+                <div key={field.name} className="daily-briefing-item">
+                  <span className="daily-briefing-field-dot" />
+                  <span><strong>{field.name}</strong><small>{field.detail}</small></span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <button className="daily-briefing-plan" type="button" onClick={() => { setShowTasks(true); onOpenQuickCare?.(); }}>
+          View full today&apos;s plan <span aria-hidden="true">›</span>
+        </button>
+      </section>
+      )}
+
       <div
         style={{
+          display: showQuickFeed ? "block" : "none",
+          position: "fixed",
+          zIndex: 1001,
+          top: "50%",
+          left: "50%",
+          width: "min(92vw, 620px)",
+          maxHeight: "80vh",
+          overflowY: "auto",
+          transform: "translate(-50%, -50%)",
           background: "#1e293b",
           padding: "14px",
           borderRadius: "12px",
           marginBottom: "12px",
           border: "1px solid #334155",
+          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.55)",
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: showFeedTally ? "10px" : 0 }}>
@@ -845,22 +1067,39 @@ function saveActionFromDashboard(
           >
             🌾 Feed Tally {showFeedTally ? "▲" : "▼"}
           </h3>
-          {showFeedTally && (
+          <div style={{ display: "flex", gap: "8px" }}>
+            {showFeedTally && (
+              <button
+                onClick={resetFeedTally}
+                style={{
+                  background: "transparent",
+                  color: "#f87171",
+                  border: "1px solid #334155",
+                  borderRadius: "8px",
+                  padding: "4px 10px",
+                  fontSize: "0.8rem",
+                  cursor: "pointer",
+                }}
+              >
+                Reset
+              </button>
+            )}
             <button
-              onClick={resetFeedTally}
+              type="button"
+              onClick={onCloseQuickFeed}
+              aria-label="Close feed tally"
               style={{
                 background: "transparent",
-                color: "#f87171",
+                color: "#cbd5e1",
                 border: "1px solid #334155",
                 borderRadius: "8px",
                 padding: "4px 10px",
-                fontSize: "0.8rem",
                 cursor: "pointer",
               }}
             >
-              Reset
+              ✕
             </button>
-          )}
+          </div>
         </div>
 
         {showFeedTally && (
@@ -1007,27 +1246,39 @@ function saveActionFromDashboard(
 
         <div
   style={{
+    display: showQuickCare ? "block" : "none",
+    position: "fixed",
+    zIndex: 1001,
+    top: "50%",
+    left: "50%",
+    width: "min(92vw, 620px)",
+    maxHeight: "80vh",
+    overflowY: "auto",
+    transform: "translate(-50%, -50%)",
     background: "#2b2b2b",
     padding: "12px",
     
     borderRadius: "12px",
     marginBottom: "12px",
+    boxShadow: "0 20px 60px rgba(0, 0, 0, 0.55)",
   }}
 >
-<h2
-  onClick={() =>
-    setShowTasks(!showTasks)
-  }
-  style={{
-    color: "#03a9f4",
-    marginTop: 0,
-    cursor: "pointer",
-  }}
->
-  📋 Today's Livestock Care ({todayTasks.length})
-  {" "}
-  {showTasks ? "▲" : "▼"}
-</h2>
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+  <h2
+    onClick={() => setShowTasks(!showTasks)}
+    style={{ color: "#03a9f4", marginTop: 0, cursor: "pointer" }}
+  >
+    📋 Today's Livestock Care ({todayTasks.length}) {showTasks ? "▲" : "▼"}
+  </h2>
+  <button
+    type="button"
+    onClick={onCloseQuickCare}
+    aria-label="Close care popup"
+    style={{ background: "transparent", color: "#cbd5e1", border: "1px solid #444", borderRadius: "8px", padding: "4px 10px", cursor: "pointer" }}
+  >
+    ✕
+  </button>
+</div>
 
 <button
   onClick={() => (showAddTask ? resetNewTask() : setShowAddTask(true))}
@@ -1231,7 +1482,7 @@ function saveActionFromDashboard(
   </div>
 )}
 
-{showTasks &&
+{(showTasks || showQuickCare) &&
 (
 todayTasks.length === 0 ? (<p
   style={{

@@ -45,6 +45,8 @@ function App() {
   const [theme, setTheme] = useState(getStoredTheme);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [quickFeedOpen, setQuickFeedOpen] = useState(false);
+  const [quickCareOpen, setQuickCareOpen] = useState(false);
 
   const [unreadCount, setUnreadCount] =
     useState(0);
@@ -208,6 +210,8 @@ function App() {
   const navigate = (nextPage) => {
     setPage(nextPage);
     if (isMobile) setMobileMenuOpen(false);
+    setQuickFeedOpen(false);
+    setQuickCareOpen(false);
   };
 
   const navItems = [
@@ -229,6 +233,13 @@ function App() {
     ["hero-points", "Hero Points"],
   ];
 
+  const mobileNavItems = [
+    ["dashboard", "Home", "⌂"],
+    ["quick-care", "Care", "✓"],
+    ["feed-purchases", "Purchases", "🛒"],
+    ["feed", "Feed", "🌾"],
+  ];
+
   return (
     <div
       style={{
@@ -246,8 +257,11 @@ function App() {
             : "250px",
           background: "var(--app-sidebar-bg)",
           color: "var(--app-sidebar-text)",
-          padding: "20px",
+          padding: isMobile
+            ? (mobileMenuOpen ? "10px" : 0)
+            : "20px",
           boxSizing: "border-box",
+          display: isMobile && !mobileMenuOpen ? "none" : "block",
         }}
       >
 {pendingSyncCount > 0 && (
@@ -268,54 +282,7 @@ function App() {
   </div>
 )}
 
-        {isMobile ? (
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <button
-              onClick={() => setMobileMenuOpen((open) => !open)}
-              aria-expanded={mobileMenuOpen}
-              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-              style={{
-                background: "#2b2b2b",
-                color: "white",
-                border: "none",
-                borderRadius: "10px",
-                cursor: "pointer",
-                width: "48px",
-                height: "44px",
-                fontSize: "1.5rem",
-                lineHeight: 1,
-              }}
-            >
-              {mobileMenuOpen ? "✕" : "☰"}
-            </button>
-            <button
-              onClick={() => navigate("dashboard")}
-              aria-label="Home"
-              title="Home"
-              style={{ ...buttonStyle("dashboard"), flex: 1, textAlign: "center", padding: "12px", fontSize: "1.2rem" }}
-            >
-              🏠
-            </button>
-            {user === "David" && (
-              <button
-                onClick={() => navigate("settings")}
-                aria-label="Settings"
-                title="Settings"
-                style={{ ...buttonStyle("settings"), width: "44px", textAlign: "center", fontSize: "1.2rem" }}
-              >
-                ⚙️
-              </button>
-            )}
-            <button
-              onClick={logout}
-              aria-label="Logout"
-              title="Logout"
-              style={{ ...buttonStyle("logout"), width: "44px", textAlign: "center", fontSize: "1.2rem" }}
-            >
-              🚪
-            </button>
-          </div>
-        ) : (
+        {!isMobile && (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {installPrompt && (
             <button
@@ -410,7 +377,7 @@ function App() {
         style={{
           flex: 1,
           padding: isMobile
-            ? "10px"
+            ? (page === "dashboard" ? "0 0 86px" : "10px")
             : "20px",
           background: "var(--app-content-bg)",
           color: "var(--app-content-text)",
@@ -421,6 +388,11 @@ function App() {
 {page === "dashboard" && (
   <Dashboard
     setPage={setPage}
+            showQuickFeed={quickFeedOpen}
+            onCloseQuickFeed={() => setQuickFeedOpen(false)}
+            showQuickCare={quickCareOpen}
+            onCloseQuickCare={() => setQuickCareOpen(false)}
+            onOpenQuickCare={() => setQuickCareOpen(true)}
   />
 )}
 
@@ -599,6 +571,57 @@ function App() {
   <HeroPoints user={user} />
 )}
       </div>
+
+      {isMobile && (
+        <nav className="mobile-bottom-nav" aria-label="Quick navigation">
+          {mobileNavItems.map(([nextPage, label, icon]) => (
+            <button
+              key={nextPage}
+              type="button"
+              onClick={() => {
+                if (nextPage === "quick-care") {
+                  setPage("dashboard");
+                  setQuickCareOpen(true);
+                  setMobileMenuOpen(false);
+                  return;
+                }
+                if (nextPage === "feed-purchases") {
+                  navigate("feed");
+                  return;
+                }
+                if (nextPage === "feed") {
+                  setPage("dashboard");
+                  setQuickFeedOpen(true);
+                  setMobileMenuOpen(false);
+                } else {
+                  navigate(nextPage);
+                }
+              }}
+              aria-current={page === (nextPage === "feed-purchases" ? "feed" : nextPage) ? "page" : undefined}
+              style={{
+                color: page === (nextPage === "feed-purchases" ? "feed" : nextPage) ? "#38bdf8" : "#cbd5e1",
+                background: "transparent",
+              }}
+            >
+              <span className="mobile-bottom-nav-icon" aria-hidden="true">{icon}</span>
+              <span>{label}</span>
+            </button>
+          ))}
+          
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((open) => !open)}
+            aria-expanded={mobileMenuOpen}
+            style={{
+              color: mobileMenuOpen ? "#38bdf8" : "#cbd5e1",
+              background: "transparent",
+            }}
+          >
+            <span className="mobile-bottom-nav-icon" aria-hidden="true">☰</span>
+            <span>More</span>
+          </button>
+        </nav>
+      )}
     </div>
   );
 }

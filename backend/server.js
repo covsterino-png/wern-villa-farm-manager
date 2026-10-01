@@ -3103,6 +3103,46 @@ const fieldsResult = await turso.execute(
     res.status(500).json(error);
   }
 });
+
+app.get("/weather", async (req, res) => {
+  try {
+    const postcode = String(req.query.postcode || "").trim();
+    if (!postcode) {
+      return res.status(400).json({ error: "A postcode is required" });
+    }
+
+    const locationResponse = await axios.get(
+      `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`
+    );
+    const { latitude, longitude } = locationResponse.data.result;
+    const forecastResponse = await axios.get(
+      "https://api.open-meteo.com/v1/forecast",
+      {
+        params: {
+          latitude,
+          longitude,
+          current: "temperature_2m,weather_code",
+          daily: "temperature_2m_max,temperature_2m_min,precipitation_probability_max",
+          forecast_days: 1,
+          timezone: "auto",
+        },
+      }
+    );
+
+    const forecast = forecastResponse.data;
+    res.json({
+      temperature: forecast.current?.temperature_2m,
+      high: forecast.daily?.temperature_2m_max?.[0],
+      low: forecast.daily?.temperature_2m_min?.[0],
+      rainChance: forecast.daily?.precipitation_probability_max?.[0] || 0,
+      code: forecast.current?.weather_code,
+    });
+  } catch (error) {
+    console.error("Weather lookup error:", error.message);
+    res.status(502).json({ error: "Weather is temporarily unavailable" });
+  }
+});
+
 app.put("/tasks/:id/complete", async (req, res) => {
   try {
     const { id } = req.params;

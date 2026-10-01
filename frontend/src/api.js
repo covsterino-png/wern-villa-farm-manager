@@ -18,6 +18,10 @@ export async function apiFetch(path, options = {}) {
   });
 }
 
+export function publicFetch(input, options = {}) {
+  return nativeFetch(input, options);
+}
+
 export async function fetchJson(path, options = {}) {
   const res = await apiFetch(path, options);
   if (!res.ok) throw new Error(`Request failed ${res.status}`);
