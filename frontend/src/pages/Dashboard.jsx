@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { API, fetchJson } from "../api";
 
 const FEED_CELEBRATION_MESSAGES = {
@@ -93,17 +93,17 @@ const [actionNotes, setActionNotes] =
       .catch(() => {});
   }
 
-  function loadEggCollections() {
+  const loadEggCollections = useCallback(() => {
     fetch(`${API}/egg-collections?date=${todayKey()}`)
       .then((res) => res.json())
       .then((data) => setEggCollections(Array.isArray(data) ? data : []))
       .catch(() => {});
-  }
+  }, []);
 
   useEffect(() => {
     loadChickens();
     loadEggCollections();
-  }, []);
+  }, [loadEggCollections]);
 
   const eggsToday = eggCollections.reduce((sum, e) => sum + Number(e.count || 0), 0);
 
@@ -145,18 +145,18 @@ const [actionNotes, setActionNotes] =
 
   // Shared feed tally (server-backed so David and Gemma both see/update the same
   // running count of sheep fed today, replacing a physical calculator app).
-  function loadFeedTally() {
+  const loadFeedTally = useCallback(() => {
     fetch(`${API}/feed-tally?date=${todayKey()}`)
       .then((res) => res.json())
       .then((data) => setFeedTallyBatches(Array.isArray(data) ? data : []))
       .catch(() => {});
-  }
+  }, []);
 
   useEffect(() => {
     loadFeedTally();
     const interval = setInterval(loadFeedTally, 8000);
     return () => clearInterval(interval);
-  }, []);
+  }, [loadFeedTally]);
 
   useEffect(() => {
     Promise.all([
@@ -323,7 +323,7 @@ const [actionNotes, setActionNotes] =
       .then((res) => res.json())
       .then((data) => setAllSheep(Array.isArray(data) ? data : []))
       .catch(() => {});
-  }, [showAddTask]);
+  }, [showAddTask, allSheep.length]);
 
     useEffect(() => {
       fetch(`${API}/hero-points`)

@@ -321,7 +321,7 @@ fetch(
       .then((data) =>
         setAllSheep(data)
       );
-  }, []);
+  }, [sheep.id]);
 
 
   

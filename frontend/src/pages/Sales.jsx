@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { API, fetchJson } from "../api";
 
 const SALE_TYPES = [
@@ -93,7 +93,7 @@ export default function Sales() {
   const [purchasePrice, setPurchasePrice] = useState("");
   const [purchaseNotes, setPurchaseNotes] = useState("");
 
-  async function load(taxYear = selectedTaxYear) {
+  const load = useCallback(async (taxYear = selectedTaxYear) => {
     try {
       const data = await fetchJson(`/sales?taxYear=${taxYear}`);
       setSales(data.sales || []);
@@ -105,11 +105,11 @@ export default function Sales() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [selectedTaxYear]);
 
   useEffect(() => {
     load(selectedTaxYear);
-  }, []);
+  }, [load, selectedTaxYear]);
 
   useEffect(() => {
     if (!showForm || allSheep.length > 0) return;
@@ -118,7 +118,7 @@ export default function Sales() {
       .then((res) => res.json())
       .then((data) => setAllSheep(Array.isArray(data) ? data : []))
       .catch(() => {});
-  }, [showForm]);
+  }, [showForm, allSheep.length]);
 
   useEffect(() => {
     if (!showPurchaseForm || fields.length > 0) return;

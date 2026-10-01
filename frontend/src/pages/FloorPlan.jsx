@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch, fetchJson } from "../api";
 
 const DEVICE_ON_COLOR = "#4caf50";
@@ -37,7 +37,7 @@ export default function FloorPlan({ user }) {
   const isDavid = user === "David";
   const active = floorplans.find((f) => f.id === activeId) || null;
 
-  function loadFloorplans() {
+  const loadFloorplans = useCallback(() => {
     fetchJson("/floorplans")
       .then((data) => {
         const list = Array.isArray(data) ? data : [];
@@ -45,7 +45,7 @@ export default function FloorPlan({ user }) {
         if (!activeId && list.length) setActiveId(list[0].id);
       })
       .catch((err) => setError(err.message));
-  }
+  }, [activeId]);
 
   function loadPins(id) {
     if (!id) return;
@@ -66,7 +66,7 @@ export default function FloorPlan({ user }) {
     fetchJson("/home-assistant/status")
       .then((data) => setHaConfigured(Boolean(data.configured)))
       .catch(() => setHaConfigured(false));
-  }, []);
+  }, [loadFloorplans]);
 
   useEffect(() => {
     if (!haConfigured) return;

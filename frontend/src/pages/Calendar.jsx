@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { API, fetchJson } from "../api";
 
 export default function Calendar() {
@@ -34,7 +34,7 @@ const [newEvent, setNewEvent] =
 const [editingEventId, setEditingEventId] =
   useState(null);
 const selectedDayRef = useRef(null);
-const loadEvents = () => {
+const loadEvents = useCallback(() => {
   fetchJson("/calendar-events")
     .then((data) => {
       setEvents(data);
@@ -56,11 +56,11 @@ const loadEvents = () => {
 
       setEventDays(days);
     });
-};
+}, [currentDate]);
 
 useEffect(() => {
   loadEvents();
-}, [currentDate]);
+}, [loadEvents]);
 
 useEffect(() => {
   if (selectedDay && selectedDayRef.current) {

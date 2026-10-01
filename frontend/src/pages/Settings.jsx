@@ -36,10 +36,10 @@ const [clickLogUser, setClickLogUser] = useState("Gemma");
 const [showAiCustomizer, setShowAiCustomizer] = useState(false);
 const [aiPrompt, setAiPrompt] = useState("");
 const [aiLoading, setAiLoading] = useState(false);
-const [aiMessage, setAiMessage] = useState("");
+const [, setAiMessage] = useState("");
 const [aiChatHistory, setAiChatHistory] = useState([]);
 const [smartDevices, setSmartDevices] = useState([]);
-const [appConfigs, setAppConfigs] = useState([]);
+const [, setAppConfigs] = useState([]);
 
 const [showManualDeviceForm, setShowManualDeviceForm] = useState(false);
 const [manualName, setManualName] = useState("");

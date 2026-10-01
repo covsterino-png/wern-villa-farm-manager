@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { API, fetchJson } from "../api";
 import { getPushSubscription, subscribeToPush } from "../push";
 
@@ -8,15 +8,15 @@ export default function Notifications({ user, setPage }) {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushMessage, setPushMessage] = useState("");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const data = await fetchJson(`/notifications?user=${user}`);
     setNotifications(data);
-  };
+  }, [user]);
 
   useEffect(() => {
     load();
     getPushSubscription().then((sub) => setPushEnabled(!!sub));
-  }, []);
+  }, [load]);
 
   const enablePush = async () => {
     setPushMessage("");

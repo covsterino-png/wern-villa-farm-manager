@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { API } from "../api";
 import SheepDetail from "./SheepDetail";
 
@@ -13,15 +13,15 @@ export default function FlockGroupDetail({
   setSelectedSheep,
 ] = useState(null);
 
-  function loadSheep() {
+  const loadSheep = useCallback(() => {
     fetch(`${API}/sheep/group/${groupName}`)
       .then((res) => res.json())
       .then((data) => setSheep(data));
-  }
+  }, [groupName]);
 
   useEffect(() => {
     loadSheep();
-  }, [groupName]);
+  }, [loadSheep]);
   if (selectedSheep) {
   return (
     <SheepDetail

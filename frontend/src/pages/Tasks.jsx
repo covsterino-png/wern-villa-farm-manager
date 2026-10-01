@@ -1,20 +1,30 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export default function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
+  const [hiddenTaskIds, setHiddenTaskIds] = useState(() => {
+    const user = localStorage.getItem("user") || "anonymous";
+    const savedTaskIds = localStorage.getItem(`hiddenTasks:${user}`);
 
-  function loadTasks() {
+    try {
+      return savedTaskIds ? JSON.parse(savedTaskIds) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const loadTasks = useCallback(() => {
     fetch("https://wern-villa-api.onrender.com/tasks")
       .then((response) => response.json())
       .then((data) => {
-        setTasks(data);
+        setTasks(data.filter((task) => !hiddenTaskIds.includes(task.id)));
       });
-  }
+  }, [hiddenTaskIds]);
 
   useEffect(() => {
     loadTasks();
-  }, []);
+  }, [loadTasks]);
 
   function addTask() {
     if (!newTask.trim()) {
@@ -51,6 +61,17 @@ export default function Tasks() {
     ).then(() => {
       loadTasks();
     });
+  }
+
+  function removeFromView(id) {
+    const updatedHiddenTaskIds = [...hiddenTaskIds, id];
+    const user = localStorage.getItem("user") || "anonymous";
+
+    localStorage.setItem(
+      `hiddenTasks:${user}`,
+      JSON.stringify(updatedHiddenTaskIds)
+    );
+    setHiddenTaskIds(updatedHiddenTaskIds);
   }
 
   return (
@@ -124,13 +145,16 @@ export default function Tasks() {
             </div>
           </div>
 
-          {!task.completed && (
-            <button
-              onClick={() => completeTask(task.id)}
-            >
-              Complete
+          <div>
+            {!task.completed && (
+              <button onClick={() => completeTask(task.id)}>
+                Complete
+              </button>
+            )}
+            <button onClick={() => removeFromView(task.id)}>
+              Remove from view
             </button>
-          )}
+          </div>
         </div>
       ))}
     </div>
