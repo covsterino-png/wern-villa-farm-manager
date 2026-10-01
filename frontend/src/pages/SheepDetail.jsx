@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { submitWrite } from "../offlineQueue";
 import { getEidFormats, getEidBreakdown } from "../eidUtils";
+import { apiFetch, fetchJson } from "../api";
 
 const TAG_STATUS_OPTIONS = [
   "Not Tagged",
@@ -190,6 +191,11 @@ const [scanResult, setScanResult] = useState("Single");
   const [groups, setGroups] = useState([]);
 
   const [allSheep, setAllSheep] = useState([]);
+  const [photos, setPhotos] = useState([]);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoCaption, setPhotoCaption] = useState("");
+  const [photoMessage, setPhotoMessage] = useState("");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const [name, setName] = useState( sheep.name || ""
   );
@@ -322,7 +328,50 @@ fetch(
       .then((data) =>
         setAllSheep(data)
       );
+    fetchJson(`/sheep/${sheep.id}/photos`)
+      .then((data) => setPhotos(Array.isArray(data) ? data : []))
+      .catch(() => setPhotos([]));
   }, [sheep.id]);
+
+  async function uploadPhoto(event) {
+    event.preventDefault();
+    if (!photoFile) return;
+
+    setUploadingPhoto(true);
+    setPhotoMessage("");
+    try {
+      const formData = new FormData();
+      formData.append("photo", photoFile);
+      formData.append("caption", photoCaption);
+      const response = await apiFetch(`/sheep/${sheep.id}/photos`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Photo upload failed");
+
+      setPhotos((previous) => [data.photo, ...previous]);
+      setPhotoFile(null);
+      setPhotoCaption("");
+      event.target.reset();
+      setPhotoMessage("Photo saved.");
+    } catch (error) {
+      setPhotoMessage(error.message);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
+
+  async function deletePhoto(photoId) {
+    if (!window.confirm("Remove this photo from the sheep?")) return;
+
+    try {
+      await fetchJson(`/sheep/${sheep.id}/photos/${photoId}`, { method: "DELETE" });
+      setPhotos((previous) => previous.filter((photo) => photo.id !== photoId));
+    } catch (error) {
+      setPhotoMessage(error.message);
+    }
+  }
 
 
   
@@ -1101,6 +1150,11 @@ function saveEvent() {
   label="Ear Tags"
   active={activeTab === "eartags"}
   onClick={() => setActiveTab("eartags")}
+/>
+<TabButton
+  label="Photos"
+  active={activeTab === "photos"}
+  onClick={() => setActiveTab("photos")}
 />
 </div>
 <button
@@ -2287,6 +2341,93 @@ function saveEvent() {
           </div>
         ))}
       </>
+    )}
+  </div>
+)}
+
+{activeTab === "photos" && (
+  <div
+    style={{
+      background: "#2b2b2b",
+      padding: "20px",
+      borderRadius: "10px",
+    }}
+  >
+    <h2 style={{ color: "#03a9f4", marginTop: 0 }}>📷 Photos</h2>
+    <form onSubmit={uploadPhoto}>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(event) => setPhotoFile(event.target.files[0] || null)}
+        style={{ marginBottom: "12px", color: "white" }}
+      />
+      <input
+        value={photoCaption}
+        onChange={(event) => setPhotoCaption(event.target.value)}
+        placeholder="Caption (optional)"
+        style={{ ...inputStyle, marginBottom: "12px" }}
+      />
+      <button
+        type="submit"
+        disabled={!photoFile || uploadingPhoto}
+        style={{
+          background: photoFile && !uploadingPhoto ? "#4caf50" : "#555",
+          color: "white",
+          border: "none",
+          padding: "12px 18px",
+          borderRadius: "8px",
+          cursor: photoFile && !uploadingPhoto ? "pointer" : "not-allowed",
+        }}
+      >
+        {uploadingPhoto ? "Uploading..." : "Upload Photo"}
+      </button>
+    </form>
+
+    {photoMessage && <p style={{ color: "#ffcc80" }}>{photoMessage}</p>}
+
+    {photos.length === 0 ? (
+      <p style={{ color: "#aaa" }}>No photos saved for this sheep yet.</p>
+    ) : (
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: "16px",
+          marginTop: "20px",
+        }}
+      >
+        {photos.map((photo) => (
+          <figure key={photo.id} style={{ margin: 0 }}>
+            <img
+              src={photo.imageUrl}
+              alt={photo.caption || `${sheep.name} photo`}
+              style={{
+                width: "100%",
+                aspectRatio: "1 / 1",
+                objectFit: "cover",
+                borderRadius: "8px",
+                display: "block",
+              }}
+            />
+            {photo.caption && <figcaption style={{ marginTop: "8px" }}>{photo.caption}</figcaption>}
+            <button
+              type="button"
+              onClick={() => deletePhoto(photo.id)}
+              style={{
+                marginTop: "8px",
+                background: "#f44336",
+                color: "white",
+                border: "none",
+                padding: "8px 12px",
+                borderRadius: "8px",
+                cursor: "pointer",
+              }}
+            >
+              Remove
+            </button>
+          </figure>
+        ))}
+      </div>
     )}
   </div>
 )}

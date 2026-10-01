@@ -46,6 +46,17 @@ turso.execute(`
     createdDate TEXT DEFAULT CURRENT_TIMESTAMP
   )
 `).catch((error) => console.error("Failed to ensure notifications table:", error.message));
+turso.execute(`
+  CREATE TABLE IF NOT EXISTS sheepPhotos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sheepId INTEGER NOT NULL,
+    imageUrl TEXT NOT NULL,
+    publicId TEXT,
+    caption TEXT,
+    uploadedBy TEXT,
+    createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+  )
+`).catch((error) => console.error("Failed to ensure sheepPhotos table:", error.message));
 // email sending removed (SendGrid) — using in-app notifications only
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -2237,6 +2248,97 @@ app.get("/sheep", async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     res.status(500).json(error);
+  }
+});
+
+app.get("/sheep/:id/photos", async (req, res) => {
+  try {
+    const result = await turso.execute({
+      sql: `
+        SELECT id, sheepId, imageUrl, caption, uploadedBy, createdAt
+        FROM sheepPhotos
+        WHERE sheepId = ?
+        ORDER BY id DESC
+      `,
+      args: [req.params.id],
+    });
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("List sheep photos error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/sheep/:id/photos", upload.single("photo"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "A photo is required" });
+    }
+    if (!req.file.mimetype.startsWith("image/")) {
+      return res.status(400).json({ error: "The uploaded file must be an image" });
+    }
+
+    const sheepResult = await turso.execute({
+      sql: "SELECT id FROM sheep WHERE id = ?",
+      args: [req.params.id],
+    });
+    if (!sheepResult.rows[0]) {
+      return res.status(404).json({ error: "Sheep not found" });
+    }
+
+    const uploadResult = await cloudinary.uploader.upload(
+      `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
+      { folder: "sheep-photos", resource_type: "image" }
+    );
+    const caption = String(req.body?.caption || "").trim() || null;
+    const result = await turso.execute({
+      sql: `
+        INSERT INTO sheepPhotos (sheepId, imageUrl, publicId, caption, uploadedBy)
+        VALUES (?, ?, ?, ?, ?)
+      `,
+      args: [req.params.id, uploadResult.secure_url, uploadResult.public_id, caption, req.user || null],
+    });
+
+    res.json({
+      success: true,
+      photo: {
+        id: Number(result.lastInsertRowid),
+        sheepId: Number(req.params.id),
+        imageUrl: uploadResult.secure_url,
+        caption,
+        uploadedBy: req.user || null,
+      },
+    });
+  } catch (error) {
+    console.error("Upload sheep photo error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/sheep/:sheepId/photos/:photoId", async (req, res) => {
+  try {
+    const result = await turso.execute({
+      sql: "SELECT publicId FROM sheepPhotos WHERE id = ? AND sheepId = ?",
+      args: [req.params.photoId, req.params.sheepId],
+    });
+    const photo = result.rows[0];
+    if (!photo) {
+      return res.status(404).json({ error: "Photo not found" });
+    }
+
+    if (photo.publicId) {
+      await cloudinary.uploader.destroy(photo.publicId, { resource_type: "image" });
+    }
+    await turso.execute({
+      sql: "DELETE FROM sheepPhotos WHERE id = ? AND sheepId = ?",
+      args: [req.params.photoId, req.params.sheepId],
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete sheep photo error:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
