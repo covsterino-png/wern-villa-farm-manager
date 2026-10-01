@@ -49,13 +49,25 @@ function weatherIcon(code) {
   return "🌧️";
 }
 
+function weatherHourLabel(value) {
+  return new Date(value).toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function weatherDayLabel(value) {
+  return new Date(`${value}T12:00:00`).toLocaleDateString([], {
+    weekday: "short",
+  });
+}
+
 export default function Dashboard({
   setPage,
   showQuickFeed,
   onCloseQuickFeed,
   showQuickCare,
   onCloseQuickCare,
-  onOpenQuickCare,
 }) {
   const [summary, setSummary] = useState({
     totalSheep: 0,
@@ -103,8 +115,7 @@ const [actionNotes, setActionNotes] =
   const [heroPoints, setHeroPoints] = useState({ balance: 0, pending: 0 });
   const [notesCount, setNotesCount] = useState(0);
   const [calendarUpcomingCount, setCalendarUpcomingCount] = useState(0);
-  const [calendarUpcomingEvents, setCalendarUpcomingEvents] = useState([]);
-  const [weather, setWeather] = useState({ status: "loading" });
+  const [weather, setWeather] = useState({ status: "loading", hours: [], days: [] });
   const [briefingDay, setBriefingDay] = useState(localDateKey);
   const [briefingVisible, setBriefingVisible] = useState(() => {
     const user = localStorage.getItem("user") || "anonymous";
@@ -355,7 +366,7 @@ const [actionNotes, setActionNotes] =
         const locationData = await locationResponse.json();
         const { latitude, longitude } = locationData.result;
         const forecastResponse = await publicFetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=1&timezone=auto`
+          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code&hourly=temperature_2m,weather_code,precipitation_probability&forecast_days=6&timezone=auto`
         );
         if (!forecastResponse.ok) throw new Error("Weather lookup failed");
         const forecastData = await forecastResponse.json();
@@ -366,6 +377,35 @@ const [actionNotes, setActionNotes] =
           rainChance: forecastData.daily?.precipitation_probability_max?.[0],
           code: forecastData.current?.weather_code,
         };
+        const hourly = forecastData.hourly || {};
+        const firstHourIndex = (hourly.time || []).findIndex(
+          (time) => new Date(time).getTime() >= Date.now() - 60 * 60 * 1000
+        );
+        const today = hourly.time?.[firstHourIndex]?.slice(0, 10);
+        const nextDayIndex = (hourly.time || []).findIndex(
+          (time, index) => index > firstHourIndex && time.slice(0, 10) !== today
+        );
+        const endOfToday = nextDayIndex >= 0 ? nextDayIndex : hourly.time?.length || 0;
+        const forecastHours = firstHourIndex >= 0
+          ? Array.from({ length: endOfToday - firstHourIndex }, (_, offset) => offset)
+              .map((offset) => firstHourIndex + offset)
+              .filter((index) => hourly.time?.[index])
+              .map((index) => ({
+                time: hourly.time[index],
+                temperature: Math.round(Number(hourly.temperature_2m?.[index])),
+                code: Number(hourly.weather_code?.[index]),
+                rainChance: Number(hourly.precipitation_probability?.[index] || 0),
+              }))
+          : [];
+        const forecastDays = (forecastData.daily?.time || [])
+          .slice(1, 6)
+          .map((date, index) => ({
+            date,
+            high: Math.round(Number(forecastData.daily.temperature_2m_max?.[index + 1])),
+            low: Math.round(Number(forecastData.daily.temperature_2m_min?.[index + 1])),
+            code: Number(forecastData.daily.weather_code?.[index + 1]),
+            rainChance: Number(forecastData.daily.precipitation_probability_max?.[index + 1] || 0),
+          }));
         const weatherCode = Number(forecast.code);
 
         setWeather({
@@ -375,9 +415,11 @@ const [actionNotes, setActionNotes] =
           low: Math.round(Number(forecast.low)),
           rainChance: Number(forecast.rainChance || 0),
           code: weatherCode,
+          hours: forecastHours,
+          days: forecastDays,
         });
       } catch {
-        setWeather({ status: "unavailable" });
+        setWeather({ status: "unavailable", hours: [], days: [] });
       }
     }
 
@@ -466,13 +508,6 @@ const [actionNotes, setActionNotes] =
           ? data.filter((event) => event.date >= todayKeyValue).length
           : 0;
         setCalendarUpcomingCount(upcoming);
-        setCalendarUpcomingEvents(
-          Array.isArray(data)
-            ? data
-                .filter((event) => event.date >= todayKeyValue)
-                .sort((eventA, eventB) => eventA.date.localeCompare(eventB.date))
-            : []
-        );
       })
       .catch(() => {});
   }, []);
@@ -865,21 +900,6 @@ function saveActionFromDashboard(
           )
           .slice(0, 8);
 
-  const attentionItems = [
-    ...(summary.sheepByFarm?.Unassigned > 0
-      ? [{ icon: "🐑", title: `${summary.sheepByFarm.Unassigned} sheep need attention`, detail: "No recognised field" }]
-      : []),
-    ...todayTasks.slice(0, 3).map((task) => ({
-      icon: task.eventType?.toLowerCase().includes("injection") ? "💉" : "📋",
-      title: task.eventType,
-      detail: task.sheepName,
-    })),
-  ];
-  const briefingFields = feedFields.slice(0, 3).map((field) => ({
-    name: field.name,
-    detail: `${feedFieldSheepCounts[field.name] || 0} sheep`,
-  }));
-
   return (
     
     <div
@@ -961,83 +981,69 @@ function saveActionFromDashboard(
       <section className="daily-briefing" aria-labelledby="daily-briefing-title">
         <div className="daily-briefing-header">
           <div>
-            <h2 id="daily-briefing-title">☀️ Today at Wern Villa</h2>
+            <h2 id="daily-briefing-title">
+              {weather.status === "ready" && (
+                <span className="daily-briefing-title-icon" aria-hidden="true">
+                  {weatherIcon(weather.code)}
+                </span>
+              )}
+              Today at Wern Villa
+            </h2>
             <p>{new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
           </div>
-          <div className="daily-briefing-header-actions">
-            {weather.status === "ready" ? (
-              <div className="daily-briefing-weather" aria-label={`Weather at Wern Villa: ${weatherDescription(weather.code)}`}>
-                <span className="daily-briefing-weather-icon" aria-hidden="true">{weatherIcon(weather.code)}</span>
-                <span>
-                  <strong>{weather.temperature}°C</strong>
-                  <small>{weatherDescription(weather.code)}</small>
-                  <small>High {weather.high}° · Low {weather.low}° · 💧 {weather.rainChance}%</small>
-                </span>
-              </div>
-            ) : (
-              <span className="daily-briefing-weather-status">
-                {weather.status === "loading" ? "Loading weather..." : "Weather unavailable"}
+          <button
+            type="button"
+            className="daily-briefing-dismiss"
+            onClick={dismissDailyBriefing}
+            aria-label="Dismiss today's briefing"
+            title="Dismiss today's briefing"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="daily-briefing-weather-detail">
+          {weather.status === "ready" ? (
+            <div className="daily-briefing-weather" aria-label={`Weather at Wern Villa: ${weatherDescription(weather.code)}`}>
+              <span>
+                <strong>{weather.temperature}°C</strong>
+                <small>{weatherDescription(weather.code)}</small>
+                <small>High {weather.high}° · Low {weather.low}° · 💧 {weather.rainChance}%</small>
               </span>
-            )}
-            <button
-              type="button"
-              className="daily-briefing-dismiss"
-              onClick={dismissDailyBriefing}
-              aria-label="Dismiss today's briefing"
-              title="Dismiss today's briefing"
-            >
-              ✕
-            </button>
-          </div>
+            </div>
+          ) : (
+            <span className="daily-briefing-weather-status">
+              {weather.status === "loading" ? "Loading weather..." : "Weather unavailable"}
+            </span>
+          )}
         </div>
 
-        <div className="daily-briefing-columns">
-          <div className="daily-briefing-panel attention">
-            <h3>⚠️ {attentionItems.length} need attention <span>›</span></h3>
-            {attentionItems.length === 0 ? (
-              <p className="daily-briefing-empty">Nothing urgent today.</p>
-            ) : (
-              attentionItems.map((item, index) => (
-                <div key={`${item.title}-${index}`} className="daily-briefing-item">
-                  <span className="daily-briefing-item-icon">{item.icon}</span>
-                  <span><strong>{item.title}</strong><small>{item.detail}</small></span>
-                </div>
-              ))
-            )}
+        {weather.status === "ready" && weather.hours.length > 0 && (
+          <div className="daily-briefing-hourly" aria-label="Hourly weather forecast for the rest of today">
+            {weather.hours.map((hour) => (
+              <div key={hour.time} className="daily-briefing-hour">
+                <strong>{weatherHourLabel(hour.time)}</strong>
+                <span aria-hidden="true">{weatherIcon(hour.code)}</span>
+                <b>{hour.temperature}°</b>
+                <small>💧 {hour.rainChance}%</small>
+              </div>
+            ))}
           </div>
+        )}
 
-          <div className="daily-briefing-panel upcoming">
-            <h3>🕒 {calendarUpcomingEvents.length} coming up <span>›</span></h3>
-            {calendarUpcomingEvents.length === 0 ? (
-              <p className="daily-briefing-empty">Calendar is clear.</p>
-            ) : (
-              calendarUpcomingEvents.slice(0, 4).map((event) => (
-                <div key={event.id} className="daily-briefing-item">
-                  <span className="daily-briefing-item-icon">📅</span>
-                  <span><strong>{event.title}</strong><small>{event.date}</small></span>
-                </div>
-              ))
-            )}
+        {weather.status === "ready" && weather.days.length > 0 && (
+          <div className="daily-briefing-days" aria-label="Five-day weather forecast">
+            {weather.days.map((day) => (
+              <div key={day.date} className="daily-briefing-day">
+                <strong>{weatherDayLabel(day.date)}</strong>
+                <span aria-hidden="true">{weatherIcon(day.code)}</span>
+                <b>{day.high}° / {day.low}°</b>
+                <small>💧 {day.rainChance}%</small>
+              </div>
+            ))}
           </div>
+        )}
 
-          <div className="daily-briefing-panel fields">
-            <h3>🌱 Fields today <span>›</span></h3>
-            {briefingFields.length === 0 ? (
-              <p className="daily-briefing-empty">No occupied fields found.</p>
-            ) : (
-              briefingFields.map((field) => (
-                <div key={field.name} className="daily-briefing-item">
-                  <span className="daily-briefing-field-dot" />
-                  <span><strong>{field.name}</strong><small>{field.detail}</small></span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <button className="daily-briefing-plan" type="button" onClick={() => { setShowTasks(true); onOpenQuickCare?.(); }}>
-          View full today&apos;s plan <span aria-hidden="true">›</span>
-        </button>
       </section>
       )}
 

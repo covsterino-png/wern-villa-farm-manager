@@ -392,7 +392,6 @@ function App() {
             onCloseQuickFeed={() => setQuickFeedOpen(false)}
             showQuickCare={quickCareOpen}
             onCloseQuickCare={() => setQuickCareOpen(false)}
-            onOpenQuickCare={() => setQuickCareOpen(true)}
   />
 )}
 
