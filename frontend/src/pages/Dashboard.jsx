@@ -20,13 +20,6 @@ const FEED_CELEBRATION_MESSAGES = {
 
 const WEATHER_POSTCODE = "SA43 2RL";
 
-function localDateKey() {
-  const date = new Date();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${date.getFullYear()}-${month}-${day}`;
-}
-
 function weatherDescription(code) {
   if (code === 0) return "Clear sky";
   if ([1, 2].includes(code)) return "Partly cloudy";
@@ -116,33 +109,7 @@ const [actionNotes, setActionNotes] =
   const [notesCount, setNotesCount] = useState(0);
   const [calendarUpcomingCount, setCalendarUpcomingCount] = useState(0);
   const [weather, setWeather] = useState({ status: "loading", hours: [], days: [] });
-  const [briefingDay, setBriefingDay] = useState(localDateKey);
-  const [briefingVisible, setBriefingVisible] = useState(() => {
-    const user = localStorage.getItem("user") || "anonymous";
-    return localStorage.getItem(`dailyBriefingDismissed:${user}:${localDateKey()}`) !== "true";
-  });
-
-  useEffect(() => {
-    const checkForNewDay = () => {
-      const currentDay = localDateKey();
-      if (currentDay === briefingDay) return;
-
-      const user = localStorage.getItem("user") || "anonymous";
-      setBriefingDay(currentDay);
-      setBriefingVisible(
-        localStorage.getItem(`dailyBriefingDismissed:${user}:${currentDay}`) !== "true"
-      );
-    };
-
-    const interval = setInterval(checkForNewDay, 60000);
-    return () => clearInterval(interval);
-  }, [briefingDay]);
-
-  function dismissDailyBriefing() {
-    const user = localStorage.getItem("user") || "anonymous";
-    localStorage.setItem(`dailyBriefingDismissed:${user}:${briefingDay}`, "true");
-    setBriefingVisible(false);
-  }
+  const [briefingExpanded, setBriefingExpanded] = useState(false);
   const [salesTotal, setSalesTotal] = useState(0);
   const [showUnassigned, setShowUnassigned] = useState(false);
   const [unassignedSheep, setUnassignedSheep] = useState([]);
@@ -977,7 +944,6 @@ function saveActionFromDashboard(
         </div>
       )}
 
-      {briefingVisible && (
       <section className="daily-briefing" aria-labelledby="daily-briefing-title">
         <div className="daily-briefing-header">
           <div>
@@ -993,15 +959,17 @@ function saveActionFromDashboard(
           </div>
           <button
             type="button"
-            className="daily-briefing-dismiss"
-            onClick={dismissDailyBriefing}
-            aria-label="Dismiss today's briefing"
-            title="Dismiss today's briefing"
+            className="daily-briefing-toggle"
+            onClick={() => setBriefingExpanded((expanded) => !expanded)}
+            aria-expanded={briefingExpanded}
+            aria-label={briefingExpanded ? "Collapse today's briefing" : "Expand today's briefing"}
           >
-            ✕
+            {briefingExpanded ? "⌃" : "⌄"}
           </button>
         </div>
 
+        {briefingExpanded && (
+        <>
         <div className="daily-briefing-weather-detail">
           {weather.status === "ready" ? (
             <div className="daily-briefing-weather" aria-label={`Weather at Wern Villa: ${weatherDescription(weather.code)}`}>
@@ -1043,9 +1011,10 @@ function saveActionFromDashboard(
             ))}
           </div>
         )}
+        </>
+        )}
 
       </section>
-      )}
 
       <div
         style={{
