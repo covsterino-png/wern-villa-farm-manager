@@ -18,77 +18,6 @@ const FEED_CELEBRATION_MESSAGES = {
   ],
 };
 
-function buildDailyBriefing({
-  totalSheep,
-  todayTasks,
-  feedTallyTotal,
-  eggsToday,
-  chickenCount,
-  unassignedSheepCount,
-  calendarUpcomingCount,
-}) {
-  const sheepCount = Number(totalSheep) || 0;
-  const fedCount = Number(feedTallyTotal) || 0;
-  const tasksDue = Array.isArray(todayTasks) ? todayTasks.length : 0;
-  const remainingToFeed = Math.max(0, sheepCount - fedCount);
-  const priorities = [];
-
-  if (tasksDue > 0) {
-    priorities.push({
-      icon: "🩺",
-      text: `${tasksDue} care task${tasksDue === 1 ? "" : "s"} due today.`,
-      tone: "#fbbf24",
-    });
-  }
-  if (remainingToFeed > 0) {
-    priorities.push({
-      icon: "🌾",
-      text: `${remainingToFeed} sheep still need a feed tally entry.`,
-      tone: "#fb923c",
-    });
-  } else if (sheepCount > 0) {
-    priorities.push({
-      icon: "✅",
-      text: "Every sheep is covered by today's feed tally.",
-      tone: "#86efac",
-    });
-  }
-  if (unassignedSheepCount > 0) {
-    priorities.push({
-      icon: "⚠️",
-      text: `${unassignedSheepCount} sheep need a recognised field assignment.`,
-      tone: "#fbbf24",
-    });
-  }
-  if (priorities.length === 0) {
-    priorities.push({
-      icon: "🌤️",
-      text: "No urgent care actions are showing today.",
-      tone: "#93c5fd",
-    });
-  }
-
-  return {
-    priorities,
-    stats: [
-      { label: "Care due", value: tasksDue, colour: "#fbbf24" },
-      {
-        label: "Fed today",
-        value: sheepCount > 0 ? `${Math.min(fedCount, sheepCount)}/${sheepCount}` : "—",
-        colour: "#fb923c",
-      },
-      {
-        label: "Eggs logged",
-        value: chickenCount > 0 ? eggsToday : "—",
-        colour: "#fde047",
-      },
-    ],
-    footer: calendarUpcomingCount > 0
-      ? `${calendarUpcomingCount} calendar item${calendarUpcomingCount === 1 ? "" : "s"} coming up.`
-      : "The calendar is clear from today onward.",
-  };
-}
-
 export default function Dashboard({ setPage }) {
   const [summary, setSummary] = useState({
     totalSheep: 0,
@@ -823,16 +752,6 @@ function saveActionFromDashboard(
           )
           .slice(0, 8);
 
-  const dailyBriefing = buildDailyBriefing({
-    totalSheep: summary.totalSheep,
-    todayTasks,
-    feedTallyTotal,
-    eggsToday,
-    chickenCount,
-    unassignedSheepCount: summary.sheepByFarm?.Unassigned || 0,
-    calendarUpcomingCount,
-  });
-
   return (
     
     <div
@@ -909,51 +828,6 @@ function saveActionFromDashboard(
           </div>
         </div>
       )}
-
-      <section
-        aria-labelledby="daily-briefing-title"
-        style={{
-          background: "#17222b",
-          padding: "16px",
-          borderRadius: "12px",
-          marginBottom: "12px",
-          border: "1px solid #7c5b20",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "baseline", flexWrap: "wrap" }}>
-          <div>
-            <h2 id="daily-briefing-title" style={{ margin: 0, color: "#fbbf24", fontSize: "1.2rem" }}>
-              ☀️ Today at Wern Villa
-            </h2>
-            <div style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: "4px" }}>
-              {new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
-            </div>
-          </div>
-          <span style={{ color: "#cbd5e1", fontSize: "0.85rem" }}>Daily farm briefing</span>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "8px", margin: "16px 0" }}>
-          {dailyBriefing.stats.map((stat) => (
-            <div key={stat.label} style={{ background: "#0f1720", borderRadius: "8px", padding: "10px", minWidth: 0 }}>
-              <div style={{ color: "#94a3b8", fontSize: "0.75rem" }}>{stat.label}</div>
-              <strong style={{ color: stat.colour, fontSize: "1.35rem" }}>{stat.value}</strong>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ display: "grid", gap: "8px" }}>
-          {dailyBriefing.priorities.map((priority) => (
-            <div key={priority.text} style={{ display: "flex", gap: "8px", alignItems: "baseline", color: "#e2e8f0", fontSize: "0.9rem" }}>
-              <span aria-hidden="true">{priority.icon}</span>
-              <span style={{ color: priority.tone }}>{priority.text}</span>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ color: "#94a3b8", fontSize: "0.8rem", marginTop: "12px" }}>
-          {dailyBriefing.footer}
-        </div>
-      </section>
 
       <div
         style={{

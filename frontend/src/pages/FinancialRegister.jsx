@@ -77,7 +77,9 @@ export default function FinancialRegister({ user }) {
       };
 
       if (receiptFile) {
-        const compressedBlob = await compressImage(receiptFile);
+        const uploadFile = receiptFile.type === "application/pdf"
+          ? receiptFile
+          : await compressImage(receiptFile);
         const formData = new FormData();
         formData.append("transDate", payload.transDate);
         formData.append("description", payload.description);
@@ -85,7 +87,7 @@ export default function FinancialRegister({ user }) {
         formData.append("payer", payload.payer);
         formData.append("payee", payload.payee);
         formData.append("shared", payload.shared);
-        formData.append("receipt", compressedBlob, receiptFile.name);
+        formData.append("receipt", uploadFile, receiptFile.name);
 
         await fetch(`${API}/transactions`, {
           method: "POST",
@@ -384,7 +386,7 @@ export default function FinancialRegister({ user }) {
 
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,.pdf,application/pdf"
               capture="environment"
               onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
               style={{ padding: "8px", borderRadius: 8, border: "none", background: "#121212", color: "white", cursor: "pointer" }}

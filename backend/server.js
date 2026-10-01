@@ -1450,6 +1450,7 @@ app.post("/transactions", upload.single("receipt"), async (req, res) => {
             `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
             {
               folder: "transaction-receipts",
+              resource_type: "auto",
             }
           );
         receiptImageUrl = uploadResult.secure_url;
