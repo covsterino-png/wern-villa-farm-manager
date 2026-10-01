@@ -3536,17 +3536,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   }
 });
 
-app.get("/flock-groups", async (req, res) => {
-  try {
-    const result = await turso.execute(
-      "SELECT * FROM flockGroups ORDER BY name"
-    );
-
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json(error);
-  }
-});
 app.put("/manual-calendar-events/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -3649,26 +3638,6 @@ app.delete(
   }
 );
 
-app.post("/flock-groups", async (req, res) => {
-  try {
-    const { name } = req.body || {};
-
-    const result = await turso.execute({
-      sql: `
-        INSERT INTO flockGroups (name)
-        VALUES (?)
-      `,
-      args: [name],
-    });
-
-    res.json({
-      success: true,
-      id: Number(result.lastInsertRowid),
-    });
-  } catch (error) {
-    res.status(500).json(error);
-  }
-});
 app.get("/medicines", async (req, res) => {
   try {
     const result = await turso.execute(

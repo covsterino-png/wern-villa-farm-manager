@@ -19,7 +19,9 @@ export default function Feed() {
   };
 
   useEffect(() => {
-    fetch(`${API}/flock-groups`)
+    // Use the real flock register (same list sheep are assigned to via
+    // SheepRegister/SheepDetail/MoveGroup) so names always match sheep.groupName.
+    fetch(`${API}/flock-register`)
       .then((res) => res.json())
       .then((data) => {
         setGroups(data);

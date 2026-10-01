@@ -36,8 +36,10 @@ export default function Treatments() {
   useEffect(() => {
     loadTreatments();
 
+    // Use the real flock register (same list sheep are assigned to via
+    // SheepRegister/SheepDetail/MoveGroup) so names always match sheep.groupName.
     fetch(
-      "https://wern-villa-api.onrender.com/flock-groups"
+      "https://wern-villa-api.onrender.com/flock-register"
     )
       .then((response) => response.json())
       .then((data) => {
