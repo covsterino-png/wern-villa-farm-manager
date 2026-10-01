@@ -232,6 +232,7 @@ if (selectedSheep) {
   return (
     <SheepDetail
       sheep={selectedSheep}
+      onSelectSheep={setSelectedSheep}
       onBack={() =>
         setSelectedSheep(null)
       }

@@ -50,6 +50,7 @@ function getTaggingDeadlines(dob) {
 export default function SheepDetail({
   sheep,
   onBack,
+  onSelectSheep,
 }) {
   const [editing, setEditing] = useState(false);
 
@@ -1167,8 +1168,35 @@ function saveEvent() {
 
         <p>
           <strong>Mother:</strong>{" "}
-          {sheep.mother ||
-            "Unknown"}
+          {(() => {
+            if (!sheep.mother) return "Unknown";
+
+            const motherSheep = allSheep.find(
+              (animal) => animal.name === sheep.mother
+            );
+
+            if (!motherSheep || !onSelectSheep) {
+              return sheep.mother;
+            }
+
+            return (
+              <button
+                type="button"
+                onClick={() => onSelectSheep(motherSheep)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  color: "#03a9f4",
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  font: "inherit",
+                }}
+              >
+                {sheep.mother}
+              </button>
+            );
+          })()}
         </p>
 
         <p>

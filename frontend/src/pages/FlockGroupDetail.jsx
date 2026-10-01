@@ -26,6 +26,7 @@ export default function FlockGroupDetail({
   return (
     <SheepDetail
       sheep={selectedSheep}
+      onSelectSheep={setSelectedSheep}
       onBack={() =>
         setSelectedSheep(null)
       }
