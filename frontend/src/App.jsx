@@ -377,7 +377,9 @@ function App() {
         style={{
           flex: 1,
           padding: isMobile
-            ? (page === "dashboard" ? "0 0 86px" : "10px")
+            ? (page === "dashboard"
+              ? "0 0 calc(86px + env(safe-area-inset-bottom))"
+              : "10px 10px calc(96px + env(safe-area-inset-bottom))")
             : "20px",
           background: "var(--app-content-bg)",
           color: "var(--app-content-text)",

@@ -204,7 +204,7 @@
 @media (max-width: 767px) {
   .mobile-bottom-nav {
     position: fixed;
-    z-index: 1000;
+    z-index: 900;
     right: 0;
     bottom: 0;
     left: 0;
@@ -342,10 +342,16 @@ html[data-theme="light"] .dashboard-card > div:last-child {
   to { transform: translateY(-5px) rotate(4deg); }
 }
 
+@media (max-width: 767px) {
+  .sheep-egg {
+    bottom: calc(86px + env(safe-area-inset-bottom));
+    z-index: 950;
+  }
+}
+
 @media (max-width: 480px) {
   .sheep-egg {
     right: 10px;
-    bottom: 10px;
     left: 10px;
     min-width: 0;
   }
