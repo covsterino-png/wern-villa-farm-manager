@@ -360,6 +360,14 @@ function App() {
                 🐛 Report Bug / Idea
               </button>
             )}
+            {user === "David" && (
+              <button
+                onClick={() => navigate("settings")}
+                style={{ ...buttonStyle("settings"), padding: "10px", minHeight: "42px" }}
+              >
+                Settings
+              </button>
+            )}
             {navItems.map(([nextPage, label]) => (
               <button
                 key={nextPage}
