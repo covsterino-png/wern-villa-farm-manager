@@ -1,21 +1,37 @@
 export const API = import.meta.env.VITE_API_URL || "https://wern-villa-api.onrender.com";
 
 const nativeFetch = window.fetch.bind(window);
-window.fetch = (input, options = {}) => {
+
+function handleExpiredLogin(response) {
+  const url = response.url || "";
+  if (
+    response.status === 401 &&
+    url.startsWith(API) &&
+    !url.includes("/auth/") &&
+    localStorage.getItem("authToken")
+  ) {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+    window.location.reload();
+  }
+  return response;
+}
+
+window.fetch = async (input, options = {}) => {
   const headers = new Headers(options.headers || {});
   const token = localStorage.getItem("authToken");
   if (token) headers.set("Authorization", `Bearer ${token}`);
-  return nativeFetch(input, { ...options, headers });
+  return handleExpiredLogin(await nativeFetch(input, { ...options, headers }));
 };
 
 export async function apiFetch(path, options = {}) {
   const headers = new Headers(options.headers || {});
   const token = localStorage.getItem("authToken");
   if (token) headers.set("Authorization", `Bearer ${token}`);
-  return nativeFetch(`${API}${path.startsWith("/") ? path : "/" + path}`, {
+  return handleExpiredLogin(await nativeFetch(`${API}${path.startsWith("/") ? path : "/" + path}`, {
     ...options,
     headers,
-  });
+  }));
 }
 
 export function publicFetch(input, options = {}) {
