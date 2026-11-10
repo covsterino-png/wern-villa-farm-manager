@@ -425,6 +425,44 @@ const WERN_VILLA_BUILDINGS = [
   "Bay 6",
 ];
 
+// Reconstructs, from recorded "🚚 Movement" sheep history ("Moved to X" entries),
+// the most recent date each field is known to have been vacated. Per sheep, each
+// move's destination field was occupied from that move's date until the sheep's
+// next recorded move - so the date of that next move is when the sheep left the
+// earlier field. The latest such date across all sheep is the field's last known
+// vacate date.
+async function reconstructFieldLastVacatedDates() {
+  const movementRows = await turso.execute(`
+    SELECT sheepId, eventDate, details, id
+    FROM sheepHistory
+    WHERE eventType = '🚚 Movement' AND details LIKE 'Moved to %'
+    ORDER BY sheepId, eventDate ASC, id ASC
+  `);
+
+  const movesBySheep = new Map();
+  for (const row of movementRows.rows) {
+    const field = String(row.details).replace(/^Moved to /, "").trim();
+    if (!field || !row.eventDate) continue;
+
+    if (!movesBySheep.has(row.sheepId)) movesBySheep.set(row.sheepId, []);
+    movesBySheep.get(row.sheepId).push({ date: row.eventDate, field });
+  }
+
+  const lastVacatedDate = {};
+  for (const moves of movesBySheep.values()) {
+    for (let i = 0; i < moves.length - 1; i++) {
+      const leftField = moves[i].field;
+      const vacateDate = moves[i + 1].date;
+
+      if (!lastVacatedDate[leftField] || vacateDate > lastVacatedDate[leftField]) {
+        lastVacatedDate[leftField] = vacateDate;
+      }
+    }
+  }
+
+  return lastVacatedDate;
+}
+
 async function ensureFieldEmptySinceColumn() {
   try {
     await turso.execute("ALTER TABLE fields ADD COLUMN emptySince TEXT");
@@ -434,23 +472,46 @@ async function ensureFieldEmptySinceColumn() {
     }
   }
 
-  // Seed emptySince for any field that isn't currently occupied by a group
-  // so "days empty" has a starting point to count from.
+  const [lastVacatedDate, fieldsResult, flockResult] = await Promise.all([
+    reconstructFieldLastVacatedDates(),
+    turso.execute("SELECT name, emptySince FROM fields"),
+    turso.execute(
+      "SELECT DISTINCT currentField FROM flockRegister WHERE currentField IS NOT NULL AND currentField != ''"
+    ),
+  ]);
+
+  const occupiedFieldNames = new Set(flockResult.rows.map((row) => row.currentField));
   const nowIso = new Date().toISOString();
-  await turso.execute({
-    sql: `
-      UPDATE fields
-      SET emptySince = ?
-      WHERE emptySince IS NULL
-        AND type != 'building'
-        AND name NOT IN (
-          SELECT DISTINCT currentField
-          FROM flockRegister
-          WHERE currentField IS NOT NULL AND currentField != ''
-        )
-    `,
-    args: [nowIso],
-  });
+
+  for (const field of fieldsResult.rows) {
+    if (occupiedFieldNames.has(field.name)) {
+      // Currently occupied fields should never carry a stale emptySince.
+      if (field.emptySince !== null) {
+        await turso.execute({
+          sql: "UPDATE fields SET emptySince = NULL WHERE name = ?",
+          args: [field.name],
+        });
+      }
+      continue;
+    }
+
+    const vacateDate = lastVacatedDate[field.name];
+
+    if (vacateDate) {
+      // Prefer the historically reconstructed vacate date over any previous guess.
+      await turso.execute({
+        sql: "UPDATE fields SET emptySince = ? WHERE name = ?",
+        args: [new Date(vacateDate).toISOString(), field.name],
+      });
+    } else if (field.emptySince === null) {
+      // No movement history to reconstruct from - fall back to "empty as of now"
+      // so "days empty" at least has a starting point.
+      await turso.execute({
+        sql: "UPDATE fields SET emptySince = ? WHERE name = ?",
+        args: [nowIso, field.name],
+      });
+    }
+  }
 }
 
 // Recomputes emptySince for the given field names based on whether any
