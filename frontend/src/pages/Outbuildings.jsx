@@ -43,6 +43,13 @@ export default function Outbuildings({ onBack, onSelectBuilding }) {
       )?.sheepCount
     ) || 0;
 
+  const daysEmptyFor = (name) =>
+    Number(
+      buildingsForFarm.find(
+        (f) => (f.name || "").trim().toLowerCase() === name.toLowerCase()
+      )?.daysEmpty
+    ) || 0;
+
   const groupsFor = (names) => [
     ...new Set(
       names.flatMap((name) => {
@@ -65,6 +72,7 @@ export default function Outbuildings({ onBack, onSelectBuilding }) {
           )}`,
     sheep: bays.reduce((total, bay) => total + sheepFor(bay), 0),
     groups: groupsFor(bays),
+    daysEmpty: Math.min(...bays.map(daysEmptyFor)),
   }));
 
   const yardUnits = [
@@ -73,6 +81,7 @@ export default function Outbuildings({ onBack, onSelectBuilding }) {
       label: LAMBING_SHED,
       sheep: sheepFor(LAMBING_SHED),
       groups: groupsFor([LAMBING_SHED]),
+      daysEmpty: daysEmptyFor(LAMBING_SHED),
     },
     ...bayGroups,
   ];
@@ -164,6 +173,17 @@ export default function Outbuildings({ onBack, onSelectBuilding }) {
                     }}
                   >
                     {unit.groups.join(", ")}
+                  </span>
+                )}
+                {unit.sheep === 0 && (
+                  <span
+                    style={{
+                      display: "block",
+                      fontSize: "0.75rem",
+                      opacity: 0.85,
+                    }}
+                  >
+                    🌱 {unit.daysEmpty} Days Empty
                   </span>
                 )}
               </span>
