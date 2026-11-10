@@ -893,11 +893,16 @@ function isValidUserName(username) {
 }
 
 async function notifyDavidGemmaActive(screen) {
-  await sendPushToUser("David", {
-    title: "Gemma is active",
-    message: screen ? `Gemma is active on ${screen}.` : "Gemma is active on the app.",
-    data: { type: "gemma-active", screen },
+  const title = "PWA in use";
+  const message = screen ? `Gemma is using the PWA on ${screen}.` : "Gemma is using the PWA.";
+  const data = { type: "gemma-active", screen };
+
+  await turso.execute({
+    sql: `INSERT INTO notifications (userName, title, message, data) VALUES (?, ?, ?, ?)`,
+    args: ["David", title, message, JSON.stringify(data)],
   });
+
+  await sendPushToUser("David", { title, message, data });
 }
 
 app.post("/auth/setup-password", async (req, res) => {
