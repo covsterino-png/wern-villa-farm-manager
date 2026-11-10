@@ -463,6 +463,10 @@ async function reconstructFieldLastVacatedDates() {
   return lastVacatedDate;
 }
 
+// Wern Villa was acquired on this date, so any of its fields with no recorded
+// movement history can't have been empty for longer than this.
+const WERN_VILLA_PURCHASE_DATE = "2026-10-23";
+
 async function ensureFieldEmptySinceColumn() {
   try {
     await turso.execute("ALTER TABLE fields ADD COLUMN emptySince TEXT");
@@ -474,7 +478,7 @@ async function ensureFieldEmptySinceColumn() {
 
   const [lastVacatedDate, fieldsResult, flockResult] = await Promise.all([
     reconstructFieldLastVacatedDates(),
-    turso.execute("SELECT name, emptySince FROM fields"),
+    turso.execute("SELECT name, farm, emptySince FROM fields"),
     turso.execute(
       "SELECT DISTINCT currentField FROM flockRegister WHERE currentField IS NOT NULL AND currentField != ''"
     ),
@@ -503,9 +507,21 @@ async function ensureFieldEmptySinceColumn() {
         sql: "UPDATE fields SET emptySince = ? WHERE name = ?",
         args: [new Date(vacateDate).toISOString(), field.name],
       });
+    } else if (field.farm === "Wern Villa") {
+      // No movement history to reconstruct from, but Wern Villa fields can't
+      // have been empty before we bought the farm - always correct these to
+      // the purchase date, overriding any earlier "empty as of now" guess.
+      const purchaseIso = new Date(WERN_VILLA_PURCHASE_DATE).toISOString();
+
+      if (field.emptySince !== purchaseIso) {
+        await turso.execute({
+          sql: "UPDATE fields SET emptySince = ? WHERE name = ?",
+          args: [purchaseIso, field.name],
+        });
+      }
     } else if (field.emptySince === null) {
-      // No movement history to reconstruct from - fall back to "empty as of now"
-      // so "days empty" at least has a starting point.
+      // No movement history for a non-Wern-Villa field - fall back to
+      // "empty as of now" so "days empty" at least has a starting point.
       await turso.execute({
         sql: "UPDATE fields SET emptySince = ? WHERE name = ?",
         args: [nowIso, field.name],
