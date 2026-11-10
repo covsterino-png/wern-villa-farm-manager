@@ -425,6 +425,60 @@ const WERN_VILLA_BUILDINGS = [
   "Bay 6",
 ];
 
+async function ensureFieldEmptySinceColumn() {
+  try {
+    await turso.execute("ALTER TABLE fields ADD COLUMN emptySince TEXT");
+  } catch (error) {
+    if (!error.message.toLowerCase().includes("duplicate column")) {
+      throw error;
+    }
+  }
+
+  // Seed emptySince for any field that isn't currently occupied by a group
+  // so "days empty" has a starting point to count from.
+  const nowIso = new Date().toISOString();
+  await turso.execute({
+    sql: `
+      UPDATE fields
+      SET emptySince = ?
+      WHERE emptySince IS NULL
+        AND type != 'building'
+        AND name NOT IN (
+          SELECT DISTINCT currentField
+          FROM flockRegister
+          WHERE currentField IS NOT NULL AND currentField != ''
+        )
+    `,
+    args: [nowIso],
+  });
+}
+
+// Recomputes emptySince for the given field names based on whether any
+// group currently occupies them. Call this whenever a group's currentField
+// changes (moving groups, creating groups, etc).
+async function syncFieldEmptyStatus(fieldNames) {
+  const names = [...new Set((fieldNames || []).filter(Boolean))];
+
+  for (const name of names) {
+    const occupiedResult = await turso.execute({
+      sql: "SELECT 1 FROM flockRegister WHERE currentField = ? LIMIT 1",
+      args: [name],
+    });
+
+    if (occupiedResult.rows.length > 0) {
+      await turso.execute({
+        sql: "UPDATE fields SET emptySince = NULL WHERE name = ?",
+        args: [name],
+      });
+    } else {
+      await turso.execute({
+        sql: "UPDATE fields SET emptySince = ? WHERE name = ? AND emptySince IS NULL",
+        args: [new Date().toISOString(), name],
+      });
+    }
+  }
+}
+
 async function ensureFieldTypeColumn() {
   try {
     await turso.execute("ALTER TABLE fields ADD COLUMN type TEXT");
@@ -2655,6 +2709,8 @@ app.post("/move-group", async (req, res) => {
       `,
       args: [newField, groupName],
     });
+
+    await syncFieldEmptyStatus([sourceField, newField]);
 const sheepResult =
   await turso.execute({
     sql: `
@@ -2907,6 +2963,8 @@ app.post("/flock-register", async (req, res) => {
         notes,
       ],
     });
+
+    await syncFieldEmptyStatus([currentField]);
 
     res.json({
       success: true,
@@ -4148,6 +4206,19 @@ app.get("/field-status", async (req, res) => {
               field.name
           ).length;
 
+        const occupied = groupsInField.length > 0;
+
+        const daysEmpty =
+          !occupied && field.emptySince
+            ? Math.max(
+                0,
+                Math.floor(
+                  (Date.now() - new Date(field.emptySince).getTime()) /
+                    (1000 * 60 * 60 * 24)
+                )
+              )
+            : 0;
+
         return {
           name: field.name,
           size: field.size,
@@ -4155,13 +4226,12 @@ app.get("/field-status", async (req, res) => {
           farm: field.farm || "Gellidywyll",
           type: field.type || "field",
           sheepCount,
-          occupied:
-            groupsInField.length > 0,
+          occupied,
           groups:
             groupsInField.map(
               (group) => group.name
             ),
-          daysEmpty: 0,
+          daysEmpty,
         };
       }
     );
@@ -4479,6 +4549,7 @@ ensureFloorplanTables().catch((error) => {
 ensureFieldFarmColumn()
   .then(ensureFieldParcelNumberColumn)
   .then(ensureFieldTypeColumn)
+  .then(ensureFieldEmptySinceColumn)
   .catch((error) => {
     console.error("Failed to ensure field columns:", error);
   });
