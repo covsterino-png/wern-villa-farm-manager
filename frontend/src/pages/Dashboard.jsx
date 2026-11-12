@@ -2099,9 +2099,10 @@ boxShadow:
     display: "grid",
     gridTemplateColumns:
       window.innerWidth < 768
-        ? "repeat(3, minmax(0, 1fr))"
+        ? "repeat(2, minmax(0, 1fr))"
         : "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: window.innerWidth < 768 ? "8px" : "12px",
+    gridAutoRows: window.innerWidth < 768 ? "minmax(88px, 1fr)" : undefined,
+    gap: window.innerWidth < 768 ? "10px" : "12px",
     marginBottom: "20px",
     width: "100%",
     boxSizing: "border-box",
@@ -2219,6 +2220,7 @@ boxShadow:
       </div>
 
 
+      {window.innerWidth >= 768 && (
       <div
         style={{
           background: "#1f1f1f",
@@ -2272,6 +2274,7 @@ boxShadow:
 )}
   </>
 )}      </div>
+      )}
 
       {showEggModal && (
         <div
@@ -2435,7 +2438,7 @@ function DashboardCard({
       style={{
         background: "#1b2432",
         borderRadius: "8px",
-        padding: isMobile ? "8px" : "16px",
+        padding: isMobile ? "12px" : "16px",
         border: `1px solid ${colour}`,
         borderLeft: `4px solid ${colour}`,
         boxShadow: `0 6px 16px ${colour}16`,
@@ -2457,7 +2460,7 @@ function DashboardCard({
           alignItems: "center",
           justifyContent: "space-between",
           color: "#cbd5e1",
-          fontSize: isMobile ? "0.68rem" : "0.95rem",
+          fontSize: isMobile ? "0.85rem" : "0.95rem",
           lineHeight: 1.2,
           whiteSpace: "nowrap",
           overflow: "hidden",
@@ -2470,10 +2473,10 @@ function DashboardCard({
 
       <div
         style={{
-          fontSize: isMobile ? "1.2rem" : "1.9rem",
+          fontSize: isMobile ? "2rem" : "1.9rem",
           fontWeight: "bold",
           color: colour,
-          marginTop: "8px",
+          marginTop: isMobile ? "14px" : "8px",
           lineHeight: 1,
           textAlign: "center",
         }}

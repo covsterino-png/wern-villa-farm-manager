@@ -21,6 +21,7 @@ import Notifications from "./pages/Notifications";
 import FinancialRegister from "./pages/FinancialRegister";
 import Sales from "./pages/Sales";
 import HeroPoints from "./pages/HeroPoints";
+import RecentActivity from "./pages/RecentActivity";
 import { API, apiFetch } from "./api";
 import { subscribeQueueCount } from "./offlineQueue";
 
@@ -368,7 +369,7 @@ function App() {
                 Settings
               </button>
             )}
-            {navItems.map(([nextPage, label]) => (
+            {[...navItems, ["recent-activity", "🚜 Recent Activity"]].map(([nextPage, label]) => (
               <button
                 key={nextPage}
                 onClick={() => navigate(nextPage)}
@@ -582,6 +583,10 @@ function App() {
 {page === "notifications" && (
   <Notifications user={user} setPage={setPage} />
 )}
+{page === "recent-activity" && (
+  <RecentActivity />
+)}
+
 {page === "hero-points" && (
   <HeroPoints user={user} />
 )}

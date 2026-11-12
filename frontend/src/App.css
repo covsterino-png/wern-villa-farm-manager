@@ -522,3 +522,9 @@ html[data-theme="light"] .dashboard-card > div:last-child {
     border-right-color: var(--border);
   }
 }
+
+@media (max-width: 767px) {
+  .dashboard-card:last-child:nth-child(odd) {
+    grid-column: span 2;
+  }
+}
