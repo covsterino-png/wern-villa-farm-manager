@@ -1,0 +1,44 @@
+name: Refresh development database
+
+on:
+  schedule:
+    - cron: "0 3 * * 0" # Sundays 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      SOURCE_TURSO_DATABASE_URL: ${{ secrets.LIVE_TURSO_DATABASE_URL }}
+      SOURCE_TURSO_AUTH_TOKEN: ${{ secrets.LIVE_TURSO_AUTH_TOKEN }}
+      DEV_TURSO_DATABASE_URL: ${{ secrets.DEV_TURSO_DATABASE_URL }}
+      DEV_TURSO_AUTH_TOKEN: ${{ secrets.DEV_TURSO_AUTH_TOKEN }}
+    steps:
+      - name: Check secrets are configured
+        id: check
+        run: |
+          if [ -z "$SOURCE_TURSO_DATABASE_URL" ] || [ -z "$DEV_TURSO_DATABASE_URL" ]; then
+            echo "Secrets not configured yet; skipping."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.enabled == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.enabled == 'true'
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install backend dependencies
+        if: steps.check.outputs.enabled == 'true'
+        working-directory: backend
+        run: npm ci
+      - name: Copy live data to development database
+        if: steps.check.outputs.enabled == 'true'
+        working-directory: backend
+        run: npm run db:refresh-dev
