@@ -121,6 +121,11 @@ const [actionNotes, setActionNotes] =
   const [feedFieldSheepCounts, setFeedFieldSheepCounts] = useState({});
   const [selectedFeedField, setSelectedFeedField] = useState("");
   const [feedBatchSize, setFeedBatchSize] = useState(25);
+  const [savingFeedTally, setSavingFeedTally] = useState(false);
+  const [feedTallyError, setFeedTallyError] = useState("");
+  const feedTallyUpdateInProgress = useRef(false);
+  const feedTallyRequestSequence = useRef(0);
+  const feedTallyLastApplied = useRef(0);
   const [showFeedTally, setShowFeedTally] = useState(
     () => localStorage.getItem("feedTallyMinimised") !== "true"
   );
@@ -190,17 +195,38 @@ const [actionNotes, setActionNotes] =
 
   // Shared feed tally (server-backed so David and Gemma both see/update the same
   // running count of sheep fed today, replacing a physical calculator app).
-  const loadFeedTally = useCallback(() => {
-    fetch(`${API}/feed-tally?date=${todayKey()}`)
-      .then((res) => res.json())
-      .then((data) => setFeedTallyBatches(Array.isArray(data) ? data : []))
-      .catch(() => {});
+  const loadFeedTally = useCallback(async ({ force = false, preserveError = false } = {}) => {
+    if (feedTallyUpdateInProgress.current && !force) return;
+    const requestId = ++feedTallyRequestSequence.current;
+    try {
+      const response = await fetch(`${API}/feed-tally?date=${todayKey()}`);
+      if (!response.ok) throw new Error(`Tally refresh failed (${response.status})`);
+      const data = await response.json();
+      if (!Array.isArray(data)) throw new Error("Invalid tally response");
+      if (requestId < feedTallyLastApplied.current) return;
+      feedTallyLastApplied.current = requestId;
+      setFeedTallyBatches(data);
+      if (!preserveError) setFeedTallyError("");
+    } catch (error) {
+      if (requestId < feedTallyLastApplied.current) return;
+      feedTallyLastApplied.current = requestId;
+      console.error("Failed to refresh feed tally:", error);
+      setFeedTallyError((previous) =>
+        preserveError && previous
+          ? `${previous} The tally could not be refreshed.`
+          : "Could not refresh the feed tally. Check your connection."
+      );
+    }
   }, []);
 
   useEffect(() => {
+    const requestSequence = feedTallyRequestSequence;
     loadFeedTally();
-    const interval = setInterval(loadFeedTally, 8000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => loadFeedTally(), 8000);
+    return () => {
+      clearInterval(interval);
+      feedTallyLastApplied.current = ++requestSequence.current;
+    };
   }, [loadFeedTally]);
 
   useEffect(() => {
@@ -280,36 +306,65 @@ const [actionNotes, setActionNotes] =
     wasAllFedRef.current = allFed;
   }, [feedTallyTotal, summary.totalSheep]);
 
+  async function updateFeedTally(path, options, onSuccess) {
+    if (feedTallyUpdateInProgress.current) return;
+    feedTallyUpdateInProgress.current = true;
+    feedTallyLastApplied.current = ++feedTallyRequestSequence.current;
+    setSavingFeedTally(true);
+    setFeedTallyError("");
+    let updateFailed = false;
+    try {
+      const response = await fetch(`${API}${path}`, options);
+      if (!response.ok) throw new Error(`Tally update failed (${response.status})`);
+      const result = await response.json();
+      if (onSuccess) onSuccess(result);
+    } catch (error) {
+      updateFailed = true;
+      console.error("Failed to update feed tally:", error);
+      setFeedTallyError("Could not confirm the tally update. Check the count before trying again.");
+    }
+    try {
+      await loadFeedTally({ force: true, preserveError: updateFailed });
+    } finally {
+      feedTallyUpdateInProgress.current = false;
+      setSavingFeedTally(false);
+    }
+  }
+
   function addFeedBatch(size) {
     const amount = Number(size);
     if (!(amount > 0)) return;
-    fetch(`${API}/feed-tally`, {
+    const date = todayKey();
+    const fieldName = selectedFeedField;
+    const createdBy = localStorage.getItem("user") || "";
+    updateFeedTally("/feed-tally", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        date: todayKey(),
+        date,
         size: amount,
-        fieldName: selectedFeedField,
-        createdBy: localStorage.getItem("user"),
+        fieldName,
+        createdBy,
       }),
-    })
-      .then(loadFeedTally)
-      .catch(() => {});
+    }, (result) => {
+      if (date === todayKey()) {
+        setFeedTallyBatches((batches) => [
+          ...batches,
+          { id: result.id, tallyDate: date, size: amount, fieldName, createdBy },
+        ]);
+      }
+    });
   }
 
   function undoLastFeedBatch() {
-    fetch(`${API}/feed-tally/last?date=${todayKey()}`, { method: "DELETE" })
-      .then(loadFeedTally)
-      .catch(() => {});
+    updateFeedTally(`/feed-tally/last?date=${todayKey()}`, { method: "DELETE" });
   }
 
   function resetFeedTally() {
     if (feedTallyBatches.length > 0 && !window.confirm("Reset today's feed tally to zero for everyone?")) {
       return;
     }
-    fetch(`${API}/feed-tally?date=${todayKey()}`, { method: "DELETE" })
-      .then(loadFeedTally)
-      .catch(() => {});
+    updateFeedTally(`/feed-tally?date=${todayKey()}`, { method: "DELETE" });
   }
 
   useEffect(() => {
@@ -1046,6 +1101,7 @@ function saveActionFromDashboard(
             {showFeedTally && (
               <button
                 onClick={resetFeedTally}
+                disabled={savingFeedTally}
                 style={{
                   background: "transparent",
                   color: "#f87171",
@@ -1079,6 +1135,12 @@ function saveActionFromDashboard(
 
         {showFeedTally && (
         <>
+        {feedTallyError && (
+          <p role="alert" style={{ color: "#fca5a5", margin: "0 0 12px" }}>{feedTallyError}</p>
+        )}
+        {savingFeedTally && (
+          <p role="status" style={{ color: "#94a3b8", margin: "0 0 12px" }}>Saving and refreshing tally...</p>
+        )}
         {(feedTallyFieldNames.length > 0 || feedTallyByField["No field"]) && (
           <div style={{ marginBottom: "12px", padding: "8px 10px", background: "#0f172a", borderRadius: "8px" }}>
             <div style={{ color: "#94a3b8", fontSize: "0.8rem", marginBottom: "4px" }}>Today's count by field</div>
@@ -1167,24 +1229,24 @@ function saveActionFromDashboard(
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           <button
             onClick={() => addFeedBatch(Number(feedBatchSize) || 0)}
-            disabled={!selectedFeedField}
+            disabled={!selectedFeedField || savingFeedTally}
             style={{
               flex: "1 1 160px",
-              background: selectedFeedField ? "#0284c7" : "#334155",
+              background: selectedFeedField && !savingFeedTally ? "#0284c7" : "#334155",
               color: "white",
               border: "none",
               padding: "14px",
               borderRadius: "10px",
               fontWeight: "bold",
               fontSize: "1rem",
-              cursor: selectedFeedField ? "pointer" : "not-allowed",
+              cursor: selectedFeedField && !savingFeedTally ? "pointer" : "not-allowed",
             }}
           >
-            ➕ Add batch of {feedBatchSize || 0}
+            {savingFeedTally ? "Saving..." : `➕ Add batch of ${feedBatchSize || 0}`}
           </button>
           <button
             onClick={undoLastFeedBatch}
-            disabled={!canUndoFeedBatch}
+            disabled={!canUndoFeedBatch || savingFeedTally}
             title="Undo your most recent batch"
             style={{
               flex: "1 1 90px",
@@ -1193,8 +1255,8 @@ function saveActionFromDashboard(
               border: "1px solid #334155",
               padding: "14px",
               borderRadius: "10px",
-              cursor: canUndoFeedBatch ? "pointer" : "default",
-              opacity: canUndoFeedBatch ? 1 : 0.5,
+              cursor: canUndoFeedBatch && !savingFeedTally ? "pointer" : "default",
+              opacity: canUndoFeedBatch && !savingFeedTally ? 1 : 0.5,
             }}
           >
             ↩ Undo mine

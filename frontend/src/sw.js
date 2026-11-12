@@ -13,7 +13,9 @@ precacheAndRoute(self.__WB_MANIFEST);
 // Cache read-only API data so pages can still show last-known data offline.
 registerRoute(
   ({ url, request }) =>
-    url.origin === "https://wern-villa-api.onrender.com" && request.method === "GET",
+    url.origin === "https://wern-villa-api.onrender.com" &&
+    url.pathname !== "/feed-tally" &&
+    request.method === "GET",
   new NetworkFirst({
     cacheName: "farm-api-cache",
     networkTimeoutSeconds: 5,
