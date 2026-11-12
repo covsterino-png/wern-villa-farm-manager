@@ -101,8 +101,10 @@ const [actionNotes, setActionNotes] =
 
   const [treatmentCount, setTreatmentCount] =
     useState(0);
-  const [withdrawalCount, setWithdrawalCount] =
+  const [treatmentYearCount, setTreatmentYearCount] =
     useState(0);
+  const [monthSalesTotal, setMonthSalesTotal] = useState(0);
+  const [nextEvent, setNextEvent] = useState(null);
   const [transactionCount, setTransactionCount] =
     useState(0);
   const [heroPoints, setHeroPoints] = useState({ balance: 0, pending: 0 });
@@ -510,7 +512,10 @@ const [actionNotes, setActionNotes] =
   useEffect(() => {
     fetch(`${API}/sales`)
       .then((res) => res.json())
-      .then((data) => setSalesTotal(Number(data?.total) || 0))
+      .then((data) => {
+        setSalesTotal(Number(data?.total) || 0);
+        setMonthSalesTotal(Number(data?.monthTotal) || 0);
+      })
       .catch(() => {});
   }, []);
 
@@ -526,10 +531,13 @@ const [actionNotes, setActionNotes] =
       .then((res) => res.json())
       .then((data) => {
         const todayKeyValue = todayKey();
-        const upcoming = Array.isArray(data)
-          ? data.filter((event) => event.date >= todayKeyValue).length
-          : 0;
-        setCalendarUpcomingCount(upcoming);
+        const upcomingEvents = Array.isArray(data)
+          ? data
+              .filter((event) => event.date >= todayKeyValue)
+              .sort((a, b) => a.date.localeCompare(b.date))
+          : [];
+        setCalendarUpcomingCount(upcomingEvents.length);
+        setNextEvent(upcomingEvents[0] || null);
       })
       .catch(() => {});
   }, []);
@@ -595,15 +603,7 @@ fetch(
       .then((response) => response.json())
       .then((data) => {
         setTreatmentCount(data.count);
-      })
-      .catch(() => {});
-
-    fetch(
-      `${API}/withdrawals-count`
-    )
-      .then((response) => response.json())
-      .then((data) => {
-        setWithdrawalCount(data.count);
+        setTreatmentYearCount(data.yearCount ?? 0);
       })
       .catch(() => {});
 
@@ -2143,15 +2143,15 @@ boxShadow:
 <DashboardCard
   icon="🌱"
   title="Fields"
-  value={fieldCount}
-  subtitle={`${summary.occupiedFields} Occupied`}
+  value={`${summary.occupiedFields ?? 0} / ${fieldCount}`}
+  subtitle="Occupied / total"
   colour="#8bc34a"
   onClick={() => setPage("farm-map")}
 />
 <DashboardCard
   icon="💉"
   title="Treatments"
-  subtitle={`This month • ${withdrawalCount} active withdrawals`}
+  subtitle={`This month · ${treatmentYearCount} this year`}
   value={treatmentCount}
   colour="#9c27b0"
   onClick={() =>
@@ -2172,8 +2172,8 @@ boxShadow:
 <DashboardCard
   icon="💰"
   title="Income"
-  value={`£${salesTotal.toFixed(0)}`}
-  subtitle="Tax year sales"
+  value={`£${monthSalesTotal.toFixed(0)}`}
+  subtitle={`This month · £${salesTotal.toFixed(0)} tax year`}
   colour="#4caf50"
   onClick={() => setPage("sales")}
 />
@@ -2191,7 +2191,16 @@ boxShadow:
   icon="📅"
   title="Calendar"
   value={calendarUpcomingCount}
-  subtitle="Upcoming"
+  subtitle={
+    nextEvent
+      ? `Next: ${new Date(`${nextEvent.date}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} · ${
+          nextEvent.title ||
+          (nextEvent.type === "withdrawal"
+            ? `Withdrawal ends${nextEvent.sheepName ? ` (${nextEvent.sheepName})` : ""}`
+            : "Event")
+        }`
+      : "No upcoming events"
+  }
   colour="#00bcd4"
   onClick={() =>
     setPage("calendar")
@@ -2483,13 +2492,14 @@ function DashboardCard({
       >
         {value}
       </div>
-      {subtitle && !isMobile && (
+      {subtitle && (
   <div
     style={{
       fontSize: isMobile ? "0.72rem" : "0.85rem",
       color: "#94a3b8",
-      marginTop: "5px",
+      marginTop: isMobile ? "8px" : "5px",
       lineHeight: 1.2,
+      textAlign: isMobile ? "center" : "left",
     }}
   >
     {subtitle}

@@ -4200,25 +4200,22 @@ app.get("/treatments-count", async (req, res) => {
 
     const now = new Date();
 
-    const count = result.rows.filter(
-      (t) => {
-        if (!t.treatmentDate) {
-          return false;
-        }
-
-        const [day, month, year] =
-          t.treatmentDate.split("/");
-
-        return (
-          Number(month) ===
-            now.getMonth() + 1 &&
-          Number(year) ===
-            now.getFullYear()
-        );
+    const inCurrentYear = result.rows.filter((t) => {
+      if (!t.treatmentDate) {
+        return false;
       }
+
+      const year = t.treatmentDate.split("/")[2];
+      return Number(year) === now.getFullYear();
+    });
+
+    const count = inCurrentYear.filter(
+      (t) =>
+        Number(t.treatmentDate.split("/")[1]) ===
+        now.getMonth() + 1
     ).length;
 
-    res.json({ count });
+    res.json({ count, yearCount: inCurrentYear.length });
   } catch (error) {
     res.status(500).json(error);
   }
@@ -4706,8 +4703,13 @@ app.get("/sales", async (req, res) => {
       : currentTaxYearRange();
     const totalsByType = {};
     let total = 0;
+    let monthTotal = 0;
+    const currentMonth = new Date().toISOString().slice(0, 7);
     for (const sale of result.rows) {
       const saleDate = normaliseDateOnly(sale.saleDate);
+      if (saleDate && saleDate.slice(0, 7) === currentMonth) {
+        monthTotal += Number(sale.total) || 0;
+      }
       if (!saleDate || saleDate < taxYear.startDate || saleDate > taxYear.endDate) {
         continue;
       }
@@ -4720,6 +4722,7 @@ app.get("/sales", async (req, res) => {
       sales: result.rows,
       totalsByType,
       total,
+      monthTotal,
       period: {
         kind: "uk-tax-year",
         startDate: taxYear.startDate,
