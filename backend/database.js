@@ -35,4 +35,11 @@ function createDatabaseClient(env = process.env) {
   return createClient({ url, authToken });
 }
 
-module.exports = { createDatabaseClient, resolveDatabaseConfig, isDeployed };
+// Password-free login for local development only. It needs an explicit opt-in
+// and is impossible on deployed services or when the live database is in use.
+function devLoginEnabled(env = process.env) {
+  if (isDeployed(env) || env.DEV_LOGIN !== "true") return false;
+  return resolveDatabaseConfig(env).url !== env.TURSO_DATABASE_URL;
+}
+
+module.exports = { createDatabaseClient, resolveDatabaseConfig, isDeployed, devLoginEnabled };

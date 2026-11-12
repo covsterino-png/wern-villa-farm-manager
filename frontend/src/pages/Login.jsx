@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { apiFetch, readJsonResponse } from "../api";
 
@@ -13,6 +13,35 @@ function Login({ onLogin }) {
   const [setupKey, setSetupKey] = useState("");
   const [setupPassword, setSetupPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [devLoginAvailable, setDevLoginAvailable] = useState(false);
+
+  // Only ever offered by `npm run dev` against a backend started with DEV_LOGIN=true.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    apiFetch("/auth/dev-login-available")
+      .then(readJsonResponse)
+      .then((data) => setDevLoginAvailable(data.available === true))
+      .catch(() => {});
+  }, []);
+
+  async function devSignIn() {
+    setBusy(true);
+    setError("");
+    try {
+      const response = await apiFetch("/auth/dev-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+      });
+      const data = await readJsonResponse(response);
+      if (!response.ok) throw new Error(data.error || "Dev sign-in failed");
+      onLogin(data.user, data.token);
+    } catch (devError) {
+      setError(devError.message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function submit(event) {
     event.preventDefault();
@@ -209,6 +238,7 @@ function Login({ onLogin }) {
         <input required type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" autoComplete="current-password" style={{ width: "100%", padding: "14px", marginBottom: "10px", borderRadius: "8px", boxSizing: "border-box" }} />
         {error && <p style={{ color: "#ff8a80" }}>{error}</p>}
         <button type="submit" disabled={busy} style={buttonStyle}>{busy ? "Signing in..." : "Sign in"}</button>
+        {devLoginAvailable && <button type="button" disabled={busy} onClick={devSignIn} style={{ ...buttonStyle, marginTop: "10px", background: "#b45309" }}>Dev sign-in (no password)</button>}
         {!isLocalDevelopment && <button type="button" disabled={busy} onClick={signInWithPasskey} style={{ ...buttonStyle, marginTop: "10px", background: "#555" }}>Sign in with device</button>}
         <button type="button" disabled={busy} onClick={() => { setSetupMode(true); setError(""); }} style={{ ...buttonStyle, marginTop: "10px", background: "transparent", border: "1px solid #555" }}>Set up a password</button>
         </form>}

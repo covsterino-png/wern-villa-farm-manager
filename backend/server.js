@@ -8,7 +8,7 @@ const {
   verifyRegistrationResponse,
 } = require("@simplewebauthn/server");
 
-const { createDatabaseClient } = require("./database");
+const { createDatabaseClient, devLoginEnabled } = require("./database");
 const cloudinary = require("cloudinary").v2;
 const turso = createDatabaseClient();
 const cron = require("node-cron");
@@ -1063,10 +1063,25 @@ app.post("/auth/login", async (req, res) => {
   return res.json({ user: username, token: createSessionToken(username) });
 });
 
+const DEV_LOGIN_ENABLED = devLoginEnabled();
+if (DEV_LOGIN_ENABLED) console.warn("DEV_LOGIN is on: /auth/dev-login signs in without a password. Local development only.");
+
+app.get("/auth/dev-login-available", (req, res) => res.json({ available: DEV_LOGIN_ENABLED }));
+
+app.post("/auth/dev-login", (req, res) => {
+  const { username } = req.body || {};
+  if (!DEV_LOGIN_ENABLED || !authSecret || !isValidUserName(username)) {
+    return res.status(404).json({ error: "Not found" });
+  }
+  return res.json({ user: username, token: createSessionToken(username) });
+});
+
 app.use((req, res, next) => {
   if (
     req.path === "/" ||
     req.path === "/auth/login" ||
+    req.path === "/auth/dev-login" ||
+    req.path === "/auth/dev-login-available" ||
     req.path === "/auth/setup-password" ||
     req.path === "/auth/passkey/login/options" ||
     req.path === "/auth/passkey/login/verify" ||
