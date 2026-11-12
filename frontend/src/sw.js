@@ -5,6 +5,8 @@ import { ExpirationPlugin } from "workbox-expiration";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 import { clientsClaim } from "workbox-core";
 
+import { API_URL } from "./apiConfig";
+
 self.skipWaiting();
 clientsClaim();
 
@@ -13,7 +15,7 @@ precacheAndRoute(self.__WB_MANIFEST);
 // Cache read-only API data so pages can still show last-known data offline.
 registerRoute(
   ({ url, request }) =>
-    url.origin === "https://wern-villa-api.onrender.com" &&
+    url.origin === new URL(API_URL).origin &&
     url.pathname !== "/feed-tally" &&
     request.method === "GET",
   new NetworkFirst({

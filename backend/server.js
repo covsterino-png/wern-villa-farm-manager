@@ -8,14 +8,9 @@ const {
   verifyRegistrationResponse,
 } = require("@simplewebauthn/server");
 
-const { createClient } =
-  require("@libsql/client");
+const { createDatabaseClient } = require("./database");
 const cloudinary = require("cloudinary").v2;
-const turso = createClient({
-  url: process.env.TURSO_DATABASE_URL,
-  authToken:
-    process.env.TURSO_AUTH_TOKEN,
-});
+const turso = createDatabaseClient();
 const cron = require("node-cron");
 const webpush = require("web-push");
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
@@ -4456,9 +4451,7 @@ app.put("/hero-redemptions/:id/complete", async (req, res) => {
 });
 
 app.listen(3001, () => {
-  console.log(
-    "Farm API running on https://wern-villa-api.onrender.com"
-  );
+  console.log("Farm API running on port 3001");
 });
 
 // Converts a wall-clock date/time entered in the farm's local timezone

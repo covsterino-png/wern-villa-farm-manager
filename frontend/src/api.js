@@ -1,6 +1,21 @@
-export const API = import.meta.env.VITE_API_URL || "https://wern-villa-api.onrender.com";
+import { API_URL, PRODUCTION_API } from "./apiConfig";
+
+export const API = API_URL;
 
 const nativeFetch = window.fetch.bind(window);
+
+// Some pages still contain the live API address. When the app is pointed at a
+// different API (development or staging), send those requests there instead.
+function redirectLegacyApiUrl(input) {
+  if (API === PRODUCTION_API) return input;
+  if (typeof input === "string" && input.startsWith(PRODUCTION_API)) {
+    return API + input.slice(PRODUCTION_API.length);
+  }
+  if (input instanceof URL && input.href.startsWith(PRODUCTION_API)) {
+    return API + input.href.slice(PRODUCTION_API.length);
+  }
+  return input;
+}
 
 function handleExpiredLogin(response) {
   const url = response.url || "";
@@ -21,7 +36,7 @@ window.fetch = async (input, options = {}) => {
   const headers = new Headers(options.headers || {});
   const token = localStorage.getItem("authToken");
   if (token) headers.set("Authorization", `Bearer ${token}`);
-  return handleExpiredLogin(await nativeFetch(input, { ...options, headers }));
+  return handleExpiredLogin(await nativeFetch(redirectLegacyApiUrl(input), { ...options, headers }));
 };
 
 export async function apiFetch(path, options = {}) {
