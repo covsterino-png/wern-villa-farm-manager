@@ -377,6 +377,12 @@ function App() {
                 {label}
               </button>
             ))}
+            <button
+              onClick={logout}
+              style={{ ...buttonStyle("logout"), padding: "10px", minHeight: "42px", gridColumn: "span 2" }}
+            >
+              🚪 Logout
+            </button>
           </div>
         )}
       </div>
