@@ -2483,7 +2483,7 @@ function DashboardCard({
       style={{
         background: "#1b2432",
         borderRadius: "8px",
-        padding: isMobile ? "12px" : "16px",
+        padding: isMobile ? "clamp(6px, 2vw, 12px)" : "clamp(8px, 1vw, 16px)",
         border: `1px solid ${colour}`,
         borderLeft: `4px solid ${colour}`,
         boxShadow: `0 6px 16px ${colour}16`,
@@ -2502,18 +2502,24 @@ function DashboardCard({
       <div
         style={{
           display: "flex",
-          alignItems: "center",
+          alignItems: "flex-start",
           justifyContent: "space-between",
+          gap: "4px",
           color: "#cbd5e1",
-          fontSize: isMobile ? "0.85rem" : "0.95rem",
-          lineHeight: 1.2,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
+          fontSize: isMobile ? "0.75rem" : "0.9rem",
+          lineHeight: 1.15,
         }}
       >
-        <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{icon} {title}</span>
-        <span aria-hidden="true" style={{ color: colour }}>›</span>
+        <span
+          style={{
+            flex: 1,
+            minWidth: 0,
+            overflowWrap: "anywhere",
+          }}
+        >
+          {icon} {title}
+        </span>
+        <span aria-hidden="true" style={{ color: colour, flexShrink: 0 }}>›</span>
       </div>
 
       <div
