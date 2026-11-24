@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API, fetchJson } from "../api";
+import HomeScreenLayoutSettings from "./HomeScreenLayoutSettings";
 
 export default function Settings({ user, theme, onThemeChange }) {
 const [fields, setFields] = useState([]);
@@ -361,6 +362,8 @@ body: JSON.stringify({
       >
         ⚙️ Administration
       </h1>
+
+      <HomeScreenLayoutSettings user={user} />
 
       <SettingsSection
         title="🎨 Appearance"

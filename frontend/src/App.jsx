@@ -9,6 +9,7 @@ import Tasks from "./pages/Tasks";
 import Treatments from "./pages/Treatments";
 import Feed from "./pages/Feed";
 import Settings from "./pages/Settings";
+import PersonalSettings from "./pages/PersonalSettings";
 import FarmMap from "./pages/FarmMap";
 import Outbuildings from "./pages/Outbuildings";
 import OutbuildingDetail from "./pages/OutbuildingDetail";
@@ -36,7 +37,6 @@ const getStoredTheme = () => localStorage.getItem("theme") || "dark";
 function getStoredPage(username) {
   if (!username) return "dashboard";
   const storedPage = localStorage.getItem(lastScreenKey(username));
-  if (storedPage === "settings" && username !== "David") return "dashboard";
   return storedPage || "dashboard";
 }
 
@@ -304,14 +304,12 @@ function App() {
               🐛 Report Bug / Idea
             </button>
           )}
-          {user === "David" && (
-            <button
-              style={buttonStyle("settings")}
-              onClick={() => navigate("settings")}
-            >
-              Settings
-            </button>
-          )}
+          <button
+            style={buttonStyle("settings")}
+            onClick={() => navigate("settings")}
+          >
+            Settings
+          </button>
           <button
             style={buttonStyle("logout")}
             onClick={logout}
@@ -361,14 +359,12 @@ function App() {
                 🐛 Report Bug / Idea
               </button>
             )}
-            {user === "David" && (
-              <button
-                onClick={() => navigate("settings")}
-                style={{ ...buttonStyle("settings"), padding: "10px", minHeight: "42px" }}
-              >
-                Settings
-              </button>
-            )}
+            <button
+              onClick={() => navigate("settings")}
+              style={{ ...buttonStyle("settings"), padding: "10px", minHeight: "42px" }}
+            >
+              Settings
+            </button>
             {[...navItems, ["recent-activity", "🚜 Recent Activity"]].map(([nextPage, label]) => (
               <button
                 key={nextPage}
@@ -404,6 +400,7 @@ function App() {
 
 {page === "dashboard" && (
   <Dashboard
+    user={user}
     setPage={setPage}
             showQuickFeed={quickFeedOpen}
             onCloseQuickFeed={() => setQuickFeedOpen(false)}
@@ -447,6 +444,10 @@ function App() {
         {page === "settings" &&
           user === "David" && (
             <Settings user={user} theme={theme} onThemeChange={setTheme} />
+          )}
+        {page === "settings" &&
+          user !== "David" && (
+            <PersonalSettings user={user} />
           )}
 
       {showBugModal && (

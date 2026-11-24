@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { API, fetchJson, publicFetch } from "../api";
+import { readDashboardLayout } from "../dashboardLayout";
 
 const FEED_CELEBRATION_MESSAGES = {
   David: [
@@ -56,12 +57,14 @@ function weatherDayLabel(value) {
 }
 
 export default function Dashboard({
+  user,
   setPage,
   showQuickFeed,
   onCloseQuickFeed,
   showQuickCare,
   onCloseQuickCare,
 }) {
+  const [dashboardLayout] = useState(() => readDashboardLayout(user));
   const [summary, setSummary] = useState({
     totalSheep: 0,
     wernVilla: 0,
@@ -2132,8 +2135,8 @@ boxShadow:
     display: "grid",
     gridTemplateColumns:
       window.innerWidth < 768
-        ? "repeat(2, minmax(0, 1fr))"
-        : "repeat(auto-fit, minmax(220px, 1fr))",
+        ? `repeat(${dashboardLayout.mobileColumns}, minmax(0, 1fr))`
+        : `repeat(${dashboardLayout.desktopColumns}, minmax(0, 1fr))`,
     gridAutoRows: window.innerWidth < 768 ? "minmax(88px, 1fr)" : undefined,
     gap: window.innerWidth < 768 ? "10px" : "12px",
     marginBottom: "20px",
