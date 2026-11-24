@@ -117,6 +117,9 @@ const [actionNotes, setActionNotes] =
   const [unassignedSheep, setUnassignedSheep] = useState([]);
   const [smartDevices, setSmartDevices] = useState([]);
   const [showSmartControls, setShowSmartControls] = useState(false);
+  const dashboardControlDevices = smartDevices.filter(
+    (device) => device.icon !== "📹" && !device.haEntityId?.startsWith("camera.")
+  );
 
   const todayKey = () => new Date().toISOString().split("T")[0];
   const [feedTallyBatches, setFeedTallyBatches] = useState([]);
@@ -935,7 +938,7 @@ function saveActionFromDashboard(
       }}
     >
 
-      {smartDevices.length > 0 && (
+      {dashboardControlDevices.length > 0 && (
         <div style={{ marginBottom: "12px" }}>
           <button
             type="button"
@@ -957,7 +960,7 @@ function saveActionFromDashboard(
               fontWeight: "bold",
             }}
           >
-            <span>⚡ Smart Controls ({smartDevices.length})</span>
+            <span>⚡ Smart Controls ({dashboardControlDevices.length})</span>
             <span>{showSmartControls ? "Hide ▲" : "Show ▼"}</span>
           </button>
           {showSmartControls && (
@@ -998,7 +1001,7 @@ function saveActionFromDashboard(
                   gap: "10px",
                 }}
               >
-                {smartDevices.map((dev) => (
+                {dashboardControlDevices.map((dev) => (
                   <button
                     key={dev.id}
                     onClick={() => toggleDashboardDevice(dev.id)}
