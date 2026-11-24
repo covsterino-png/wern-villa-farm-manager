@@ -116,6 +116,7 @@ const [actionNotes, setActionNotes] =
   const [showUnassigned, setShowUnassigned] = useState(false);
   const [unassignedSheep, setUnassignedSheep] = useState([]);
   const [smartDevices, setSmartDevices] = useState([]);
+  const [showSmartControls, setShowSmartControls] = useState(false);
 
   const todayKey = () => new Date().toISOString().split("T")[0];
   const [feedTallyBatches, setFeedTallyBatches] = useState([]);
@@ -935,67 +936,96 @@ function saveActionFromDashboard(
     >
 
       {smartDevices.length > 0 && (
-        <div
-          style={{
-            background: "#1e293b",
-            padding: "14px",
-            borderRadius: "12px",
-            marginBottom: "12px",
-            border: "1px solid #334155",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-            <h3 style={{ margin: 0, color: "#38bdf8", fontSize: "1.05rem" }}>
-              ⚡ Smart Farm Controls
-            </h3>
-            <button
-              onClick={() => setPage("floorplan")}
-              style={{
-                background: "transparent",
-                color: "#38bdf8",
-                border: "1px solid #334155",
-                borderRadius: "8px",
-                padding: "4px 10px",
-                fontSize: "0.8rem",
-                cursor: "pointer",
-              }}
-            >
-              View Floorplan →
-            </button>
-          </div>
-          <div
+        <div style={{ marginBottom: "12px" }}>
+          <button
+            type="button"
+            onClick={() => setShowSmartControls((show) => !show)}
+            aria-expanded={showSmartControls}
+            aria-controls="dashboard-smart-controls"
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
-              gap: "10px",
+              width: "100%",
+              background: "#1e293b",
+              color: "#38bdf8",
+              border: "1px solid #334155",
+              borderRadius: "12px",
+              padding: "12px 14px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              cursor: "pointer",
+              fontSize: "1rem",
+              fontWeight: "bold",
             }}
           >
-            {smartDevices.map((dev) => (
-              <button
-                key={dev.id}
-                onClick={() => toggleDashboardDevice(dev.id)}
+            <span>⚡ Smart Controls ({smartDevices.length})</span>
+            <span>{showSmartControls ? "Hide ▲" : "Show ▼"}</span>
+          </button>
+          {showSmartControls && (
+            <div
+              id="dashboard-smart-controls"
+              style={{
+                background: "#1e293b",
+                padding: "14px",
+                borderRadius: "12px",
+                marginTop: "8px",
+                border: "1px solid #334155",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                <h3 style={{ margin: 0, color: "#38bdf8", fontSize: "1.05rem" }}>
+                  ⚡ Smart Farm Controls
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setPage("floorplan")}
+                  style={{
+                    background: "transparent",
+                    color: "#38bdf8",
+                    border: "1px solid #334155",
+                    borderRadius: "8px",
+                    padding: "4px 10px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  View Floorplan →
+                </button>
+              </div>
+              <div
                 style={{
-                  background: dev.state === "on" ? "#0284c7" : "#0f172a",
-                  color: "white",
-                  border: dev.state === "on" ? "2px solid #38bdf8" : "1px solid #334155",
-                  padding: "10px 8px",
-                  borderRadius: "10px",
-                  cursor: "pointer",
-                  textAlign: "center",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: "4px",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
+                  gap: "10px",
                 }}
               >
-                <span style={{ fontSize: "1.4rem" }}>{dev.icon || "💡"}</span>
-                <strong style={{ fontSize: "0.85rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{dev.name}</strong>
-                <span style={{ fontSize: "0.75rem", opacity: 0.8 }}>
-                  {dev.state === "on" ? "🟢 ON" : "⚪ OFF"}
-                </span>
-              </button>
-            ))}
-          </div>
+                {smartDevices.map((dev) => (
+                  <button
+                    key={dev.id}
+                    onClick={() => toggleDashboardDevice(dev.id)}
+                    style={{
+                      background: dev.state === "on" ? "#0284c7" : "#0f172a",
+                      color: "white",
+                      border: dev.state === "on" ? "2px solid #38bdf8" : "1px solid #334155",
+                      padding: "10px 8px",
+                      borderRadius: "10px",
+                      cursor: "pointer",
+                      textAlign: "center",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <span style={{ fontSize: "1.4rem" }}>{dev.icon || "💡"}</span>
+                    <strong style={{ fontSize: "0.85rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{dev.name}</strong>
+                    <span style={{ fontSize: "0.75rem", opacity: 0.8 }}>
+                      {dev.state === "on" ? "🟢 ON" : "⚪ OFF"}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

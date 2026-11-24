@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { API } from "../api";
 import {
+  HOME_BUILDING,
   LAMBING_SHED,
   BAYS,
   buildBayGroups,
@@ -76,6 +77,14 @@ export default function Outbuildings({ onBack, onSelectBuilding }) {
   }));
 
   const yardUnits = [
+    {
+      bays: [HOME_BUILDING],
+      label: HOME_BUILDING,
+      sheep: 0,
+      groups: [],
+      daysEmpty: 0,
+      isResidence: true,
+    },
     {
       bays: [LAMBING_SHED],
       label: LAMBING_SHED,
@@ -163,7 +172,7 @@ export default function Outbuildings({ onBack, onSelectBuilding }) {
               }}
             >
               <span>
-                🏚️ {unit.label}
+                {unit.isResidence ? "🏠" : "🏚️"} {unit.label}
                 {unit.groups.length > 0 && (
                   <span
                     style={{
@@ -175,7 +184,7 @@ export default function Outbuildings({ onBack, onSelectBuilding }) {
                     {unit.groups.join(", ")}
                   </span>
                 )}
-                {unit.sheep === 0 && (
+                {!unit.isResidence && unit.sheep === 0 && (
                   <span
                     style={{
                       display: "block",
@@ -204,12 +213,14 @@ export default function Outbuildings({ onBack, onSelectBuilding }) {
                     }}
                   />
                 )}
-                <span>🐑 {unit.sheep}</span>
+                {!unit.isResidence && <span>🐑 {unit.sheep}</span>}
                 {!editingBays && <span>▶</span>}
               </span>
             </div>
 
-            {editingBays && index > 0 && index < yardUnits.length - 1 && (
+            {editingBays &&
+              unit.bays.some((bay) => BAYS.includes(bay)) &&
+              index < yardUnits.length - 1 && (
               <BayButton
                 label="⇵ Merge with below"
                 block
@@ -217,7 +228,7 @@ export default function Outbuildings({ onBack, onSelectBuilding }) {
                   toggleMerge(BAYS.indexOf(unit.bays[unit.bays.length - 1]))
                 }
               />
-            )}
+              )}
           </div>
         ))}
       </div>

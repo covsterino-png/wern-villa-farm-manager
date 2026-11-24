@@ -148,26 +148,30 @@ export default function OutbuildingDetail({ unit, onBack }) {
         >
           ← Home & Yard
         </button>
-        <h1 style={{ color: "#03a9f4", margin: 0 }}>🏚️ {unit.label}</h1>
+        <h1 style={{ color: "#03a9f4", margin: 0 }}>
+          {unit.isResidence ? "🏠" : "🏚️"} {unit.label}
+        </h1>
       </div>
 
-      <div
-        style={{
-          background: "#1f1f1f",
-          borderRadius: "12px",
-          padding: "16px",
-          marginBottom: "16px",
-        }}
-      >
-        <div>🐑 {unit.sheep ?? 0} sheep</div>
-        {unit.groups?.length > 0 && (
-          <div style={{ marginTop: "8px", color: "#aaa" }}>
-            {unit.groups.map((group) => (
-              <div key={group}>• {group}</div>
-            ))}
-          </div>
-        )}
-      </div>
+      {!unit.isResidence && (
+        <div
+          style={{
+            background: "#1f1f1f",
+            borderRadius: "12px",
+            padding: "16px",
+            marginBottom: "16px",
+          }}
+        >
+          <div>🐑 {unit.sheep ?? 0} sheep</div>
+          {unit.groups?.length > 0 && (
+            <div style={{ marginTop: "8px", color: "#aaa" }}>
+              {unit.groups.map((group) => (
+                <div key={group}>• {group}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div
         style={{

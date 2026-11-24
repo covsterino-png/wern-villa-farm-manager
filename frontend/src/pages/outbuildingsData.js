@@ -1,4 +1,5 @@
 export const LAMBING_SHED = "Lambing Shed";
+export const HOME_BUILDING = "Home";
 
 export const BAYS = [
   "Bay 1",
